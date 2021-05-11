@@ -1,4 +1,4 @@
-package communication
+package plugin_go
 
 type Handshake struct {
 	Protocol string `json:"protocol"`

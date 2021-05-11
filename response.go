@@ -1,11 +1,12 @@
-package communication
+package plugin_go
 
 type ResponseType int
 
 const (
 	ResponseTypeEmpty ResponseType = iota + 1
 	ResponseTypeData
-	ResponseTypeMap
+	ResponseTypeGetState
+	ResponseTypePlan
 	ResponseTypePrompt
 	ResponseTypeMessage
 	ResponseTypeError
@@ -76,18 +77,6 @@ func (r *DataResponse) Type() ResponseType {
 
 func (r *DataResponse) Data() []byte {
 	return r.Content
-}
-
-type MapResponse struct {
-	Map map[string]interface{} `json:"data"`
-}
-
-func (r *MapResponse) Type() ResponseType {
-	return ResponseTypeMap
-}
-
-func (r *MapResponse) Data() map[string]interface{} {
-	return r.Map
 }
 
 type EmptyResponse struct{}

@@ -1,4 +1,4 @@
-package communication
+package plugin_go
 
 import (
 	"context"

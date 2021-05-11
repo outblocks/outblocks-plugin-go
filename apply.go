@@ -1,11 +1,10 @@
-package communication
+package plugin_go
 
 import "github.com/outblocks/outblocks-plugin-go/types"
 
 type ApplyRequest struct {
-	Apps         []*types.App           `json:"apps"`
-	Dependencies []*types.Dependency    `json:"dependencies"`
-	Plan         map[string]interface{} `json:"plan"`
+	Apps         []*types.AppPlan        `json:"apps,omitempty"`
+	Dependencies []*types.DependencyPlan `json:"dependencies,omitempty"`
 }
 
 func (r *ApplyRequest) Type() RequestType {

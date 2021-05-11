@@ -1,4 +1,4 @@
-package communication
+package plugin_go
 
 import "github.com/outblocks/outblocks-plugin-go/types"
 

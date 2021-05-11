@@ -1,4 +1,4 @@
-package communication
+package plugin_go
 
 type RequestType int
 
@@ -9,7 +9,6 @@ const (
 	RequestTypeApply
 	RequestTypeRun
 	RequestTypeGetState
-	RequestTypeUpdateState
 	RequestTypeSaveState
 	RequestTypeCommand
 	RequestTypePromptAnswer

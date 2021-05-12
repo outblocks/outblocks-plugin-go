@@ -14,17 +14,17 @@ import (
 
 type ReqHandler struct {
 	Init               func(ctx context.Context, r *InitRequest) (Response, error)
-	InitInteractive    func(ctx context.Context, r *InitRequest, in chan<- Request, out <-chan Response) error
+	InitInteractive    func(ctx context.Context, r *InitRequest, in <-chan Request, out chan<- Response) error
 	Start              func(ctx context.Context, r *StartRequest) (Response, error)
-	StartInteractive   func(ctx context.Context, r *StartRequest, in chan<- Request, out <-chan Response) error
+	StartInteractive   func(ctx context.Context, r *StartRequest, in <-chan Request, out chan<- Response) error
 	Plan               func(ctx context.Context, r *PlanRequest) (Response, error)
-	PlanInteractive    func(ctx context.Context, r *PlanRequest, in chan<- Request, out <-chan Response) error
+	PlanInteractive    func(ctx context.Context, r *PlanRequest, in <-chan Request, out chan<- Response) error
 	Apply              func(ctx context.Context, r *ApplyRequest) (Response, error)
-	AppleInteractive   func(ctx context.Context, r *ApplyRequest, in chan<- Request, out <-chan Response) error
+	AppleInteractive   func(ctx context.Context, r *ApplyRequest, in <-chan Request, out chan<- Response) error
 	Run                func(ctx context.Context, r *RunRequest) (Response, error)
-	RunInteractive     func(ctx context.Context, r *RunRequest, in chan<- Request, out <-chan Response) error
+	RunInteractive     func(ctx context.Context, r *RunRequest, in <-chan Request, out chan<- Response) error
 	Command            func(ctx context.Context, r *CommandRequest) (Response, error)
-	CommandInteractive func(ctx context.Context, r *CommandRequest, in chan<- Request, out <-chan Response) error
+	CommandInteractive func(ctx context.Context, r *CommandRequest, in <-chan Request, out chan<- Response) error
 
 	// Cleanup
 	Cleanup func() error

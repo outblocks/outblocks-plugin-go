@@ -200,11 +200,6 @@ func writeResponse(w io.Writer, res Response) error {
 		Type: res.Type(),
 	}
 
-	if sr, ok := res.(StreamingResponse); ok {
-		header.IsStreaming = true
-		header.IsFinal = sr.IsFinal()
-	}
-
 	// Send header.
 	data, err := json.Marshal(header)
 	if err != nil {

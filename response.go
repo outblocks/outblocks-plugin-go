@@ -7,6 +7,7 @@ const (
 	ResponseTypeData
 	ResponseTypeGetState
 	ResponseTypePlan
+	ResponseTypeApply
 	ResponseTypePrompt
 	ResponseTypeMessage
 	ResponseTypeError
@@ -18,11 +19,6 @@ type Response interface {
 	Type() ResponseType
 }
 
-type StreamingResponse interface {
-	Response
-	IsFinal() bool
-}
-
 var (
 	_ Response = (*GetStateResponse)(nil)
 	_ Response = (*SaveStateResponse)(nil)
@@ -30,9 +26,7 @@ var (
 )
 
 type ResponseHeader struct {
-	Type        ResponseType `json:"type"`
-	IsStreaming bool         `json:"is_streaming"`
-	IsFinal     bool         `json:"is_final"`
+	Type ResponseType `json:"type"`
 }
 
 type UnhandledResponse struct {

@@ -10,3 +10,11 @@ type ApplyRequest struct {
 func (r *ApplyRequest) Type() RequestType {
 	return RequestTypeApply
 }
+
+type ApplyResponse struct {
+	Actions []*types.ApplyAction `json:"actions,omitempty"`
+}
+
+func (r *ApplyResponse) Type() ResponseType {
+	return ResponseTypeApply
+}

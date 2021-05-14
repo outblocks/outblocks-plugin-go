@@ -29,3 +29,11 @@ func ValidateString(m map[string]interface{}, key, msg string) (plugin.Response,
 		Error: msg,
 	}, ""
 }
+
+func ValidateOptionalString(def string, m map[string]interface{}, key, msg string) (plugin.Response, string) {
+	if _, ok := m[key]; !ok {
+		return nil, def
+	}
+
+	return ValidateString(m, key, msg)
+}

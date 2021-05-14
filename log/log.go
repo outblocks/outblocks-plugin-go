@@ -7,7 +7,7 @@ import (
 
 type Log struct{}
 
-func NewLogger() *Log {
+func NewLogger() Logger {
 	return &Log{}
 }
 

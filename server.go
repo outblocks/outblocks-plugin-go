@@ -33,11 +33,11 @@ func NewServer() *Server {
 
 func (s *Server) handleConnection(ctx context.Context, handler *ReqHandler, c net.Conn) {
 	err := handler.Handle(ctx, s.log, c)
+	_ = c.Close()
+
 	if err != nil {
 		s.log.Fatalln(err)
 	}
-
-	_ = c.Close()
 
 	s.wg.Done()
 }

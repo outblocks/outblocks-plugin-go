@@ -3,8 +3,7 @@ package plugin_go
 import "github.com/outblocks/outblocks-plugin-go/types"
 
 type ApplyRequest struct {
-	Apps         []*types.AppPlan        `json:"apps,omitempty"`
-	Dependencies []*types.DependencyPlan `json:"dependencies,omitempty"`
+	Plan *types.Plan `json:"plan"`
 }
 
 func (r *ApplyRequest) Type() RequestType {
@@ -17,4 +16,13 @@ type ApplyResponse struct {
 
 func (r *ApplyResponse) Type() ResponseType {
 	return ResponseTypeApply
+}
+
+type ApplyDoneResponse struct {
+	Plugin types.PluginState  `json:"plugin"`
+	Deploy *types.StateDeploy `json:"deploy_state"`
+}
+
+func (r *ApplyDoneResponse) Type() ResponseType {
+	return ResponseTypeApplyDone
 }

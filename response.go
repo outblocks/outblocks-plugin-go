@@ -8,6 +8,7 @@ const (
 	ResponseTypeGetState
 	ResponseTypePlan
 	ResponseTypeApply
+	ResponseTypeApplyDone
 	ResponseTypePrompt
 	ResponseTypeMessage
 	ResponseTypeError

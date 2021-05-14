@@ -30,8 +30,8 @@ type ReqHandler struct {
 	Cleanup func() error
 
 	// State handlers.
-	GetState  func(ctx context.Context, r *GetStateRequest) (*GetStateResponse, error)
-	SaveState func(ctx context.Context, r *SaveStateRequest) (*SaveStateResponse, error)
+	GetState  func(ctx context.Context, r *GetStateRequest) (Response, error)
+	SaveState func(ctx context.Context, r *SaveStateRequest) (Response, error)
 }
 
 func (h *ReqHandler) handleSync(ctx context.Context, req Request) (res Response, err error) {
@@ -175,6 +175,9 @@ func (h *ReqHandler) Handle(ctx context.Context, logger log.Logger, c net.Conn) 
 	// Handle sync responses.
 	res, err := h.handleSync(ctx, req)
 	if err != nil {
+		_ = writeResponse(c, &ErrorResponse{
+			Error: err.Error(),
+		})
 		return err
 	}
 
@@ -185,6 +188,10 @@ func (h *ReqHandler) Handle(ctx context.Context, logger log.Logger, c net.Conn) 
 	// Handle interactive responses.
 	handled, err := h.handleInteractive(ctx, logger, c, r, req)
 	if err != nil {
+		_ = writeResponse(c, &ErrorResponse{
+			Error: err.Error(),
+		})
+
 		return err
 	}
 

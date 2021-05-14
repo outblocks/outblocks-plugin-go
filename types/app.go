@@ -17,5 +17,6 @@ func (a *App) String() string {
 }
 
 type AppNeed struct {
+	Dependency string                 `json:"dependency"`
 	Properties map[string]interface{} `json:"properties"`
 }

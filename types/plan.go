@@ -1,17 +1,29 @@
 package types
 
+import "fmt"
+
 const (
 	DNSObject = "dns"
 )
 
-type AppPlanRequest struct {
-	IsDeploy bool `json:"is_deploy"`
-	IsDNS    bool `json:"is_dns"`
-	App      *App `json:"app"`
+type AppInfo struct {
+	IsDeploy bool      `json:"is_deploy"`
+	IsDNS    bool      `json:"is_dns"`
+	App      *App      `json:"app"`
+	State    *AppState `json:"state`
 }
 
-type DependencyPlanRequest struct {
-	Dependency *Dependency `json:"dependency"`
+func (a *AppInfo) String() string {
+	return fmt.Sprintf("AppInfo<App=%s,IsDeploy=%s,IsDNS=%s>", a.App, a.IsDeploy, a.IsDNS)
+}
+
+type DependencyInfo struct {
+	Dependency *Dependency      `json:"dependency"`
+	State      *DependencyState `json:"state`
+}
+
+func (d *DependencyInfo) String() string {
+	return fmt.Sprintf("DepInfo<Dep=%s>", d.Dependency)
 }
 
 type Plan struct {
@@ -22,7 +34,7 @@ type Plan struct {
 type PlanAction struct {
 	Object      string `json:"object"`
 	Description string `json:"description"`
-	Operation   []byte `json:"op"`
+	Data        []byte `json:"data"`
 }
 
 func (a *PlanAction) IsDNS() bool {

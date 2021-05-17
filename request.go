@@ -10,6 +10,7 @@ const (
 	RequestTypeRun
 	RequestTypeGetState
 	RequestTypeSaveState
+	RequestTypeForceUnlock
 	RequestTypeCommand
 	RequestTypePromptAnswer
 )

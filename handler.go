@@ -30,8 +30,9 @@ type ReqHandler struct {
 	Cleanup func() error
 
 	// State handlers.
-	GetState  func(ctx context.Context, r *GetStateRequest) (Response, error)
-	SaveState func(ctx context.Context, r *SaveStateRequest) (Response, error)
+	GetState    func(ctx context.Context, r *GetStateRequest) (Response, error)
+	SaveState   func(ctx context.Context, r *SaveStateRequest) (Response, error)
+	ForceUnlock func(ctx context.Context, r *ForceUnlockRequest) (Response, error)
 }
 
 func (h *ReqHandler) handleSync(ctx context.Context, req Request) (res Response, err error) {
@@ -51,6 +52,10 @@ func (h *ReqHandler) handleSync(ctx context.Context, req Request) (res Response,
 	case *SaveStateRequest:
 		if h.SaveState != nil {
 			res, err = h.SaveState(ctx, v)
+		}
+	case *ForceUnlockRequest:
+		if h.ForceUnlock != nil {
+			res, err = h.ForceUnlock(ctx, v)
 		}
 	case *PlanRequest:
 		if h.Plan != nil {
@@ -164,6 +169,18 @@ func (h *ReqHandler) handleInteractive(ctx context.Context, logger log.Logger, c
 	return true, err
 }
 
+func handleError(c net.Conn, err error) {
+	if r, ok := err.(Response); ok {
+		_ = writeResponse(c, r)
+
+		return
+	}
+
+	_ = writeResponse(c, &ErrorResponse{
+		Error: err.Error(),
+	})
+}
+
 func (h *ReqHandler) Handle(ctx context.Context, logger log.Logger, c net.Conn) error {
 	r := bufio.NewReader(c)
 
@@ -175,10 +192,9 @@ func (h *ReqHandler) Handle(ctx context.Context, logger log.Logger, c net.Conn) 
 	// Handle sync responses.
 	res, err := h.handleSync(ctx, req)
 	if err != nil {
-		_ = writeResponse(c, &ErrorResponse{
-			Error: err.Error(),
-		})
-		return err
+		handleError(c, err)
+
+		return nil
 	}
 
 	if res != nil {
@@ -188,11 +204,9 @@ func (h *ReqHandler) Handle(ctx context.Context, logger log.Logger, c net.Conn) 
 	// Handle interactive responses.
 	handled, err := h.handleInteractive(ctx, logger, c, r, req)
 	if err != nil {
-		_ = writeResponse(c, &ErrorResponse{
-			Error: err.Error(),
-		})
+		handleError(c, err)
 
-		return err
+		return nil
 	}
 
 	if handled {
@@ -266,6 +280,8 @@ func readRequest(logger log.Logger, r *bufio.Reader) (Request, error) {
 		req = &SaveStateRequest{}
 	case RequestTypeCommand:
 		req = &CommandRequest{}
+	case RequestTypeForceUnlock:
+		req = &ForceUnlockRequest{}
 	default:
 		logger.Fatalf("unknown request type: %d\n", header.Type)
 	}

@@ -5,25 +5,36 @@ type StateSource struct {
 	Created bool   `json:"created"`
 }
 
-type AppState struct {
+type DeployDNS struct {
+	InternalIP  string `json:"internal_ip"`
+	ExternalIP  string `json:"external_ip"`
+	InternalURL string `json:"internal_url"`
+	ExternalURL string `json:"external_url"`
+}
+
+type DNS struct {
 	IP  string `json:"ip"`
 	URL string `json:"url"`
+}
+
+type AppState struct {
+	DeployState map[string]interface{} `json:"deploy_state"`
+	DeployDNS   *DeployDNS             `json:"deploy_dns"`
+	DNSState    map[string]interface{} `json:"dns_state"`
+	DNS         *DNS                   `json:"dns"`
 }
 
 type DependencyState struct {
-	IP  string `json:"ip"`
-	URL string `json:"url"`
+	DeployState map[string]interface{} `json:"deploy_state"`
+	DeployDNS   *DeployDNS             `json:"deploy_dns"`
+	DNSState    map[string]interface{} `json:"dns_state"`
+	DNS         *DNS                   `json:"dns"`
 }
 
-type PluginState map[string]interface{}
-
-type StateDeploy struct {
-	Apps         map[string]*AppState        `json:"apps"`
-	Dependencies map[string]*DependencyState `json:"dependencies"`
-}
+type PluginStateMap map[string]interface{}
 
 type StateData struct {
-	Plugins  map[string]PluginState `json:"plugins"` // plugin name -> object -> state
-	Deploy   *StateDeploy           `json:"deploy_state"`
-	LockInfo []byte                 `json:"lockinfo"`
+	PluginsMap       map[string]PluginStateMap   `json:"plugins_state"` // plugin name -> object -> state
+	AppStates        map[string]*AppState        `json:"app_states"`
+	DependencyStates map[string]*DependencyState `json:"dep_states"`
 }

@@ -27,6 +27,7 @@ func (d *DependencyInfo) String() string {
 }
 
 type Plan struct {
+	Plugin       []*PluginPlan     `json:"plugin,omitempty"`
 	Apps         []*AppPlan        `json:"apps,omitempty"`
 	Dependencies []*DependencyPlan `json:"dependencies,omitempty"`
 }
@@ -39,6 +40,12 @@ type PlanAction struct {
 
 func (a *PlanAction) IsDNS() bool {
 	return a.Object == DNSObject
+}
+
+type PluginPlan struct {
+	Add    []*PlanAction `json:"add"`
+	Change []*PlanAction `json:"change"`
+	Remove []*PlanAction `json:"remove"`
 }
 
 type AppPlan struct {

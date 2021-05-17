@@ -120,16 +120,18 @@ func (h *ReqHandler) handleInteractive(ctx context.Context, logger log.Logger, c
 		wg  sync.WaitGroup
 	)
 
-	errCh := make(chan error)
+	errCh := make(chan error, 2)
 	wg.Add(2)
 
 	go func() {
+		defer wg.Done()
+
 		for {
 			req, err := readRequest(logger, r)
 			if err != nil {
 				errCh <- err
 				close(in)
-				wg.Done()
+
 				return
 			}
 
@@ -138,22 +140,24 @@ func (h *ReqHandler) handleInteractive(ctx context.Context, logger log.Logger, c
 	}()
 
 	go func() {
+		defer wg.Done()
+
 		for {
 			select {
 			case res, ok := <-out:
 				if !ok {
 					c.Close()
+
 					return
 				}
 				err := writeResponse(c, res)
 				if err != nil {
 					errCh <- err
-					break
+
+					return
 				}
 			}
 		}
-
-		wg.Done()
 	}()
 
 	if err := handler(); err != nil {

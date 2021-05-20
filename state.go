@@ -1,4 +1,4 @@
-package plugin_go
+package plugin
 
 import (
 	"fmt"
@@ -29,15 +29,15 @@ func (r *GetStateResponse) Type() ResponseType {
 }
 
 // Force Unlock.
-type ForceUnlockRequest struct {
-	LockInfo   string                 `json:"lockinfo"`
+type ReleaseLockRequest struct {
+	LockID     string                 `json:"lock_id"`
 	StateType  string                 `json:"type"`
 	Env        string                 `json:"env"`
 	Properties map[string]interface{} `json:"properties"`
 }
 
-func (r *ForceUnlockRequest) Type() RequestType {
-	return RequestTypeForceUnlock
+func (r *ReleaseLockRequest) Type() RequestType {
+	return RequestTypeReleaseLock
 }
 
 // Lock Error.
@@ -57,7 +57,6 @@ func (r *LockErrorResponse) Error() string {
 // Save State.
 type SaveStateRequest struct {
 	State      *types.StateData       `json:"state"`
-	LockInfo   string                 `json:"lockinfo"`
 	StateType  string                 `json:"type"`
 	Env        string                 `json:"env"`
 	Properties map[string]interface{} `json:"properties"`

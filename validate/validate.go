@@ -2,7 +2,7 @@ package validate
 
 import plugin "github.com/outblocks/outblocks-plugin-go"
 
-func ValidateAny(m map[string]interface{}, key, msg string) (plugin.Response, interface{}) {
+func Any(m map[string]interface{}, key, msg string) (res plugin.Response, val interface{}) {
 	if v, ok := m[key]; ok {
 		return nil, v
 	}
@@ -11,11 +11,10 @@ func ValidateAny(m map[string]interface{}, key, msg string) (plugin.Response, in
 		Path:  key,
 		Error: msg,
 	}, nil
-
 }
 
-func ValidateString(m map[string]interface{}, key, msg string) (plugin.Response, string) {
-	res, v := ValidateAny(m, key, msg)
+func String(m map[string]interface{}, key, msg string) (res plugin.Response, val string) {
+	res, v := Any(m, key, msg)
 	if res != nil {
 		return res, ""
 	}
@@ -30,10 +29,10 @@ func ValidateString(m map[string]interface{}, key, msg string) (plugin.Response,
 	}, ""
 }
 
-func ValidateOptionalString(def string, m map[string]interface{}, key, msg string) (plugin.Response, string) {
+func OptionalString(def string, m map[string]interface{}, key, msg string) (res plugin.Response, val string) {
 	if _, ok := m[key]; !ok {
 		return nil, def
 	}
 
-	return ValidateString(m, key, msg)
+	return String(m, key, msg)
 }

@@ -1,4 +1,4 @@
-package plugin_go
+package plugin
 
 type InitRequest struct {
 	Properties map[string]interface{} `json:"properties"`

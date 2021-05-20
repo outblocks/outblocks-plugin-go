@@ -14,7 +14,7 @@ type AppInfo struct {
 }
 
 func (a *AppInfo) String() string {
-	return fmt.Sprintf("AppInfo<App=%s,IsDeploy=%s,IsDNS=%s>", a.App, a.IsDeploy, a.IsDNS)
+	return fmt.Sprintf("AppInfo<App=%s,IsDeploy=%t,IsDNS=%t>", a.App, a.IsDeploy, a.IsDNS)
 }
 
 type DependencyInfo struct {

@@ -1,4 +1,4 @@
-package plugin_go
+package plugin
 
 type RequestType int
 
@@ -10,7 +10,7 @@ const (
 	RequestTypeRun
 	RequestTypeGetState
 	RequestTypeSaveState
-	RequestTypeForceUnlock
+	RequestTypeReleaseLock
 	RequestTypeCommand
 	RequestTypePromptAnswer
 )

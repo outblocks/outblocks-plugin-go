@@ -1,4 +1,4 @@
-package plugin_go
+package plugin
 
 type PromptAnswerRequest struct {
 	// TODO: prompt support

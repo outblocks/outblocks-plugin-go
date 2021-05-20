@@ -1,4 +1,4 @@
-package plugin_go
+package plugin
 
 import (
 	"bufio"
@@ -32,7 +32,7 @@ type ReqHandler struct {
 	// State handlers.
 	GetState    func(ctx context.Context, r *GetStateRequest) (Response, error)
 	SaveState   func(ctx context.Context, r *SaveStateRequest) (Response, error)
-	ForceUnlock func(ctx context.Context, r *ForceUnlockRequest) (Response, error)
+	ReleaseLock func(ctx context.Context, r *ReleaseLockRequest) (Response, error)
 }
 
 func (h *ReqHandler) handleSync(ctx context.Context, req Request) (res Response, err error) {
@@ -53,9 +53,9 @@ func (h *ReqHandler) handleSync(ctx context.Context, req Request) (res Response,
 		if h.SaveState != nil {
 			res, err = h.SaveState(ctx, v)
 		}
-	case *ForceUnlockRequest:
-		if h.ForceUnlock != nil {
-			res, err = h.ForceUnlock(ctx, v)
+	case *ReleaseLockRequest:
+		if h.ReleaseLock != nil {
+			res, err = h.ReleaseLock(ctx, v)
 		}
 	case *PlanRequest:
 		if h.Plan != nil {
@@ -75,7 +75,7 @@ func (h *ReqHandler) handleSync(ctx context.Context, req Request) (res Response,
 		}
 	}
 
-	return
+	return res, err
 }
 
 func (h *ReqHandler) handleInteractive(ctx context.Context, logger log.Logger, c net.Conn, r *bufio.Reader, req Request) (bool, error) {
@@ -121,6 +121,7 @@ func (h *ReqHandler) handleInteractive(ctx context.Context, logger log.Logger, c
 	)
 
 	errCh := make(chan error, 2)
+
 	wg.Add(2)
 
 	go func() {
@@ -130,6 +131,7 @@ func (h *ReqHandler) handleInteractive(ctx context.Context, logger log.Logger, c
 			req, err := readRequest(logger, r)
 			if err != nil {
 				errCh <- err
+
 				close(in)
 
 				return
@@ -142,22 +144,16 @@ func (h *ReqHandler) handleInteractive(ctx context.Context, logger log.Logger, c
 	go func() {
 		defer wg.Done()
 
-		for {
-			select {
-			case res, ok := <-out:
-				if !ok {
-					c.Close()
+		for res := range out {
+			err := writeResponse(c, res)
+			if err != nil {
+				errCh <- err
 
-					return
-				}
-				err := writeResponse(c, res)
-				if err != nil {
-					errCh <- err
-
-					return
-				}
+				return
 			}
 		}
+
+		c.Close()
 	}()
 
 	if err := handler(); err != nil {
@@ -168,6 +164,7 @@ func (h *ReqHandler) handleInteractive(ctx context.Context, logger log.Logger, c
 
 	select {
 	case err = <-errCh:
+	default:
 	}
 
 	return true, err
@@ -284,8 +281,10 @@ func readRequest(logger log.Logger, r *bufio.Reader) (Request, error) {
 		req = &SaveStateRequest{}
 	case RequestTypeCommand:
 		req = &CommandRequest{}
-	case RequestTypeForceUnlock:
-		req = &ForceUnlockRequest{}
+	case RequestTypeReleaseLock:
+		req = &ReleaseLockRequest{}
+	case RequestTypePromptAnswer:
+		req = &PromptAnswerRequest{}
 	default:
 		logger.Fatalf("unknown request type: %d\n", header.Type)
 	}

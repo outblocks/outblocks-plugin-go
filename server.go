@@ -1,4 +1,4 @@
-package plugin_go
+package plugin
 
 import (
 	"context"
@@ -48,14 +48,17 @@ func (s *Server) Start(handler *ReqHandler) error {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	l, err := net.Listen("tcp4", "")
 	if err != nil {
 		s.log.Fatalln(err)
 	}
+
 	defer l.Close()
 
 	handshake.Addr = l.Addr().String()
+
 	out, err := json.Marshal(handshake)
 	if err != nil {
 		return err

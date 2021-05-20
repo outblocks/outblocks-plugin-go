@@ -1,4 +1,4 @@
-package plugin_go
+package plugin
 
 import "github.com/outblocks/outblocks-plugin-go/types"
 

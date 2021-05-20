@@ -1,4 +1,4 @@
-package plugin_go
+package plugin
 
 type CommandRequest struct {
 	Command string   `json:"cmd"`

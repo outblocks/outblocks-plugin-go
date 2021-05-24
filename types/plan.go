@@ -6,58 +6,67 @@ const (
 	DNSObject = "dns"
 )
 
-type AppInfo struct {
+type AppPlan struct {
 	IsDeploy bool      `json:"is_deploy"`
 	IsDNS    bool      `json:"is_dns"`
 	App      *App      `json:"app"`
 	State    *AppState `json:"state`
 }
 
-func (a *AppInfo) String() string {
-	return fmt.Sprintf("AppInfo<App=%s,IsDeploy=%t,IsDNS=%t>", a.App, a.IsDeploy, a.IsDNS)
+func (a *AppPlan) String() string {
+	return fmt.Sprintf("AppPlan<App=%s,IsDeploy=%t,IsDNS=%t>", a.App, a.IsDeploy, a.IsDNS)
 }
 
-type DependencyInfo struct {
+type DependencyPlan struct {
 	Dependency *Dependency      `json:"dependency"`
 	State      *DependencyState `json:"state`
 }
 
-func (d *DependencyInfo) String() string {
-	return fmt.Sprintf("DepInfo<Dep=%s>", d.Dependency)
+func (d *DependencyPlan) String() string {
+	return fmt.Sprintf("DepPlan<Dep=%s>", d.Dependency)
 }
 
 type Plan struct {
-	Plugin       []*PluginPlan     `json:"plugin,omitempty"`
-	Apps         []*AppPlan        `json:"apps,omitempty"`
-	Dependencies []*DependencyPlan `json:"dependencies,omitempty"`
+	Plugin       []*PluginPlanActions     `json:"plugin,omitempty"`
+	Apps         []*AppPlanActions        `json:"apps,omitempty"`
+	Dependencies []*DependencyPlanActions `json:"dependencies,omitempty"`
+}
+
+type PlanOperation int
+
+const (
+	PlanAdd PlanOperation = iota + 1
+	PlanUpdate
+	PlanDelete
+)
+
+type PlanActionOperation struct {
+	Operation PlanOperation `json:"op"`
+	Data      []byte        `json:"data"`
 }
 
 type PlanAction struct {
-	Object      string `json:"object"`
-	Description string `json:"description"`
-	Data        []byte `json:"data"`
+	Description string                 `json:"description"`
+	Operations  []*PlanActionOperation `json:"operations"`
 }
 
-func (a *PlanAction) IsDNS() bool {
-	return a.Object == DNSObject
+type PluginPlanActions struct {
+	Actions map[string]*PlanAction `json:"actions"`
 }
 
-type PluginPlan struct {
-	Add    []*PlanAction `json:"add"`
-	Change []*PlanAction `json:"change"`
-	Remove []*PlanAction `json:"remove"`
+type AppPlanActions struct {
+	App     *App                   `json:"app"`
+	Actions map[string]*PlanAction `json:"actions"`
 }
 
-type AppPlan struct {
-	App    *App          `json:"app"`
-	Add    []*PlanAction `json:"add"`
-	Change []*PlanAction `json:"change"`
-	Remove []*PlanAction `json:"remove"`
+func NewAppPlanActions(app *App) *AppPlanActions {
+	return &AppPlanActions{
+		App:     app,
+		Actions: make(map[string]*PlanAction),
+	}
 }
 
-type DependencyPlan struct {
-	Dependency *Dependency   `json:"dependency"`
-	Add        []*PlanAction `json:"add"`
-	Change     []*PlanAction `json:"change"`
-	Remove     []*PlanAction `json:"remove"`
+type DependencyPlanActions struct {
+	Dependency *Dependency            `json:"dependency"`
+	Actions    map[string]*PlanAction `json:"actions"`
 }

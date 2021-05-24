@@ -3,7 +3,10 @@ package plugin
 import "github.com/outblocks/outblocks-plugin-go/types"
 
 type ApplyRequest struct {
-	Plan       *types.Plan `json:"plan"`
+	PluginMap        types.PluginStateMap              `json:"plugin_state"`
+	AppStates        map[string]*types.AppState        `json:"app_states"`
+	DependencyStates map[string]*types.DependencyState `json:"dep_states"`
+
 	DeployPlan *types.Plan `json:"deploy,omitempty"`
 	DNSPlan    *types.Plan `json:"dns,omitempty"`
 }
@@ -21,9 +24,9 @@ func (r *ApplyResponse) Type() ResponseType {
 }
 
 type ApplyDoneResponse struct {
-	Plugin     types.PluginStateMap `json:"plugin"`
-	DeployPlan *types.Plan          `json:"deploy,omitempty"`
-	DNSPlan    *types.Plan          `json:"dns,omitempty"`
+	PluginMap        types.PluginStateMap              `json:"plugin_state"`
+	AppStates        map[string]*types.AppState        `json:"app_states"`
+	DependencyStates map[string]*types.DependencyState `json:"dep_states"`
 }
 
 func (r *ApplyDoneResponse) Type() ResponseType {

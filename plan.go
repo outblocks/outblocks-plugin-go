@@ -3,10 +3,11 @@ package plugin
 import "github.com/outblocks/outblocks-plugin-go/types"
 
 type PlanRequest struct {
-	Apps         []*types.AppInfo        `json:"apps"`
-	Dependencies []*types.DependencyInfo `json:"dependencies"`
+	Apps         []*types.AppPlan        `json:"apps"`
+	Dependencies []*types.DependencyPlan `json:"dependencies"`
 	PluginState  types.PluginStateMap    `json:"plugin_state"`
 	Verify       bool                    `json:"verify"`
+	Destroy      bool                    `json:"destroy"`
 }
 
 func (r *PlanRequest) Type() RequestType {

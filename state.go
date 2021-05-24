@@ -69,3 +69,7 @@ func (r *SaveStateRequest) Type() RequestType {
 type SaveStateResponse struct {
 	EmptyResponse
 }
+
+func (r *SaveStateResponse) Type() ResponseType {
+	return ResponseTypeSaveState
+}

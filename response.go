@@ -6,6 +6,7 @@ const (
 	ResponseTypeEmpty ResponseType = iota + 1
 	ResponseTypeData
 	ResponseTypeGetState
+	ResponseTypeSaveState
 	ResponseTypeLockError
 	ResponseTypePlan
 	ResponseTypeApply

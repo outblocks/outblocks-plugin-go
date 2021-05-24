@@ -24,11 +24,25 @@ type AppState struct {
 	DNS         *DNS                   `json:"dns"`
 }
 
+func NewAppState() *AppState {
+	return &AppState{
+		DeployState: make(map[string]interface{}),
+		DNSState:    make(map[string]interface{}),
+	}
+}
+
 type DependencyState struct {
 	DeployState map[string]interface{} `json:"deploy_state"`
 	DeployDNS   *DeployDNS             `json:"deploy_dns"`
 	DNSState    map[string]interface{} `json:"dns_state"`
 	DNS         *DNS                   `json:"dns"`
+}
+
+func NewDependencyState() *DependencyState {
+	return &DependencyState{
+		DeployState: make(map[string]interface{}),
+		DNSState:    make(map[string]interface{}),
+	}
 }
 
 type PluginStateMap map[string]interface{}

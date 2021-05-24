@@ -20,7 +20,7 @@ type ReqHandler struct {
 	Plan               func(ctx context.Context, r *PlanRequest) (Response, error)
 	PlanInteractive    func(ctx context.Context, r *PlanRequest, in <-chan Request, out chan<- Response) error
 	Apply              func(ctx context.Context, r *ApplyRequest) (Response, error)
-	AppleInteractive   func(ctx context.Context, r *ApplyRequest, in <-chan Request, out chan<- Response) error
+	ApplyInteractive   func(ctx context.Context, r *ApplyRequest, in <-chan Request, out chan<- Response) error
 	Run                func(ctx context.Context, r *RunRequest) (Response, error)
 	RunInteractive     func(ctx context.Context, r *RunRequest, in <-chan Request, out chan<- Response) error
 	Command            func(ctx context.Context, r *CommandRequest) (Response, error)
@@ -98,8 +98,8 @@ func (h *ReqHandler) handleInteractive(ctx context.Context, logger log.Logger, c
 			handler = func() error { return h.PlanInteractive(ctx, v, in, out) }
 		}
 	case *ApplyRequest:
-		if h.AppleInteractive != nil {
-			handler = func() error { return h.AppleInteractive(ctx, v, in, out) }
+		if h.ApplyInteractive != nil {
+			handler = func() error { return h.ApplyInteractive(ctx, v, in, out) }
 		}
 	case *RunRequest:
 		if h.RunInteractive != nil {

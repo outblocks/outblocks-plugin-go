@@ -35,19 +35,40 @@ type Plan struct {
 type PlanOperation int
 
 const (
-	PlanAdd PlanOperation = iota + 1
+	PlanOpAdd PlanOperation = iota + 1
+	PlanOpUpdate
+	PlanOpDelete
+)
+
+type PlanType int
+
+const (
+	PlanCreate PlanType = iota + 1
+	PlanRecreate
 	PlanUpdate
 	PlanDelete
 )
 
 type PlanActionOperation struct {
 	Operation PlanOperation `json:"op"`
+	Steps     int           `json:"steps"`
 	Data      []byte        `json:"data"`
 }
 
 type PlanAction struct {
+	Type        PlanType               `json:"type"`
 	Description string                 `json:"description"`
 	Operations  []*PlanActionOperation `json:"operations"`
+}
+
+func (a *PlanAction) TotalSteps() int {
+	steps := 0
+
+	for _, op := range a.Operations {
+		steps += op.Steps
+	}
+
+	return steps
 }
 
 type PluginPlanActions struct {
@@ -69,4 +90,28 @@ func NewAppPlanActions(app *App) *AppPlanActions {
 type DependencyPlanActions struct {
 	Dependency *Dependency            `json:"dependency"`
 	Actions    map[string]*PlanAction `json:"actions"`
+}
+
+func NewPlanAction(typ PlanType, desc string, op []*PlanActionOperation) *PlanAction {
+	return &PlanAction{
+		Type:        typ,
+		Description: desc,
+		Operations:  op,
+	}
+}
+
+func NewPlanActionCreate(desc string, op []*PlanActionOperation) *PlanAction {
+	return NewPlanAction(PlanCreate, desc, op)
+}
+
+func NewPlanActionRecreate(desc string, op []*PlanActionOperation) *PlanAction {
+	return NewPlanAction(PlanRecreate, desc, op)
+}
+
+func NewPlanActionUpdate(desc string, op []*PlanActionOperation) *PlanAction {
+	return NewPlanAction(PlanUpdate, desc, op)
+}
+
+func NewPlanActionDelete(desc string, op []*PlanActionOperation) *PlanAction {
+	return NewPlanAction(PlanDelete, desc, op)
 }

@@ -12,6 +12,10 @@ type App struct {
 	Properties map[string]interface{} `json:"properties"`
 }
 
+func (a *App) TargetName() string {
+	return fmt.Sprintf("App '%s'", a.Name)
+}
+
 func (a *App) String() string {
 	return fmt.Sprintf("App<Name=%s,Type=%s>", a.Name, a.Type)
 }

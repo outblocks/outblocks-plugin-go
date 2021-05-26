@@ -9,6 +9,10 @@ type Dependency struct {
 	Properties map[string]interface{} `json:"properties"`
 }
 
+func (d *Dependency) TargetName() string {
+	return fmt.Sprintf("Dependency '%s'", d.Name)
+}
+
 func (d *Dependency) String() string {
 	return fmt.Sprintf("Dependency<Name=%s,Type=%s>", d.Name, d.Type)
 }

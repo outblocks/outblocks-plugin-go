@@ -1,6 +1,7 @@
 package types
 
 type ApplyAction struct {
+	Target      string `json:"target"`
 	Object      string `json:"object"`
 	Description string `json:"description"`
 	Progress    int    `json:"progress"`

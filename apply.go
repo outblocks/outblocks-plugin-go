@@ -16,7 +16,6 @@ func (r *ApplyRequest) Type() RequestType {
 }
 
 type ApplyResponse struct {
-	Target  string               `json:"target"`
 	Actions []*types.ApplyAction `json:"actions"`
 }
 

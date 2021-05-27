@@ -5,9 +5,12 @@ import "github.com/outblocks/outblocks-plugin-go/types"
 type PlanRequest struct {
 	Apps         []*types.AppPlan        `json:"apps"`
 	Dependencies []*types.DependencyPlan `json:"dependencies"`
-	PluginState  types.PluginStateMap    `json:"plugin_state"`
 	Verify       bool                    `json:"verify"`
 	Destroy      bool                    `json:"destroy"`
+
+	PluginMap        types.PluginStateMap              `json:"plugin_state"`
+	AppStates        map[string]*types.AppState        `json:"app_states"`
+	DependencyStates map[string]*types.DependencyState `json:"dep_states"`
 }
 
 func (r *PlanRequest) Type() RequestType {
@@ -17,6 +20,10 @@ func (r *PlanRequest) Type() RequestType {
 type PlanResponse struct {
 	DeployPlan *types.Plan `json:"deploy,omitempty"`
 	DNSPlan    *types.Plan `json:"dns,omitempty"`
+
+	PluginMap        types.PluginStateMap              `json:"plugin_state"`
+	AppStates        map[string]*types.AppState        `json:"app_states"`
+	DependencyStates map[string]*types.DependencyState `json:"dep_states"`
 }
 
 func (r *PlanResponse) Type() ResponseType {

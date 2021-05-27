@@ -3,6 +3,7 @@ package types
 import "fmt"
 
 type Dependency struct {
+	ID         string                 `json:"id"`
 	Name       string                 `json:"name"`
 	Type       string                 `json:"type"`
 	Deploy     string                 `json:"deploy"`

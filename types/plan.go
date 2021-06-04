@@ -70,7 +70,15 @@ func (a *PlanAction) TotalSteps() int {
 }
 
 type PluginPlanActions struct {
+	Object  string                 `json:"object"`
 	Actions map[string]*PlanAction `json:"actions"`
+}
+
+func NewPluginPlanActions(obj string) *PluginPlanActions {
+	return &PluginPlanActions{
+		Object:  obj,
+		Actions: make(map[string]*PlanAction),
+	}
 }
 
 type AppPlanActions struct {

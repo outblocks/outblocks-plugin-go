@@ -18,6 +18,7 @@ type DNS struct {
 }
 
 type AppState struct {
+	App         *App                   `json:"app"`
 	DeployState map[string]interface{} `json:"deploy_state"`
 	DeployDNS   *DeployDNS             `json:"deploy_dns"`
 	DNSState    map[string]interface{} `json:"dns_state"`
@@ -32,6 +33,7 @@ func NewAppState() *AppState {
 }
 
 type DependencyState struct {
+	Dependency  *Dependency            `json:"dependency"`
 	DeployState map[string]interface{} `json:"deploy_state"`
 	DeployDNS   *DeployDNS             `json:"deploy_dns"`
 	DNSState    map[string]interface{} `json:"dns_state"`

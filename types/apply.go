@@ -12,6 +12,7 @@ type ApplyAction struct {
 	TargetID    string     `json:"target_id"`
 	TargetName  string     `json:"target_name"`
 	TargetType  TargetType `json:"target_type"`
+	Index       int        `json:"index"`
 	Object      string     `json:"object"`
 	Description string     `json:"description"`
 	Progress    int        `json:"progress"`

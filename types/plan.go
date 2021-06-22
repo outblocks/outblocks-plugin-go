@@ -9,9 +9,10 @@ const (
 )
 
 type AppPlan struct {
-	IsDeploy bool `json:"is_deploy"`
-	IsDNS    bool `json:"is_dns"`
-	App      *App `json:"app"`
+	IsDeploy bool   `json:"is_deploy"`
+	IsDNS    bool   `json:"is_dns"`
+	Path     string `json:"path"`
+	App      *App   `json:"app"`
 }
 
 func (a *AppPlan) String() string {
@@ -32,14 +33,6 @@ type Plan struct {
 	Dependencies []*DependencyPlanActions `json:"dependencies,omitempty"`
 }
 
-type PlanOperation int
-
-const (
-	PlanOpAdd PlanOperation = iota + 1
-	PlanOpUpdate
-	PlanOpDelete
-)
-
 type PlanType int
 
 const (
@@ -49,28 +42,11 @@ const (
 	PlanDelete
 )
 
-type PlanActionOperation struct {
-	Operation PlanOperation `json:"op"`
-	Steps     int           `json:"steps"`
-	Data      []byte        `json:"data"`
-}
-
 type PlanAction struct {
-	Key         string                 `json:"key"`
-	Index       int                    `json:"idx"`
-	Type        PlanType               `json:"type"`
-	Description string                 `json:"description"`
-	Operations  []*PlanActionOperation `json:"operations"`
-}
-
-func (a *PlanAction) TotalSteps() int {
-	steps := 0
-
-	for _, op := range a.Operations {
-		steps += op.Steps
-	}
-
-	return steps
+	Type       PlanType `json:"type"`
+	ObjectID   string   `json:"object_id"`
+	ObjectType string   `json:"object_type"`
+	ObjectName string   `json:"object_name"`
 }
 
 type PluginPlanActions struct {
@@ -109,28 +85,31 @@ func NewDependencyPlanActions(dep *Dependency) *DependencyPlanActions {
 	}
 }
 
-func NewPlanAction(typ PlanType, key, desc string, op []*PlanActionOperation) *PlanAction {
+func NewPlanAction(typ PlanType, objectID, objectType, objectName string) *PlanAction {
 	return &PlanAction{
-		Index:       -1,
-		Key:         key,
-		Type:        typ,
-		Description: desc,
-		Operations:  op,
+		Type:       typ,
+		ObjectID:   objectID,
+		ObjectType: objectType,
+		ObjectName: objectName,
 	}
 }
 
-func NewPlanActionCreate(key, desc string, op []*PlanActionOperation) *PlanAction {
-	return NewPlanAction(PlanCreate, key, desc, op)
+func NewPlanActionCreate(objectID, objectType, objectName string) *PlanAction {
+	return NewPlanAction(PlanCreate, objectID, objectType, objectName)
 }
 
-func NewPlanActionRecreate(key, desc string, op []*PlanActionOperation) *PlanAction {
-	return NewPlanAction(PlanRecreate, key, desc, op)
+func NewPlanActionRecreate(objectID, objectType, objectName string) *PlanAction {
+	return NewPlanAction(PlanRecreate, objectID, objectType, objectName)
 }
 
-func NewPlanActionUpdate(key, desc string, op []*PlanActionOperation) *PlanAction {
-	return NewPlanAction(PlanUpdate, key, desc, op)
+func NewPlanActionUpdate(objectID, objectType, objectName string) *PlanAction {
+	return NewPlanAction(PlanUpdate, objectID, objectType, objectName)
 }
 
-func NewPlanActionDelete(key, desc string, op []*PlanActionOperation) *PlanAction {
-	return NewPlanAction(PlanDelete, key, desc, op)
+func NewPlanActionDelete(objectID, objectType, objectName string) *PlanAction {
+	return NewPlanAction(PlanDelete, objectID, objectType, objectName)
+}
+
+type PlanActions struct {
+	Actions []*PlanAction `json:"actions"`
 }

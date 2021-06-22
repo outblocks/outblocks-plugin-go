@@ -1,22 +1,13 @@
 package types
 
-type TargetType int
-
-const (
-	TargetTypeApp = iota + 1
-	TargetTypeDependency
-	TargetTypePlugin
-)
-
 type ApplyAction struct {
-	TargetID    string     `json:"target_id"`
-	TargetName  string     `json:"target_name"`
-	TargetType  TargetType `json:"target_type"`
-	Index       int        `json:"index"`
-	Object      string     `json:"object"`
-	Description string     `json:"description"`
-	Progress    int        `json:"progress"`
-	Total       int        `json:"total"`
+	Type       PlanType `json:"type"`
+	Namespace  string   `json:"namespace"`
+	ObjectID   string   `json:"object_id"`
+	ObjectType string   `json:"object_type"`
+	ObjectName string   `json:"object_name"`
+	Progress   int      `json:"progress"`
+	Total      int      `json:"total"`
 }
 
 func (a *ApplyAction) WithProgressIncBy(cnt int) *ApplyAction {
@@ -33,13 +24,6 @@ func (a *ApplyAction) WithProgressInc() *ApplyAction {
 func (a *ApplyAction) WithProgress(p int) *ApplyAction {
 	b := *a
 	b.Progress = p
-
-	return &b
-}
-
-func (a *ApplyAction) WithDesc(str string) *ApplyAction {
-	b := *a
-	b.Description = str
 
 	return &b
 }

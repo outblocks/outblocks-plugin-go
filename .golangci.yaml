@@ -22,7 +22,7 @@ linters-settings:
   gocyclo:
     min-complexity: 20
   maligned:
-    suggest-new: true
+    suggest-wanted: true
   dupl:
     threshold: 200
   goconst:

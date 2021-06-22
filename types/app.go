@@ -5,10 +5,8 @@ import "fmt"
 type App struct {
 	ID         string                 `json:"id"`
 	Name       string                 `json:"name"`
-	Path       string                 `json:"path"`
 	Type       string                 `json:"type"`
 	URL        string                 `json:"url"`
-	Deploy     string                 `json:"deploy"`
 	Needs      map[string]*AppNeed    `json:"needs"`
 	Properties map[string]interface{} `json:"properties"`
 }

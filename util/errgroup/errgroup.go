@@ -14,6 +14,10 @@ type Group struct {
 	sem *semaphore.Weighted
 }
 
+func WithContext(ctx context.Context) (*errgroup.Group, context.Context) {
+	return errgroup.WithContext(ctx)
+}
+
 func WithConcurrency(ctx context.Context, concurrency int) (*Group, context.Context) {
 	sem := semaphore.NewWeighted(int64(concurrency))
 	gr, ctx := errgroup.WithContext(ctx)

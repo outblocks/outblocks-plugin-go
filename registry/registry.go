@@ -270,9 +270,9 @@ func (r *Registry) Load(ctx context.Context, state []byte) error {
 	return nil
 }
 
-func (r *Registry) Read(ctx context.Context) error {
+func (r *Registry) Read(ctx context.Context, meta interface{}) error {
+	pool, ctx := errgroup.WithConcurrency(ctx, defaultConcurrency)
 	g, _ := errgroup.WithContext(ctx)
-	pool, _ := errgroup.WithConcurrency(ctx, defaultConcurrency)
 
 	resMap := make(map[*ResourceWrapper]*sync.WaitGroup, len(r.resources))
 
@@ -296,7 +296,7 @@ func (r *Registry) Read(ctx context.Context) error {
 			}
 
 			pool.Go(func() error {
-				err := res.Resource.Read(ctx)
+				err := res.Resource.Read(ctx, meta)
 				if err != nil {
 					return err
 				}
@@ -317,9 +317,7 @@ func (r *Registry) Read(ctx context.Context) error {
 		return err
 	}
 
-	err = pool.Wait()
-
-	return err
+	return pool.Wait()
 }
 
 var (
@@ -486,7 +484,7 @@ func calculateDiff(r *ResourceWrapper, recreate bool) *Diff {
 	if r.Resource.IsNew() || recreate {
 		typ := DiffTypeCreate
 
-		if recreate {
+		if recreate && !r.Resource.IsNew() {
 			typ = DiffTypeRecreate
 		}
 
@@ -497,7 +495,7 @@ func calculateDiff(r *ResourceWrapper, recreate bool) *Diff {
 		}
 	}
 
-	forceWanted := false
+	forceNew := false
 
 	var fieldsList []string
 
@@ -514,7 +512,7 @@ func calculateDiff(r *ResourceWrapper, recreate bool) *Diff {
 		fieldsList = append(fieldsList, name)
 
 		if f.Type.Properties.ForceNew {
-			forceWanted = true
+			forceNew = true
 		}
 	}
 
@@ -523,7 +521,7 @@ func calculateDiff(r *ResourceWrapper, recreate bool) *Diff {
 	}
 
 	typ := DiffTypeUpdate
-	if forceWanted {
+	if forceNew {
 		typ = DiffTypeRecreate
 	}
 
@@ -536,13 +534,15 @@ func calculateDiff(r *ResourceWrapper, recreate bool) *Diff {
 
 func recreateObjectTree(r *ResourceWrapper, diffMap map[*ResourceWrapper]*Diff) {
 	for _, d := range r.DependedBy {
-		if _, ok := diffMap[d]; ok {
+		if c, ok := diffMap[d]; ok && c.Type == DiffTypeRecreate {
 			continue
 		}
 
-		diffMap[d] = calculateDiff(r, true)
+		diffMap[d] = calculateDiff(d, true)
 
-		recreateObjectTree(d, diffMap)
+		if len(d.DependedBy) > 0 {
+			recreateObjectTree(d, diffMap)
+		}
 	}
 }
 
@@ -578,7 +578,18 @@ func isTreeMarkedForDeletion(r *ResourceWrapper, diffMap map[*ResourceWrapper]*D
 func (r *Registry) Diff(ctx context.Context) ([]*Diff, error) {
 	diffMap := make(map[*ResourceWrapper]*Diff)
 
+	// Add all missing resources as deletions.
+	for _, o := range r.missing {
+		deleteObjectTree(o, diffMap)
+	}
+
+	// Process other ops.
 	for _, o := range r.resources {
+		existing := diffMap[o]
+		if existing != nil && existing.Type == DiffTypeRecreate {
+			continue
+		}
+
 		d := calculateDiff(o, false)
 		if d != nil {
 			diffMap[o] = d
@@ -587,11 +598,6 @@ func (r *Registry) Diff(ctx context.Context) ([]*Diff, error) {
 				recreateObjectTree(d.Object, diffMap)
 			}
 		}
-	}
-
-	// Add all missing resources as deletions.
-	for _, o := range r.missing {
-		deleteObjectTree(o, diffMap)
 	}
 
 	// Verify if all that depends on it are also deleted.
@@ -648,6 +654,18 @@ func waitContext(ctx context.Context, wg *sync.WaitGroup) error {
 	}
 }
 
+func calculateDependencyWaitGroup(diffActionMap map[diffActionType]*diffAction, deps []*ResourceWrapper, del bool) int {
+	add := 0
+
+	for _, d := range deps {
+		if _, ok := diffActionMap[diffActionType{rw: d, delete: del}]; ok {
+			add++
+		}
+	}
+
+	return add
+}
+
 func prepareDiffActionMap(diff []*Diff) map[diffActionType]*diffAction {
 	diffActionMap := make(map[diffActionType]*diffAction)
 
@@ -659,30 +677,33 @@ func prepareDiffActionMap(diff []*Diff) map[diffActionType]*diffAction {
 
 		switch d.Type {
 		case DiffTypeCreate, DiffTypeUpdate:
-			action.wg.Add(len(d.Object.Dependencies))
-
 		case DiffTypeDelete:
-			action.wg.Add(len(d.Object.DependedBy))
-
 			typ.delete = true
 
 		case DiffTypeRecreate:
-			preAction := &diffAction{
+			// Add one more action before create.
+			diffActionMap[diffActionType{rw: d.Object, delete: true}] = &diffAction{
 				diff: d,
 			}
-			preAction.wg.Add(len(d.Object.DependedBy))
-			diffActionMap[diffActionType{rw: d.Object, delete: true}] = preAction
 
-			action.wg.Add(len(d.Object.Dependencies))
+			action.wg.Add(1)
 		}
 
 		diffActionMap[typ] = action
 	}
 
+	for t, a := range diffActionMap {
+		if t.delete {
+			a.wg.Add(calculateDependencyWaitGroup(diffActionMap, a.diff.Object.DependedBy, t.delete))
+		} else {
+			a.wg.Add(calculateDependencyWaitGroup(diffActionMap, a.diff.Object.Dependencies, t.delete))
+		}
+	}
+
 	return diffActionMap
 }
 
-func handleDiffAction(ctx context.Context, d *Diff, del bool, callback func(*types.ApplyAction)) error {
+func handleDiffAction(ctx context.Context, meta interface{}, d *Diff, del bool, callback func(*types.ApplyAction)) error {
 	if callback == nil {
 		callback = func(*types.ApplyAction) {}
 	}
@@ -691,7 +712,7 @@ func handleDiffAction(ctx context.Context, d *Diff, del bool, callback func(*typ
 	case DiffTypeCreate:
 		callback(d.ToApplyAction(0, 1))
 
-		err := d.Object.Resource.Create(ctx)
+		err := d.Object.Resource.Create(ctx, meta)
 		if err != nil {
 			return err
 		}
@@ -703,7 +724,7 @@ func handleDiffAction(ctx context.Context, d *Diff, del bool, callback func(*typ
 	case DiffTypeUpdate:
 		callback(d.ToApplyAction(0, 1))
 
-		err := d.Object.Resource.Update(ctx)
+		err := d.Object.Resource.Update(ctx, meta)
 		if err != nil {
 			return err
 		}
@@ -714,7 +735,7 @@ func handleDiffAction(ctx context.Context, d *Diff, del bool, callback func(*typ
 	case DiffTypeDelete:
 		callback(d.ToApplyAction(0, 1))
 
-		err := d.Object.Resource.Delete(ctx)
+		err := d.Object.Resource.Delete(ctx, meta)
 		if err != nil {
 			return err
 		}
@@ -725,14 +746,14 @@ func handleDiffAction(ctx context.Context, d *Diff, del bool, callback func(*typ
 		if del {
 			callback(d.ToApplyAction(0, 2))
 
-			err := d.Object.Resource.Delete(ctx)
+			err := d.Object.Resource.Delete(ctx, meta)
 			if err != nil {
 				return err
 			}
 
 			callback(d.ToApplyAction(1, 2))
 		} else {
-			err := d.Object.Resource.Create(ctx)
+			err := d.Object.Resource.Create(ctx, meta)
 			if err != nil {
 				return err
 			}
@@ -746,9 +767,9 @@ func handleDiffAction(ctx context.Context, d *Diff, del bool, callback func(*typ
 	return nil
 }
 
-func (r *Registry) Apply(ctx context.Context, diff []*Diff, callback func(*types.ApplyAction)) error {
+func (r *Registry) Apply(ctx context.Context, meta interface{}, diff []*Diff, callback func(*types.ApplyAction)) error {
+	pool, ctx := errgroup.WithConcurrency(ctx, defaultConcurrency)
 	g, _ := errgroup.WithContext(ctx)
-	pool, _ := errgroup.WithConcurrency(ctx, defaultConcurrency)
 
 	diffActionMap := prepareDiffActionMap(diff)
 
@@ -766,26 +787,36 @@ func (r *Registry) Apply(ctx context.Context, diff []*Diff, callback func(*types
 			pool.Go(func() error {
 				d := action.diff
 
-				err = handleDiffAction(ctx, d, t.delete, callback)
+				err = handleDiffAction(ctx, meta, d, t.delete, callback)
 				if err != nil {
 					return err
 				}
 
 				if action.diff.Type == DiffTypeCreate || action.diff.Type == DiffTypeUpdate || (action.diff.Type == DiffTypeRecreate && !t.delete) {
-					// Tell all objects that depepnd on me that I have been created.
+					// Tell all objects that depend on me that I have been created.
 					for _, dep := range action.diff.Object.DependedBy {
 						a, ok := diffActionMap[diffActionType{rw: dep, delete: false}]
 						if ok {
 							a.wg.Done()
 						}
 					}
-				} else {
-					// Tell all my dependencies that I have been deleted.
-					for _, dep := range action.diff.Object.Dependencies {
-						a, ok := diffActionMap[diffActionType{rw: dep, delete: true}]
-						if ok {
-							a.wg.Done()
-						}
+
+					return nil
+				}
+
+				// When dealing with delete, tell all my dependencies that I have been deleted so they can be deleted safely as well.
+				for _, dep := range action.diff.Object.Dependencies {
+					a, ok := diffActionMap[diffActionType{rw: dep, delete: true}]
+					if ok {
+						a.wg.Done()
+					}
+				}
+
+				if action.diff.Type == DiffTypeRecreate {
+					// Tell myself that I have been deleted as well if we are dealing with recreate.
+					a, ok := diffActionMap[diffActionType{rw: action.diff.Object, delete: false}]
+					if ok {
+						a.wg.Done()
 					}
 				}
 
@@ -801,7 +832,5 @@ func (r *Registry) Apply(ctx context.Context, diff []*Diff, callback func(*types
 		return err
 	}
 
-	err = pool.Wait()
-
-	return err
+	return pool.Wait()
 }

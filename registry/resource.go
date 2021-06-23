@@ -13,10 +13,10 @@ type Resource interface {
 	GetName() string
 	SetNew(bool)
 	IsNew() bool
-	Read(ctx context.Context) error
-	Create(ctx context.Context) error
-	Update(ctx context.Context) error
-	Delete(ctx context.Context) error
+	Read(ctx context.Context, meta interface{}) error
+	Create(ctx context.Context, meta interface{}) error
+	Update(ctx context.Context, meta interface{}) error
+	Delete(ctx context.Context, meta interface{}) error
 }
 
 type ResourceTypeVerbose interface {

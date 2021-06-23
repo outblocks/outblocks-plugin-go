@@ -10,9 +10,9 @@ type MapInputField interface {
 	SetCurrent(map[string]interface{})
 	LookupCurrent() (map[string]interface{}, bool)
 	LookupWanted() (map[string]interface{}, bool)
-	GetCurrent() map[string]interface{}
-	GetWanted() map[string]interface{}
-	GetAny() map[string]interface{}
+	Current() map[string]interface{}
+	Wanted() map[string]interface{}
+	Any() map[string]interface{}
 }
 
 type MapOutputField interface {
@@ -20,7 +20,7 @@ type MapOutputField interface {
 
 	SetCurrent(map[string]interface{})
 	LookupCurrent() (map[string]interface{}, bool)
-	GetCurrent() map[string]interface{}
+	Current() map[string]interface{}
 }
 
 type MapField struct {
@@ -63,17 +63,17 @@ func (f *MapField) LookupWanted() (v map[string]interface{}, ok bool) {
 	return fieldMapToInterfaceMap(f.wanted.(map[string]Field)), true
 }
 
-func (f *MapField) GetWanted() map[string]interface{} {
+func (f *MapField) Wanted() map[string]interface{} {
 	v, _ := f.LookupWanted()
 	return v
 }
 
-func (f *MapField) GetCurrent() map[string]interface{} {
+func (f *MapField) Current() map[string]interface{} {
 	v, _ := f.LookupCurrent()
 	return v
 }
 
-func (f *MapField) GetAny() map[string]interface{} {
+func (f *MapField) Any() map[string]interface{} {
 	any, defined := f.lookupAny()
 	if !defined {
 		return nil

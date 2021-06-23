@@ -6,9 +6,9 @@ type IntInputField interface {
 	SetCurrent(int)
 	LookupCurrent() (int, bool)
 	LookupWanted() (int, bool)
-	GetCurrent() int
-	GetWanted() int
-	GetAny() int
+	Current() int
+	Wanted() int
+	Any() int
 }
 
 type IntOutputField interface {
@@ -16,7 +16,7 @@ type IntOutputField interface {
 
 	SetCurrent(int)
 	LookupCurrent() (int, bool)
-	GetCurrent() int
+	Current() int
 }
 
 type IntField struct {
@@ -59,17 +59,17 @@ func (f *IntField) LookupWanted() (v int, ok bool) {
 	return f.wanted.(int), true
 }
 
-func (f *IntField) GetWanted() int {
+func (f *IntField) Wanted() int {
 	v, _ := f.LookupWanted()
 	return v
 }
 
-func (f *IntField) GetCurrent() int {
+func (f *IntField) Current() int {
 	v, _ := f.LookupCurrent()
 	return v
 }
 
-func (f *IntField) GetAny() int {
+func (f *IntField) Any() int {
 	any, defined := f.lookupAny()
 	if !defined {
 		return 0

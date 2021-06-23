@@ -11,9 +11,9 @@ type StringInputField interface {
 	SetCurrent(string)
 	LookupCurrent() (string, bool)
 	LookupWanted() (string, bool)
-	GetCurrent() string
-	GetWanted() string
-	GetAny() string
+	Current() string
+	Wanted() string
+	Any() string
 }
 
 type StringOutputField interface {
@@ -21,7 +21,7 @@ type StringOutputField interface {
 
 	SetCurrent(string)
 	LookupCurrent() (string, bool)
-	GetCurrent() string
+	Current() string
 }
 
 type StringField struct {
@@ -64,17 +64,17 @@ func (f *StringField) LookupWanted() (v string, ok bool) {
 	return f.wanted.(string), true
 }
 
-func (f *StringField) GetWanted() string {
+func (f *StringField) Wanted() string {
 	v, _ := f.LookupWanted()
 	return v
 }
 
-func (f *StringField) GetCurrent() string {
+func (f *StringField) Current() string {
 	v, _ := f.LookupCurrent()
 	return v
 }
 
-func (f *StringField) GetAny() string {
+func (f *StringField) Any() string {
 	any, defined := f.lookupAny()
 	if !defined {
 		return ""
@@ -112,7 +112,7 @@ func Sprintf(format string, args ...interface{}) StringInputField {
 	}
 }
 
-func (f *SprintfField) GetAny() string {
+func (f *SprintfField) Any() string {
 	if f.currentDefined {
 		return f.current.(string)
 	}
@@ -174,12 +174,12 @@ func (f *SprintfField) LookupWanted() (string, bool) {
 	return fmt.Sprintf(f.fmt, args...), true
 }
 
-func (f *SprintfField) GetWanted() string {
+func (f *SprintfField) Wanted() string {
 	v, _ := f.LookupWanted()
 	return v
 }
 
-func (f *SprintfField) GetCurrent() string {
+func (f *SprintfField) Current() string {
 	v, _ := f.LookupCurrent()
 	return v
 }

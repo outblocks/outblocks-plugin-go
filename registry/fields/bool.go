@@ -6,9 +6,9 @@ type BoolInputField interface {
 	SetCurrent(bool)
 	LookupCurrent() (bool, bool)
 	LookupWanted() (bool, bool)
-	GetCurrent() bool
-	GetWanted() bool
-	GetAny() bool
+	Current() bool
+	Wanted() bool
+	Any() bool
 }
 
 type BoolOutputField interface {
@@ -16,7 +16,7 @@ type BoolOutputField interface {
 
 	SetCurrent(bool)
 	LookupCurrent() (bool, bool)
-	GetCurrent() bool
+	Current() bool
 }
 
 type BoolField struct {
@@ -59,17 +59,17 @@ func (f *BoolField) LookupWanted() (v, ok bool) {
 	return f.wanted.(bool), true
 }
 
-func (f *BoolField) GetWanted() bool {
+func (f *BoolField) Wanted() bool {
 	v, _ := f.LookupWanted()
 	return v
 }
 
-func (f *BoolField) GetCurrent() bool {
+func (f *BoolField) Current() bool {
 	v, _ := f.LookupCurrent()
 	return v
 }
 
-func (f *BoolField) GetAny() bool {
+func (f *BoolField) Any() bool {
 	any, defined := f.lookupAny()
 	if !defined {
 		return false

@@ -271,17 +271,55 @@ func (r *Registry) Load(ctx context.Context, state []byte) error {
 }
 
 func (r *Registry) Read(ctx context.Context) error {
-	g, _ := errgroup.WithConcurrency(ctx, defaultConcurrency)
+	g, _ := errgroup.WithContext(ctx)
+	pool, _ := errgroup.WithConcurrency(ctx, defaultConcurrency)
 
-	for _, o := range r.resources {
-		o := o
+	resMap := make(map[*ResourceWrapper]*sync.WaitGroup, len(r.resources))
+
+	for _, res := range r.resources {
+		var s sync.WaitGroup
+
+		s.Add(len(res.Dependencies))
+
+		resMap[res] = &s
+	}
+
+	for res, wg := range resMap {
+		res := res
+		wg := wg
 
 		g.Go(func() error {
-			return o.Resource.Read(ctx)
+			// Wait for all dependencies to finish.
+			err := waitContext(ctx, wg)
+			if err != nil {
+				return err
+			}
+
+			pool.Go(func() error {
+				err := res.Resource.Read(ctx)
+				if err != nil {
+					return err
+				}
+
+				for _, dep := range res.DependedBy {
+					resMap[dep].Done()
+				}
+
+				return nil
+			})
+
+			return nil
 		})
 	}
 
-	return g.Wait()
+	err := g.Wait()
+	if err != nil {
+		return err
+	}
+
+	err = pool.Wait()
+
+	return err
 }
 
 var (
@@ -423,8 +461,8 @@ func (d *Diff) ToApplyAction(step, total int) *types.ApplyAction {
 }
 
 type FieldProperties struct {
-	Ignored     bool
-	ForceWanted bool
+	Ignored  bool
+	ForceNew bool
 }
 
 func parseFieldPropertiesTag(tag string) *FieldProperties {
@@ -436,8 +474,8 @@ func parseFieldPropertiesTag(tag string) *FieldProperties {
 		case "-":
 			ret.Ignored = true
 
-		case "force_wanted":
-			ret.ForceWanted = true
+		case "force_new":
+			ret.ForceNew = true
 		}
 	}
 
@@ -475,7 +513,7 @@ func calculateDiff(r *ResourceWrapper, recreate bool) *Diff {
 
 		fieldsList = append(fieldsList, name)
 
-		if f.Type.Properties.ForceWanted {
+		if f.Type.Properties.ForceNew {
 			forceWanted = true
 		}
 	}

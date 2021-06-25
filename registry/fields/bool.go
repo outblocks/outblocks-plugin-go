@@ -1,22 +1,23 @@
 package fields
 
-type BoolInputField interface {
-	InputField
-
+type boolBaseField interface {
 	SetCurrent(bool)
 	LookupCurrent() (bool, bool)
-	LookupWanted() (bool, bool)
 	Current() bool
+}
+
+type BoolInputField interface {
+	boolBaseField
+	InputField
+
+	LookupWanted() (bool, bool)
 	Wanted() bool
 	Any() bool
 }
 
 type BoolOutputField interface {
+	boolBaseField
 	OutputField
-
-	SetCurrent(bool)
-	LookupCurrent() (bool, bool)
-	Current() bool
 }
 
 type BoolField struct {

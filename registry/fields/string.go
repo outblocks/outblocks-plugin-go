@@ -5,23 +5,24 @@ import (
 	"strings"
 )
 
-type StringInputField interface {
-	InputField
-
+type stringBaseField interface {
 	SetCurrent(string)
 	LookupCurrent() (string, bool)
-	LookupWanted() (string, bool)
 	Current() string
+}
+
+type StringInputField interface {
+	stringBaseField
+	InputField
+
+	LookupWanted() (string, bool)
 	Wanted() string
 	Any() string
 }
 
 type StringOutputField interface {
+	stringBaseField
 	OutputField
-
-	SetCurrent(string)
-	LookupCurrent() (string, bool)
-	Current() string
 }
 
 type StringField struct {
@@ -107,8 +108,9 @@ type SprintfField struct {
 
 func Sprintf(format string, args ...interface{}) StringInputField {
 	return &SprintfField{
-		fmt:  format,
-		args: args,
+		FieldBase: BasicValue(nil, false),
+		fmt:       format,
+		args:      args,
 	}
 }
 
@@ -146,6 +148,10 @@ func (f *SprintfField) Any() string {
 }
 
 func (f *SprintfField) LookupWanted() (string, bool) {
+	if !f.wantedDefined {
+		return "", false
+	}
+
 	var args []interface{}
 
 	for _, a := range f.args {
@@ -174,6 +180,10 @@ func (f *SprintfField) LookupWanted() (string, bool) {
 	return fmt.Sprintf(f.fmt, args...), true
 }
 
+func (f *SprintfField) LookupWantedRaw() (interface{}, bool) {
+	return f.LookupWanted()
+}
+
 func (f *SprintfField) Wanted() string {
 	v, _ := f.LookupWanted()
 	return v
@@ -188,7 +198,7 @@ func (f *SprintfField) FieldDependencies() []interface{} {
 	var deps []interface{}
 
 	for _, a := range f.args {
-		_, ok := a.(InputField)
+		_, ok := a.(Field)
 		if ok {
 			deps = append(deps, a)
 		}
@@ -205,6 +215,14 @@ func (f *SprintfField) LookupCurrent() (v string, ok bool) {
 	return f.current.(string), true
 }
 
+func (f *SprintfField) LookupCurrentRaw() (v interface{}, ok bool) {
+	return f.LookupCurrent()
+}
+
 func (f *SprintfField) SetCurrent(i string) {
 	f.setCurrent(i)
+}
+
+func (f *SprintfField) IsChanged() bool {
+	return f.Current() != f.Wanted()
 }

@@ -1,22 +1,23 @@
 package fields
 
-type IntInputField interface {
-	InputField
-
+type intBaseField interface {
 	SetCurrent(int)
 	LookupCurrent() (int, bool)
-	LookupWanted() (int, bool)
 	Current() int
+}
+
+type IntInputField interface {
+	intBaseField
+	InputField
+
+	LookupWanted() (int, bool)
 	Wanted() int
 	Any() int
 }
 
 type IntOutputField interface {
+	intBaseField
 	OutputField
-
-	SetCurrent(int)
-	LookupCurrent() (int, bool)
-	Current() int
 }
 
 type IntField struct {

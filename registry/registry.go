@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
-	"strings"
 	"sync"
 
 	"github.com/outblocks/outblocks-plugin-go/registry/fields"
@@ -38,17 +37,10 @@ func NewRegistry() *Registry {
 	}
 }
 
-func (r *Registry) RegisterType(o Resource) error {
-	t := reflect.TypeOf(o)
+func mapFieldTypeInfo(fieldsMap map[string]*FieldTypeInfo, t reflect.Type, prefix string) {
 	if t.Kind() == reflect.Ptr {
 		t = t.Elem()
 	}
-
-	if _, ok := r.types[t.Name()]; ok {
-		return nil
-	}
-
-	fieldsMap := make(map[string]*FieldTypeInfo)
 
 	for i := 0; i < t.NumField(); i++ {
 		ft := t.Field(i)
@@ -57,15 +49,37 @@ func (r *Registry) RegisterType(o Resource) error {
 			continue
 		}
 
+		if ft.Type.Kind() == reflect.Struct {
+			mapFieldTypeInfo(fieldsMap, ft.Type, ft.Name+".")
+
+			continue
+		}
+
 		def, defSet := ft.Tag.Lookup("default")
 
-		fieldsMap[ft.Name] = &FieldTypeInfo{
+		fieldsMap[prefix+ft.Name] = &FieldTypeInfo{
 			ReflectType: ft,
 			Properties:  parseFieldPropertiesTag(ft.Tag.Get("state")),
 			Default:     def,
 			DefaultSet:  defSet,
 		}
 	}
+}
+
+func (r *Registry) RegisterType(o Resource) error {
+	t := reflect.TypeOf(o)
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+
+	// Check if type wasn't registered.
+	if _, ok := r.types[t.Name()]; ok {
+		return nil
+	}
+
+	fieldsMap := make(map[string]*FieldTypeInfo)
+
+	mapFieldTypeInfo(fieldsMap, t, "")
 
 	r.types[t.Name()] = &ResourceTypeInfo{
 		Type:   t,
@@ -75,28 +89,44 @@ func (r *Registry) RegisterType(o Resource) error {
 	return nil
 }
 
-func generateResourceFields(o Resource, rti *ResourceTypeInfo) map[string]*FieldInfo {
-	v := reflect.ValueOf(o)
-	t := rti.Type
+func mapFieldInfo(rti *ResourceTypeInfo, fieldsMap map[string]*FieldInfo, t reflect.Type, v reflect.Value, prefix string) {
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
 
 	if v.Kind() == reflect.Ptr {
 		v = v.Elem()
 	}
 
-	fieldsMap := make(map[string]*FieldInfo)
-
 	for i := 0; i < t.NumField(); i++ {
 		ft := t.Field(i)
+		fv := v.Field(i)
 
 		if ft.Anonymous {
 			continue
 		}
 
-		fieldsMap[ft.Name] = &FieldInfo{
-			Type:  rti.Fields[ft.Name],
-			Value: v.Field(i),
+		if ft.Type.Kind() == reflect.Struct {
+			mapFieldInfo(rti, fieldsMap, ft.Type, fv, ft.Name+".")
+
+			continue
+		}
+
+		fName := prefix + ft.Name
+		fieldsMap[fName] = &FieldInfo{
+			Type:  rti.Fields[fName],
+			Value: fv,
 		}
 	}
+}
+
+func generateResourceFields(o Resource, rti *ResourceTypeInfo) map[string]*FieldInfo {
+	v := reflect.ValueOf(o)
+	t := rti.Type
+
+	fieldsMap := make(map[string]*FieldInfo)
+
+	mapFieldInfo(rti, fieldsMap, t, v, "")
 
 	return fieldsMap
 }
@@ -107,6 +137,7 @@ func (r *Registry) Register(o Resource, namespace, id string) error {
 		t = t.Elem()
 	}
 
+	id = fmt.Sprintf("%s:%s", t.Name(), id)
 	tinfo, ok := r.types[t.Name()]
 
 	if !ok {
@@ -133,9 +164,11 @@ func (r *Registry) Register(o Resource, namespace, id string) error {
 	o.SetNew(true)
 
 	rw := &ResourceWrapper{
-		ResourceID: resourceID,
-		Fields:     generateResourceFields(o, tinfo),
-		Resource:   o,
+		ResourceID:   resourceID,
+		Fields:       generateResourceFields(o, tinfo),
+		Resource:     o,
+		DependedBy:   make(map[*ResourceWrapper]struct{}),
+		Dependencies: make(map[*ResourceWrapper]struct{}),
 	}
 	r.resourceMap[resourceID] = rw
 
@@ -150,8 +183,10 @@ func (r *Registry) Register(o Resource, namespace, id string) error {
 		}
 
 		if erw, ok := r.fieldMap[f.Value.Interface()]; ok {
-			rw.Dependencies = append(rw.Dependencies, erw)
-			erw.DependedBy = append(erw.DependedBy, rw)
+			rw.Dependencies[erw] = struct{}{}
+			erw.DependedBy[rw] = struct{}{}
+
+			f.Value.Set(reflect.ValueOf(fields.MakeProxyField(f.Value.Interface())))
 
 			continue
 		}
@@ -159,8 +194,8 @@ func (r *Registry) Register(o Resource, namespace, id string) error {
 		if fh, ok := f.Value.Interface().(fields.FieldHolder); ok {
 			for _, dep := range fh.FieldDependencies() {
 				if erw, ok := r.fieldMap[dep]; ok {
-					rw.Dependencies = append(rw.Dependencies, erw)
-					erw.DependedBy = append(erw.DependedBy, rw)
+					rw.Dependencies[erw] = struct{}{}
+					erw.DependedBy[rw] = struct{}{}
 				}
 			}
 		}
@@ -178,14 +213,14 @@ func (r *Registry) Load(ctx context.Context, state []byte) error {
 		return nil
 	}
 
-	var existing []*ResourceData
+	var existing []*ResourceSerialized
 
 	err := json.Unmarshal(state, &existing)
 	if err != nil {
 		return err
 	}
 
-	existingMap := make(map[ResourceID]*ResourceData)
+	existingMap := make(map[ResourceID]*ResourceSerialized)
 	resourceMap := make(map[ResourceID]*ResourceWrapper)
 
 	for _, e := range existing {
@@ -223,9 +258,11 @@ func (r *Registry) Load(ctx context.Context, state []byte) error {
 		res := obj.Interface().(Resource)
 
 		rw := &ResourceWrapper{
-			ResourceID: v.ResourceID,
-			Fields:     generateResourceFields(res, rti),
-			Resource:   obj.Interface().(Resource),
+			ResourceID:   v.ResourceID,
+			Fields:       generateResourceFields(res, rti),
+			Resource:     obj.Interface().(Resource),
+			DependedBy:   make(map[*ResourceWrapper]struct{}),
+			Dependencies: make(map[*ResourceWrapper]struct{}),
 		}
 
 		err := setFieldDefaults(rw)
@@ -252,7 +289,7 @@ func (r *Registry) Load(ctx context.Context, state []byte) error {
 				return fmt.Errorf("dependency missing: %s", d)
 			}
 
-			rw.DependedBy = append(rw.DependedBy, dep)
+			rw.DependedBy[dep] = struct{}{}
 		}
 
 		for _, d := range v.Dependencies {
@@ -261,7 +298,7 @@ func (r *Registry) Load(ctx context.Context, state []byte) error {
 				return fmt.Errorf("dependency missing: %s", d)
 			}
 
-			rw.Dependencies = append(rw.Dependencies, dep)
+			rw.Dependencies[dep] = struct{}{}
 		}
 	}
 
@@ -301,7 +338,7 @@ func (r *Registry) Read(ctx context.Context, meta interface{}) error {
 					return err
 				}
 
-				for _, dep := range res.DependedBy {
+				for dep := range res.DependedBy {
 					resMap[dep].Done()
 				}
 
@@ -313,7 +350,7 @@ func (r *Registry) Read(ctx context.Context, meta interface{}) error {
 	}
 
 	err := g.Wait()
-	if err != nil {
+	if err != nil && err != context.Canceled {
 		return err
 	}
 
@@ -329,6 +366,8 @@ var (
 	intOutputType    = reflect.TypeOf((*fields.IntOutputField)(nil)).Elem()
 	mapInputType     = reflect.TypeOf((*fields.MapInputField)(nil)).Elem()
 	mapOutputType    = reflect.TypeOf((*fields.MapOutputField)(nil)).Elem()
+	arrayInputType   = reflect.TypeOf((*fields.ArrayInputField)(nil)).Elem()
+	arrayOutputType  = reflect.TypeOf((*fields.ArrayOutputField)(nil)).Elem()
 )
 
 func setFieldDefaults(r *ResourceWrapper) error {
@@ -380,6 +419,12 @@ func setFieldDefaults(r *ResourceWrapper) error {
 		case mapOutputType:
 			val = fields.MapUnsetOutput()
 
+			// Array.
+		case arrayInputType:
+			val = fields.ArrayUnset()
+		case arrayOutputType:
+			val = fields.ArrayUnsetOutput()
+
 		default:
 			return fmt.Errorf("unknown field type %s", f.Type.ReflectType.Type)
 		}
@@ -388,191 +433,6 @@ func setFieldDefaults(r *ResourceWrapper) error {
 	}
 
 	return nil
-}
-
-type DiffType int
-
-const (
-	DiffTypeCreate DiffType = iota + 1
-	DiffTypeUpdate
-	DiffTypeRecreate
-	DiffTypeDelete
-)
-
-type Diff struct {
-	Object *ResourceWrapper
-	Type   DiffType
-	Fields []string
-}
-
-func (d *Diff) ObjectType() string {
-	typ := d.Object.Type
-
-	v, ok := d.Object.Resource.(ResourceTypeVerbose)
-	if ok {
-		typ = v.GetType()
-	}
-
-	return typ
-}
-
-func (d *Diff) ToPlanAction() *types.PlanAction {
-	switch d.Type {
-	case DiffTypeCreate:
-		return types.NewPlanActionCreate(d.Object.ID, d.ObjectType(), d.Object.Resource.GetName())
-	case DiffTypeUpdate:
-		return types.NewPlanActionUpdate(d.Object.ID, d.ObjectType(), d.Object.Resource.GetName())
-	case DiffTypeRecreate:
-		return types.NewPlanActionRecreate(d.Object.ID, d.ObjectType(), d.Object.Resource.GetName())
-	case DiffTypeDelete:
-		return types.NewPlanActionDelete(d.Object.ID, d.ObjectType(), d.Object.Resource.GetName())
-	}
-
-	panic("unknown diff type")
-}
-
-func (d *Diff) ToApplyAction(step, total int) *types.ApplyAction {
-	var typ types.PlanType
-
-	switch d.Type {
-	case DiffTypeCreate:
-		typ = types.PlanCreate
-	case DiffTypeUpdate:
-		typ = types.PlanUpdate
-	case DiffTypeDelete:
-		typ = types.PlanDelete
-	case DiffTypeRecreate:
-		typ = types.PlanRecreate
-	default:
-		panic("unknown diff type")
-	}
-
-	return &types.ApplyAction{
-		Type:       typ,
-		Namespace:  d.Object.Namespace,
-		ObjectID:   d.Object.ID,
-		ObjectType: d.ObjectType(),
-		ObjectName: d.Object.Resource.GetName(),
-		Progress:   step,
-		Total:      total,
-	}
-}
-
-type FieldProperties struct {
-	Ignored  bool
-	ForceNew bool
-}
-
-func parseFieldPropertiesTag(tag string) *FieldProperties {
-	ret := &FieldProperties{}
-	taginfo := strings.Split(tag, ",")
-
-	for _, t := range taginfo {
-		switch t {
-		case "-":
-			ret.Ignored = true
-
-		case "force_new":
-			ret.ForceNew = true
-		}
-	}
-
-	return ret
-}
-
-func calculateDiff(r *ResourceWrapper, recreate bool) *Diff {
-	if r.Resource.IsNew() || recreate {
-		typ := DiffTypeCreate
-
-		if recreate && !r.Resource.IsNew() {
-			typ = DiffTypeRecreate
-		}
-
-		return &Diff{
-			Object: r,
-			Type:   typ,
-			Fields: r.FieldList(),
-		}
-	}
-
-	forceNew := false
-
-	var fieldsList []string
-
-	for name, f := range r.Fields {
-		if f.Type.Properties.Ignored {
-			continue
-		}
-
-		v := f.Value.Interface().(fields.ValueTracker)
-		if !v.IsChanged() {
-			continue
-		}
-
-		fieldsList = append(fieldsList, name)
-
-		if f.Type.Properties.ForceNew {
-			forceNew = true
-		}
-	}
-
-	if len(fieldsList) == 0 {
-		return nil
-	}
-
-	typ := DiffTypeUpdate
-	if forceNew {
-		typ = DiffTypeRecreate
-	}
-
-	return &Diff{
-		Type:   typ,
-		Object: r,
-		Fields: fieldsList,
-	}
-}
-
-func recreateObjectTree(r *ResourceWrapper, diffMap map[*ResourceWrapper]*Diff) {
-	for _, d := range r.DependedBy {
-		if c, ok := diffMap[d]; ok && c.Type == DiffTypeRecreate {
-			continue
-		}
-
-		diffMap[d] = calculateDiff(d, true)
-
-		if len(d.DependedBy) > 0 {
-			recreateObjectTree(d, diffMap)
-		}
-	}
-}
-
-func deleteObjectTree(r *ResourceWrapper, diffMap map[*ResourceWrapper]*Diff) {
-	for _, d := range r.DependedBy {
-		deleteObjectTree(d, diffMap)
-	}
-
-	d := &Diff{
-		Type:   DiffTypeDelete,
-		Object: r,
-		Fields: r.FieldList(),
-	}
-
-	diffMap[r] = d
-}
-
-func isTreeMarkedForDeletion(r *ResourceWrapper, diffMap map[*ResourceWrapper]*Diff) bool {
-	for _, d := range r.DependedBy {
-		v, ok := diffMap[d]
-		if !ok {
-			return false
-		}
-
-		if v.Type != DiffTypeDelete {
-			return false
-		}
-	}
-
-	return true
 }
 
 func (r *Registry) Diff(ctx context.Context) ([]*Diff, error) {
@@ -654,10 +514,10 @@ func waitContext(ctx context.Context, wg *sync.WaitGroup) error {
 	}
 }
 
-func calculateDependencyWaitGroup(diffActionMap map[diffActionType]*diffAction, deps []*ResourceWrapper, del bool) int {
+func calculateDependencyWaitGroup(diffActionMap map[diffActionType]*diffAction, deps map[*ResourceWrapper]struct{}, del bool) int {
 	add := 0
 
-	for _, d := range deps {
+	for d := range deps {
 		if _, ok := diffActionMap[diffActionType{rw: d, delete: del}]; ok {
 			add++
 		}
@@ -794,7 +654,7 @@ func (r *Registry) Apply(ctx context.Context, meta interface{}, diff []*Diff, ca
 
 				if action.diff.Type == DiffTypeCreate || action.diff.Type == DiffTypeUpdate || (action.diff.Type == DiffTypeRecreate && !t.delete) {
 					// Tell all objects that depend on me that I have been created.
-					for _, dep := range action.diff.Object.DependedBy {
+					for dep := range action.diff.Object.DependedBy {
 						a, ok := diffActionMap[diffActionType{rw: dep, delete: false}]
 						if ok {
 							a.wg.Done()
@@ -805,7 +665,7 @@ func (r *Registry) Apply(ctx context.Context, meta interface{}, diff []*Diff, ca
 				}
 
 				// When dealing with delete, tell all my dependencies that I have been deleted so they can be deleted safely as well.
-				for _, dep := range action.diff.Object.Dependencies {
+				for dep := range action.diff.Object.Dependencies {
 					a, ok := diffActionMap[diffActionType{rw: dep, delete: true}]
 					if ok {
 						a.wg.Done()
@@ -828,7 +688,7 @@ func (r *Registry) Apply(ctx context.Context, meta interface{}, diff []*Diff, ca
 	}
 
 	err := g.Wait()
-	if err != nil {
+	if err != nil && err != context.Canceled {
 		return err
 	}
 

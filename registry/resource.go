@@ -3,8 +3,6 @@ package registry
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-	"reflect"
 
 	"github.com/outblocks/outblocks-plugin-go/registry/fields"
 )
@@ -23,16 +21,16 @@ type ResourceTypeVerbose interface {
 	GetType() string
 }
 
-type FieldTypeInfo struct {
-	ReflectType reflect.StructField
-	Properties  *FieldProperties
-	Default     string
-	DefaultSet  bool
+type ResourceBase struct {
+	new bool
 }
 
-type FieldInfo struct {
-	Type  *FieldTypeInfo
-	Value reflect.Value
+func (b *ResourceBase) IsNew() bool {
+	return b.new
+}
+
+func (b *ResourceBase) SetNew(v bool) {
+	b.new = v
 }
 
 type ResourceID struct {
@@ -41,20 +39,20 @@ type ResourceID struct {
 	Type      string `json:"type"`
 }
 
-type ResourceData struct {
+type ResourceSerialized struct {
 	ResourceID
-	Properties   map[string]interface{} `json:"properties"`
-	DependedBy   []ResourceID           `json:"depended_by"`
-	Dependencies []ResourceID           `json:"dependencies"`
+	Properties   map[string]interface{} `json:"properties,omitempty"`
+	DependedBy   []ResourceID           `json:"depended_by,omitempty"`
+	Dependencies []ResourceID           `json:"dependencies,omitempty"`
 }
 
 type ResourceWrapper struct {
 	ResourceID
 
-	Fields       map[string]*FieldInfo `json:"-"`
-	DependedBy   []*ResourceWrapper    `json:"-"`
-	Dependencies []*ResourceWrapper    `json:"-"`
-	Resource     Resource              `json:"-"`
+	Fields       map[string]*FieldInfo         `json:"-"`
+	DependedBy   map[*ResourceWrapper]struct{} `json:"-"`
+	Dependencies map[*ResourceWrapper]struct{} `json:"-"`
+	Resource     Resource                      `json:"-"`
 }
 
 func (w *ResourceWrapper) SetFieldValues(props map[string]interface{}) error {
@@ -64,26 +62,9 @@ func (w *ResourceWrapper) SetFieldValues(props map[string]interface{}) error {
 			continue
 		}
 
-		switch val := f.Value.Interface().(type) {
-		case fields.StringInputField:
-			val.SetCurrent(v.(string))
-		case fields.BoolInputField:
-			val.SetCurrent(v.(bool))
-		case fields.IntInputField:
-			switch i := v.(type) {
-			case float64:
-				val.SetCurrent(int(i))
-			case int64:
-				val.SetCurrent(int(i))
-			case int:
-				val.SetCurrent(i)
-			default:
-				return fmt.Errorf("unknown int field input found: %s", v)
-			}
-		case fields.MapInputField:
-			val.SetCurrent(v.(map[string]interface{}))
-		default:
-			return fmt.Errorf("unknown field type found: %s", f.Value.Type())
+		err := fields.SetFieldValue(f.Value.Interface(), v)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -108,7 +89,12 @@ func (w *ResourceWrapper) MarshalJSON() ([]byte, error) {
 			continue
 		}
 
-		props[k] = v.Value.Interface().(fields.Field).SerializeValue()
+		f := v.Value.Interface().(fields.Field)
+
+		val, ok := f.LookupCurrentRaw()
+		if ok {
+			props[k] = f.Serialize(val)
+		}
 	}
 
 	var (
@@ -116,19 +102,19 @@ func (w *ResourceWrapper) MarshalJSON() ([]byte, error) {
 		deps       []ResourceID
 	)
 
-	for _, d := range w.DependedBy {
+	for d := range w.DependedBy {
 		if !d.Resource.IsNew() {
 			dependedBy = append(dependedBy, d.ResourceID)
 		}
 	}
 
-	for _, d := range w.Dependencies {
+	for d := range w.Dependencies {
 		if !d.Resource.IsNew() {
 			deps = append(deps, d.ResourceID)
 		}
 	}
 
-	return json.Marshal(ResourceData{
+	return json.Marshal(ResourceSerialized{
 		ResourceID: ResourceID{
 			ID:        w.ID,
 			Namespace: w.Namespace,
@@ -142,23 +128,32 @@ func (w *ResourceWrapper) MarshalJSON() ([]byte, error) {
 
 func (w *ResourceWrapper) MarkAllWantedAsCurrent() {
 	for _, f := range w.Fields {
-		i, ok := f.Value.Interface().(fields.InputField)
-		if !ok {
-			continue
+		switch i := f.Value.Interface().(type) {
+		case fields.StringInputField:
+			w, ok := i.LookupWanted()
+			if ok {
+				i.SetCurrent(w)
+			}
+		case fields.BoolInputField:
+			w, ok := i.LookupWanted()
+			if ok {
+				i.SetCurrent(w)
+			}
+		case fields.IntInputField:
+			w, ok := i.LookupWanted()
+			if ok {
+				i.SetCurrent(w)
+			}
+		case fields.MapInputField:
+			w, ok := i.LookupWanted()
+			if ok {
+				i.SetCurrent(w)
+			}
+		case fields.ArrayInputField:
+			w, ok := i.LookupWanted()
+			if ok {
+				i.SetCurrent(w)
+			}
 		}
-
-		i.SetWantedAsCurrent()
 	}
-}
-
-type ResourceBase struct {
-	new bool
-}
-
-func (b *ResourceBase) IsNew() bool {
-	return b.new
-}
-
-func (b *ResourceBase) SetNew(v bool) {
-	b.new = v
 }

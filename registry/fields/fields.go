@@ -1,5 +1,7 @@
 package fields
 
+import "fmt"
+
 type ValueTracker interface {
 	IsChanged() bool
 }
@@ -11,8 +13,9 @@ type FieldHolder interface {
 type Field interface {
 	ValueTracker
 
-	SerializeValue() interface{}
+	Serialize(interface{}) interface{}
 	LookupCurrentRaw() (interface{}, bool)
+	UnsetCurrent()
 	IsOutput() bool
 }
 
@@ -20,7 +23,7 @@ type InputField interface {
 	Field
 
 	LookupWantedRaw() (interface{}, bool)
-	SetWantedAsCurrent()
+	UnsetWanted()
 }
 
 type OutputField interface {
@@ -51,6 +54,14 @@ func BasicValueUnset(output bool) FieldBase {
 	return FieldBase{
 		isOutput: output,
 	}
+}
+
+func (f *FieldBase) UnsetWanted() {
+	f.wantedDefined = false
+}
+
+func (f *FieldBase) UnsetCurrent() {
+	f.currentDefined = false
 }
 
 func (f *FieldBase) setCurrent(i interface{}) {
@@ -94,11 +105,64 @@ func (f *FieldBase) LookupWantedRaw() (interface{}, bool) {
 	return f.wanted, f.wantedDefined
 }
 
-func (f *FieldBase) SerializeValue() interface{} {
-	return f.current
+func (f *FieldBase) Serialize(i interface{}) interface{} {
+	return i
 }
 
-func (f *FieldBase) SetWantedAsCurrent() {
-	f.current = f.wanted
-	f.currentDefined = f.wantedDefined
+func toInt(in interface{}) (v int, ok bool) {
+	switch i := in.(type) {
+	case float64:
+		return int(i), true
+	case int64:
+		return int(i), true
+	case int:
+		return i, true
+	default:
+		return 0, false
+	}
+}
+
+func SetFieldValue(f, v interface{}) error {
+	switch val := f.(type) {
+	case stringBaseField:
+		if _, ok := v.(string); !ok {
+			return nil
+		}
+
+		val.SetCurrent(v.(string))
+
+	case boolBaseField:
+		if _, ok := v.(bool); !ok {
+			return nil
+		}
+
+		val.SetCurrent(v.(bool))
+
+	case intBaseField:
+		out, ok := toInt(v)
+		if !ok {
+			return nil
+		}
+
+		val.SetCurrent(out)
+
+	case mapBaseField:
+		if _, ok := v.(map[string]interface{}); !ok {
+			return nil
+		}
+
+		val.SetCurrent(v.(map[string]interface{}))
+
+	case arrayBaseField:
+		if _, ok := v.([]interface{}); !ok {
+			return nil
+		}
+
+		val.SetCurrent(v.([]interface{}))
+
+	default:
+		return fmt.Errorf("unknown field type found: %+v", f)
+	}
+
+	return nil
 }

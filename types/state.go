@@ -19,8 +19,10 @@ type AppState struct {
 	DNS *DNS `json:"dns"`
 }
 
-func NewAppState() *AppState {
-	return &AppState{}
+func NewAppState(app *App) *AppState {
+	return &AppState{
+		App: app,
+	}
 }
 
 type DependencyState struct {

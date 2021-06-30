@@ -8,9 +8,10 @@ type StateSource struct {
 }
 
 type DNS struct {
-	InternalIP  string `json:"internal_ip"`
+	InternalIP  string `json:"internal_ip,omitempty"`
 	IP          string `json:"ip"`
-	InternalURL string `json:"internal_url"`
+	CNAME       string `json:"cname,omitempty"`
+	InternalURL string `json:"internal_url,omitempty"`
 	URL         string `json:"url"`
 }
 

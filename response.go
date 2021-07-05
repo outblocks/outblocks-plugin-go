@@ -47,17 +47,27 @@ func (r *ErrorResponse) Type() ResponseType {
 	return ResponseTypeError
 }
 
+type MessageLogLevel string
+
+const (
+	MessageLogLevelError   MessageLogLevel = "error"
+	MessageLogLevelWarn    MessageLogLevel = "warn"
+	MessageLogLevelInfo    MessageLogLevel = "info"
+	MessageLogLevelDebug   MessageLogLevel = "debug"
+	MessageLogLevelSuccess MessageLogLevel = "success"
+)
+
 type MessageResponse struct {
-	LogLevel string `json:"level"`
-	Message  string `json:"message"`
+	LogLevel MessageLogLevel `json:"level"`
+	Message  string          `json:"message"`
 }
 
-func (r *MessageResponse) Level() string {
+func (r *MessageResponse) Level() MessageLogLevel {
 	if r.LogLevel != "" {
 		return r.LogLevel
 	}
 
-	return "info"
+	return MessageLogLevelError
 }
 
 func (r *MessageResponse) Type() ResponseType {

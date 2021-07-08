@@ -7,10 +7,26 @@ import (
 	"github.com/outblocks/outblocks-plugin-go/registry/fields"
 )
 
+type ResourceState int
+
+const (
+	ResourceStateNew ResourceState = iota + 1
+	ResourceStateExisting
+	ResourceStateDeleted
+)
+
 type Resource interface {
 	GetName() string
-	SetNew(bool)
+	SetState(ResourceState)
+	State() ResourceState
+
 	IsNew() bool
+	MarkAsNew()
+	IsExisting() bool
+	MarkAsExisting()
+	IsDeleted() bool
+	MarkAsDeleted()
+
 	Read(ctx context.Context, meta interface{}) error
 	Create(ctx context.Context, meta interface{}) error
 	Update(ctx context.Context, meta interface{}) error
@@ -22,15 +38,39 @@ type ResourceTypeVerbose interface {
 }
 
 type ResourceBase struct {
-	new bool
+	state ResourceState
+}
+
+func (b *ResourceBase) SetState(v ResourceState) {
+	b.state = v
+}
+
+func (b *ResourceBase) State() ResourceState {
+	return b.state
 }
 
 func (b *ResourceBase) IsNew() bool {
-	return b.new
+	return b.State() == ResourceStateNew
 }
 
-func (b *ResourceBase) SetNew(v bool) {
-	b.new = v
+func (b *ResourceBase) IsExisting() bool {
+	return b.State() == ResourceStateExisting
+}
+
+func (b *ResourceBase) IsDeleted() bool {
+	return b.State() == ResourceStateDeleted
+}
+
+func (b *ResourceBase) MarkAsNew() {
+	b.SetState(ResourceStateNew)
+}
+
+func (b *ResourceBase) MarkAsExisting() {
+	b.SetState(ResourceStateExisting)
+}
+
+func (b *ResourceBase) MarkAsDeleted() {
+	b.SetState(ResourceStateDeleted)
 }
 
 type ResourceID struct {
@@ -103,13 +143,13 @@ func (w *ResourceWrapper) MarshalJSON() ([]byte, error) {
 	)
 
 	for d := range w.DependedBy {
-		if !d.Resource.IsNew() {
+		if d.Resource.State() == ResourceStateExisting {
 			dependedBy = append(dependedBy, d.ResourceID)
 		}
 	}
 
 	for d := range w.Dependencies {
-		if !d.Resource.IsNew() {
+		if d.Resource.State() == ResourceStateExisting {
 			deps = append(deps, d.ResourceID)
 		}
 	}

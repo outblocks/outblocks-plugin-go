@@ -131,6 +131,12 @@ func (f *MapField) FieldDependencies() []interface{} {
 			continue
 		}
 
+		if fh, ok := v.(FieldHolder); ok {
+			deps = append(deps, fh.FieldDependencies()...)
+
+			continue
+		}
+
 		deps = append(deps, v)
 	}
 

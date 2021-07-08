@@ -1,6 +1,8 @@
 package registry
 
 import (
+	"fmt"
+
 	"github.com/outblocks/outblocks-plugin-go/registry/fields"
 	"github.com/outblocks/outblocks-plugin-go/types"
 )
@@ -77,7 +79,7 @@ func calculateDiff(r *ResourceWrapper, recreate bool) *Diff {
 	if r.Resource.IsNew() || recreate {
 		typ := DiffTypeCreate
 
-		if recreate && !r.Resource.IsNew() {
+		if recreate && r.Resource.IsExisting() {
 			typ = DiffTypeRecreate
 		}
 
@@ -140,8 +142,14 @@ func recreateObjectTree(r *ResourceWrapper, diffMap map[*ResourceWrapper]*Diff) 
 }
 
 func deleteObjectTree(r *ResourceWrapper, diffMap map[*ResourceWrapper]*Diff) {
+	fmt.Println(diffMap[r])
+
 	for d := range r.DependedBy {
 		deleteObjectTree(d, diffMap)
+	}
+
+	if !r.Resource.IsExisting() {
+		return
 	}
 
 	d := &Diff{
@@ -151,19 +159,4 @@ func deleteObjectTree(r *ResourceWrapper, diffMap map[*ResourceWrapper]*Diff) {
 	}
 
 	diffMap[r] = d
-}
-
-func isTreeMarkedForDeletion(r *ResourceWrapper, diffMap map[*ResourceWrapper]*Diff) bool {
-	for d := range r.DependedBy {
-		v, ok := diffMap[d]
-		if !ok {
-			return false
-		}
-
-		if v.Type != DiffTypeDelete {
-			return false
-		}
-	}
-
-	return true
 }

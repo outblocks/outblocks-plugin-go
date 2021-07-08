@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"net"
-	"sync"
 
 	"github.com/outblocks/outblocks-plugin-go/log"
 )
@@ -78,59 +77,59 @@ func (h *ReqHandler) handleSync(ctx context.Context, req Request) (res Response,
 	return res, err
 }
 
-func (h *ReqHandler) handleInteractive(ctx context.Context, logger log.Logger, c net.Conn, r *bufio.Reader, req Request) (bool, error) {
+func (h *ReqHandler) interactiveHandler(ctx context.Context, req Request, in chan Request, out chan Response) func() error {
+	switch v := req.(type) {
+	case *InitRequest:
+		if h.InitInteractive != nil {
+			return func() error { return h.InitInteractive(ctx, v, in, out) }
+		}
+	case *StartRequest:
+		if h.StartInteractive != nil {
+			return func() error { return h.StartInteractive(ctx, v, in, out) }
+		}
+	case *PlanRequest:
+		if h.PlanInteractive != nil {
+			return func() error { return h.PlanInteractive(ctx, v, in, out) }
+		}
+	case *ApplyRequest:
+		if h.ApplyInteractive != nil {
+			return func() error { return h.ApplyInteractive(ctx, v, in, out) }
+		}
+	case *RunRequest:
+		if h.RunInteractive != nil {
+			return func() error { return h.RunInteractive(ctx, v, in, out) }
+		}
+	case *CommandRequest:
+		if h.CommandInteractive != nil {
+			return func() error { return h.CommandInteractive(ctx, v, in, out) }
+		}
+	}
+
+	return nil
+}
+
+func (h *ReqHandler) handleInteractive(ctx context.Context, logger log.Logger, c net.Conn, r *bufio.Reader, req Request) (handled bool, err error) {
 	var handler func() error
 
 	in := make(chan Request)
 	out := make(chan Response)
 
-	switch v := req.(type) {
-	case *InitRequest:
-		if h.InitInteractive != nil {
-			handler = func() error { return h.InitInteractive(ctx, v, in, out) }
-		}
-	case *StartRequest:
-		if h.StartInteractive != nil {
-			handler = func() error { return h.StartInteractive(ctx, v, in, out) }
-		}
-	case *PlanRequest:
-		if h.PlanInteractive != nil {
-			handler = func() error { return h.PlanInteractive(ctx, v, in, out) }
-		}
-	case *ApplyRequest:
-		if h.ApplyInteractive != nil {
-			handler = func() error { return h.ApplyInteractive(ctx, v, in, out) }
-		}
-	case *RunRequest:
-		if h.RunInteractive != nil {
-			handler = func() error { return h.RunInteractive(ctx, v, in, out) }
-		}
-	case *CommandRequest:
-		if h.CommandInteractive != nil {
-			handler = func() error { return h.CommandInteractive(ctx, v, in, out) }
-		}
-	}
-
+	handler = h.interactiveHandler(ctx, req, in, out)
 	if handler == nil {
 		return false, nil
 	}
 
-	var (
-		err error
-		wg  sync.WaitGroup
-	)
+	writeWait := make(chan struct{})
 
 	errCh := make(chan error, 2)
 
-	wg.Add(2)
-
 	go func() {
-		defer wg.Done()
-
 		for {
 			req, err := readRequest(logger, r)
 			if err != nil {
-				errCh <- err
+				if err != io.EOF {
+					errCh <- err
+				}
 
 				close(in)
 
@@ -142,7 +141,7 @@ func (h *ReqHandler) handleInteractive(ctx context.Context, logger log.Logger, c
 	}()
 
 	go func() {
-		defer wg.Done()
+		defer close(writeWait)
 
 		for res := range out {
 			err := writeResponse(c, res)
@@ -152,15 +151,16 @@ func (h *ReqHandler) handleInteractive(ctx context.Context, logger log.Logger, c
 				return
 			}
 		}
-
-		c.Close()
 	}()
 
-	if err := handler(); err != nil {
+	err = handler()
+
+	close(out)
+	<-writeWait
+
+	if err != nil {
 		return true, err
 	}
-
-	wg.Wait()
 
 	select {
 	case err = <-errCh:
@@ -222,31 +222,24 @@ func writeResponse(w io.Writer, res Response) error {
 		Type: res.Type(),
 	}
 
-	// Send header.
-	data, err := json.Marshal(header)
+	// Prepare header.
+	headerData, err := json.Marshal(header)
 	if err != nil {
 		return err
 	}
 
-	if _, err := w.Write(data); err != nil {
-		return err
-	}
-
-	if _, err := w.Write([]byte{'\n'}); err != nil {
-		return err
-	}
-
-	// Send response itself.
-	data, err = json.Marshal(res)
+	// Prepare response itself.
+	responseData, err := json.Marshal(res)
 	if err != nil {
 		return err
 	}
 
-	if _, err := w.Write(data); err != nil {
-		return err
-	}
+	data := headerData
+	data = append(data, byte('\n'))
+	data = append(data, responseData...)
+	data = append(data, byte('\n'))
 
-	_, err = w.Write([]byte{'\n'})
+	_, err = w.Write(data)
 
 	return err
 }

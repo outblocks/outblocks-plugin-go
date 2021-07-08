@@ -71,7 +71,14 @@ func (s *Server) Start(handler *ReqHandler) error {
 	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-		<-ch
+		for {
+			sig := <-ch
+
+			if sig == syscall.SIGTERM {
+				break
+			}
+		}
+
 		close(s.quit)
 		l.Close()
 	}()

@@ -26,7 +26,7 @@ type Registry struct {
 
 	resources   []*ResourceWrapper
 	resourceMap map[ResourceID]*ResourceWrapper
-	missing     []*ResourceWrapper
+	existing    []*ResourceWrapper
 }
 
 func NewRegistry() *Registry {
@@ -161,7 +161,7 @@ func (r *Registry) Register(o Resource, namespace, id string) error {
 		return nil
 	}
 
-	o.SetNew(true)
+	o.SetState(ResourceStateNew)
 
 	rw := &ResourceWrapper{
 		ResourceID:   resourceID,
@@ -242,7 +242,7 @@ func (r *Registry) Load(ctx context.Context, state []byte) error {
 			return err
 		}
 
-		res.Resource.SetNew(false)
+		res.Resource.SetState(ResourceStateExisting)
 	}
 
 	// Process missing resources.
@@ -302,7 +302,7 @@ func (r *Registry) Load(ctx context.Context, state []byte) error {
 		}
 	}
 
-	r.missing = missing
+	r.existing = missing
 
 	return nil
 }
@@ -435,16 +435,21 @@ func setFieldDefaults(r *ResourceWrapper) error {
 	return nil
 }
 
-func (r *Registry) Diff(ctx context.Context) ([]*Diff, error) {
+func (r *Registry) Diff(ctx context.Context, destroy bool) ([]*Diff, error) {
 	diffMap := make(map[*ResourceWrapper]*Diff)
 
 	// Add all missing resources as deletions.
-	for _, o := range r.missing {
+	for _, o := range r.existing {
 		deleteObjectTree(o, diffMap)
 	}
 
 	// Process other ops.
 	for _, o := range r.resources {
+		if destroy {
+			deleteObjectTree(o, diffMap)
+			continue
+		}
+
 		existing := diffMap[o]
 		if existing != nil && existing.Type == DiffTypeRecreate {
 			continue
@@ -460,13 +465,6 @@ func (r *Registry) Diff(ctx context.Context) ([]*Diff, error) {
 		}
 	}
 
-	// Verify if all that depends on it are also deleted.
-	for _, d := range diffMap {
-		if d.Type == DiffTypeDelete && !isTreeMarkedForDeletion(d.Object, diffMap) {
-			return nil, fmt.Errorf("object: '%s' marked for deletion but there are still objects depending on it", d.Object.ResourceID)
-		}
-	}
-
 	var diff []*Diff
 	for _, v := range diffMap {
 		diff = append(diff, v)
@@ -477,8 +475,8 @@ func (r *Registry) Diff(ctx context.Context) ([]*Diff, error) {
 
 func (r *Registry) Dump() ([]byte, error) {
 	var resources []*ResourceWrapper
-	for _, res := range r.resources {
-		if res.Resource.IsNew() {
+	for _, res := range append(r.resources, r.existing...) {
+		if !res.Resource.IsExisting() {
 			continue
 		}
 
@@ -577,7 +575,7 @@ func handleDiffAction(ctx context.Context, meta interface{}, d *Diff, del bool, 
 			return err
 		}
 
-		d.Object.Resource.SetNew(false)
+		d.Object.Resource.SetState(ResourceStateExisting)
 		d.Object.MarkAllWantedAsCurrent()
 		callback(d.ToApplyAction(1, 1))
 
@@ -600,6 +598,7 @@ func handleDiffAction(ctx context.Context, meta interface{}, d *Diff, del bool, 
 			return err
 		}
 
+		d.Object.Resource.SetState(ResourceStateDeleted)
 		callback(d.ToApplyAction(1, 1))
 
 	case DiffTypeRecreate:
@@ -611,6 +610,7 @@ func handleDiffAction(ctx context.Context, meta interface{}, d *Diff, del bool, 
 				return err
 			}
 
+			d.Object.Resource.SetState(ResourceStateDeleted)
 			callback(d.ToApplyAction(1, 2))
 		} else {
 			err := d.Object.Resource.Create(ctx, meta)
@@ -618,7 +618,7 @@ func handleDiffAction(ctx context.Context, meta interface{}, d *Diff, del bool, 
 				return err
 			}
 
-			d.Object.Resource.SetNew(false)
+			d.Object.Resource.SetState(ResourceStateExisting)
 			d.Object.MarkAllWantedAsCurrent()
 			callback(d.ToApplyAction(2, 2))
 		}
@@ -649,7 +649,7 @@ func (r *Registry) Apply(ctx context.Context, meta interface{}, diff []*Diff, ca
 
 				err = handleDiffAction(ctx, meta, d, t.delete, callback)
 				if err != nil {
-					return err
+					return fmt.Errorf("applying changes to %s '%s' error: %w", d.ObjectType(), d.Object.Resource.GetName(), err)
 				}
 
 				if action.diff.Type == DiffTypeCreate || action.diff.Type == DiffTypeUpdate || (action.diff.Type == DiffTypeRecreate && !t.delete) {

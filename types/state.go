@@ -13,6 +13,7 @@ type DNS struct {
 	CNAME       string `json:"cname,omitempty"`
 	InternalURL string `json:"internal_url,omitempty"`
 	URL         string `json:"url"`
+	Manual      bool   `json:"manual"`
 }
 
 type AppState struct {

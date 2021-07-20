@@ -6,7 +6,7 @@ type ValueTracker interface {
 	IsChanged() bool
 }
 
-type FieldHolder interface {
+type FieldDependencyHolder interface {
 	FieldDependencies() []interface{}
 }
 

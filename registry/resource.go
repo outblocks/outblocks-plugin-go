@@ -17,6 +17,8 @@ const (
 
 type Resource interface {
 	GetName() string
+	SetDiff(*Diff)
+	Diff() *Diff
 	SetState(ResourceState)
 	State() ResourceState
 
@@ -27,10 +29,25 @@ type Resource interface {
 	IsDeleted() bool
 	MarkAsDeleted()
 
+	SkipState() bool
+}
+
+type ResourceReader interface {
 	Read(ctx context.Context, meta interface{}) error
+}
+
+type ResourceProcessor interface {
+	Process(ctx context.Context, meta interface{}) error
+}
+
+type ResourceCUD interface {
 	Create(ctx context.Context, meta interface{}) error
 	Update(ctx context.Context, meta interface{}) error
 	Delete(ctx context.Context, meta interface{}) error
+}
+
+type ResourceDiffCalculator interface {
+	CalculateDiff() DiffType
 }
 
 type ResourceTypeVerbose interface {
@@ -39,6 +56,15 @@ type ResourceTypeVerbose interface {
 
 type ResourceBase struct {
 	state ResourceState
+	diff  *Diff
+}
+
+func (b *ResourceBase) SetDiff(v *Diff) {
+	b.diff = v
+}
+
+func (b *ResourceBase) Diff() *Diff {
+	return b.diff
 }
 
 func (b *ResourceBase) SetState(v ResourceState) {
@@ -71,6 +97,10 @@ func (b *ResourceBase) MarkAsExisting() {
 
 func (b *ResourceBase) MarkAsDeleted() {
 	b.SetState(ResourceStateDeleted)
+}
+
+func (b *ResourceBase) SkipState() bool {
+	return false
 }
 
 type ResourceID struct {
@@ -125,7 +155,7 @@ func (w *ResourceWrapper) MarshalJSON() ([]byte, error) {
 	props := make(map[string]interface{})
 
 	for k, v := range w.Fields {
-		if v.Type.Properties.Ignored {
+		if v.Type.Properties.Ignored || v.Type.Properties.Computed {
 			continue
 		}
 

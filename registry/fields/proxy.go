@@ -14,9 +14,9 @@ func MakeProxyField(i interface{}) interface{} {
 		return newProxyMapField(v)
 	case arrayBaseField:
 		return newProxyArrayField(v)
+	default:
+		panic("unknown base field for proxy")
 	}
-
-	return nil
 }
 
 // String.
@@ -54,7 +54,7 @@ func (f *proxyStringField) IsChanged() bool {
 }
 
 func (f *proxyStringField) FieldDependencies() []interface{} {
-	if v, ok := f.org.(FieldHolder); ok {
+	if v, ok := f.org.(FieldDependencyHolder); ok {
 		return v.FieldDependencies()
 	}
 
@@ -96,7 +96,7 @@ func (f *proxyBoolField) IsChanged() bool {
 }
 
 func (f *proxyBoolField) FieldDependencies() []interface{} {
-	if v, ok := f.org.(FieldHolder); ok {
+	if v, ok := f.org.(FieldDependencyHolder); ok {
 		return v.FieldDependencies()
 	}
 
@@ -138,7 +138,7 @@ func (f *proxyIntField) IsChanged() bool {
 }
 
 func (f *proxyIntField) FieldDependencies() []interface{} {
-	if v, ok := f.org.(FieldHolder); ok {
+	if v, ok := f.org.(FieldDependencyHolder); ok {
 		return v.FieldDependencies()
 	}
 
@@ -180,7 +180,7 @@ func (f *proxyMapField) IsChanged() bool {
 }
 
 func (f *proxyMapField) FieldDependencies() []interface{} {
-	if v, ok := f.org.(FieldHolder); ok {
+	if v, ok := f.org.(FieldDependencyHolder); ok {
 		return v.FieldDependencies()
 	}
 
@@ -222,7 +222,7 @@ func (f *proxyArrayField) IsChanged() bool {
 }
 
 func (f *proxyArrayField) FieldDependencies() []interface{} {
-	if v, ok := f.org.(FieldHolder); ok {
+	if v, ok := f.org.(FieldDependencyHolder); ok {
 		return v.FieldDependencies()
 	}
 

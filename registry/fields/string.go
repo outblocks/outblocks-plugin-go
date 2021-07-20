@@ -200,7 +200,7 @@ func (f *SprintfField) FieldDependencies() []interface{} {
 	for _, a := range f.args {
 		_, ok := a.(Field)
 		if ok {
-			if fh, ok := a.(FieldHolder); ok {
+			if fh, ok := a.(FieldDependencyHolder); ok {
 				deps = append(deps, fh.FieldDependencies()...)
 
 				continue

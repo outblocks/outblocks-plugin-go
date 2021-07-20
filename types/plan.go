@@ -40,6 +40,7 @@ const (
 	PlanRecreate
 	PlanUpdate
 	PlanDelete
+	PlanProcess
 )
 
 type PlanAction struct {
@@ -108,6 +109,10 @@ func NewPlanActionUpdate(objectID, objectType, objectName string) *PlanAction {
 
 func NewPlanActionDelete(objectID, objectType, objectName string) *PlanAction {
 	return NewPlanAction(PlanDelete, objectID, objectType, objectName)
+}
+
+func NewPlanActionProcess(objectID, objectType, objectName string) *PlanAction {
+	return NewPlanAction(PlanProcess, objectID, objectType, objectName)
 }
 
 type PlanActions struct {

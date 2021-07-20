@@ -102,7 +102,7 @@ func mapFieldInfo(rti *ResourceTypeInfo, fieldsMap map[string]*FieldInfo, t refl
 		ft := t.Field(i)
 		fv := v.Field(i)
 
-		if ft.Anonymous {
+		if ft.Anonymous || !fv.CanSet() {
 			continue
 		}
 
@@ -191,7 +191,7 @@ func (r *Registry) Register(o Resource, namespace, id string) error {
 			continue
 		}
 
-		if fh, ok := f.Value.Interface().(fields.FieldHolder); ok {
+		if fh, ok := f.Value.Interface().(fields.FieldDependencyHolder); ok {
 			for _, dep := range fh.FieldDependencies() {
 				if erw, ok := r.fieldMap[dep]; ok {
 					rw.Dependencies[erw] = struct{}{}
@@ -201,6 +201,16 @@ func (r *Registry) Register(o Resource, namespace, id string) error {
 		}
 
 		r.fieldMap[f.Value.Interface()] = rw
+	}
+
+	// Check if object has additional FieldDependencies.
+	if fh, ok := o.(fields.FieldDependencyHolder); ok {
+		for _, dep := range fh.FieldDependencies() {
+			if erw, ok := r.fieldMap[dep]; ok {
+				rw.Dependencies[erw] = struct{}{}
+				erw.DependedBy[rw] = struct{}{}
+			}
+		}
 	}
 
 	r.resources = append(r.resources, rw)
@@ -314,11 +324,11 @@ func (r *Registry) Read(ctx context.Context, meta interface{}) error {
 	resMap := make(map[*ResourceWrapper]*sync.WaitGroup, len(r.resources))
 
 	for _, res := range r.resources {
-		var s sync.WaitGroup
+		var wg sync.WaitGroup
 
-		s.Add(len(res.Dependencies))
+		wg.Add(len(res.Dependencies))
 
-		resMap[res] = &s
+		resMap[res] = &wg
 	}
 
 	for res, wg := range resMap {
@@ -333,9 +343,11 @@ func (r *Registry) Read(ctx context.Context, meta interface{}) error {
 			}
 
 			pool.Go(func() error {
-				err := res.Resource.Read(ctx, meta)
-				if err != nil {
-					return err
+				if rr, ok := res.Resource.(ResourceReader); ok {
+					err := rr.Read(ctx, meta)
+					if err != nil {
+						return err
+					}
 				}
 
 				for dep := range res.DependedBy {
@@ -372,7 +384,7 @@ var (
 
 func setFieldDefaults(r *ResourceWrapper) error {
 	for _, f := range r.Fields {
-		if f.Type.Properties.Ignored || !f.Value.IsNil() {
+		if f.Type.Properties.Ignored || f.Type.Properties.Computed || !f.Value.IsNil() || !f.Value.CanSet() {
 			continue
 		}
 
@@ -466,7 +478,10 @@ func (r *Registry) Diff(ctx context.Context, destroy bool) ([]*Diff, error) {
 	}
 
 	var diff []*Diff
-	for _, v := range diffMap {
+
+	for k, v := range diffMap {
+		k.Resource.SetDiff(v)
+
 		diff = append(diff, v)
 	}
 
@@ -476,7 +491,7 @@ func (r *Registry) Diff(ctx context.Context, destroy bool) ([]*Diff, error) {
 func (r *Registry) Dump() ([]byte, error) {
 	var resources []*ResourceWrapper
 	for _, res := range append(r.resources, r.existing...) {
-		if !res.Resource.IsExisting() {
+		if !res.Resource.IsExisting() || res.Resource.SkipState() {
 			continue
 		}
 
@@ -534,7 +549,7 @@ func prepareDiffActionMap(diff []*Diff) map[diffActionType]*diffAction {
 		typ := diffActionType{rw: d.Object, delete: false}
 
 		switch d.Type {
-		case DiffTypeCreate, DiffTypeUpdate:
+		case DiffTypeCreate, DiffTypeUpdate, DiffTypeProcess:
 		case DiffTypeDelete:
 			typ.delete = true
 
@@ -545,6 +560,10 @@ func prepareDiffActionMap(diff []*Diff) map[diffActionType]*diffAction {
 			}
 
 			action.wg.Add(1)
+		case DiffTypeNone:
+			panic("unexpected diff type")
+		default:
+			panic("unknown diff type")
 		}
 
 		diffActionMap[typ] = action
@@ -570,7 +589,7 @@ func handleDiffAction(ctx context.Context, meta interface{}, d *Diff, del bool, 
 	case DiffTypeCreate:
 		callback(d.ToApplyAction(0, 1))
 
-		err := d.Object.Resource.Create(ctx, meta)
+		err := d.Object.Resource.(ResourceCUD).Create(ctx, meta)
 		if err != nil {
 			return err
 		}
@@ -582,7 +601,18 @@ func handleDiffAction(ctx context.Context, meta interface{}, d *Diff, del bool, 
 	case DiffTypeUpdate:
 		callback(d.ToApplyAction(0, 1))
 
-		err := d.Object.Resource.Update(ctx, meta)
+		err := d.Object.Resource.(ResourceCUD).Update(ctx, meta)
+		if err != nil {
+			return err
+		}
+
+		d.Object.MarkAllWantedAsCurrent()
+		callback(d.ToApplyAction(1, 1))
+
+	case DiffTypeProcess:
+		callback(d.ToApplyAction(0, 1))
+
+		err := d.Object.Resource.(ResourceProcessor).Process(ctx, meta)
 		if err != nil {
 			return err
 		}
@@ -593,7 +623,7 @@ func handleDiffAction(ctx context.Context, meta interface{}, d *Diff, del bool, 
 	case DiffTypeDelete:
 		callback(d.ToApplyAction(0, 1))
 
-		err := d.Object.Resource.Delete(ctx, meta)
+		err := d.Object.Resource.(ResourceCUD).Delete(ctx, meta)
 		if err != nil {
 			return err
 		}
@@ -605,7 +635,7 @@ func handleDiffAction(ctx context.Context, meta interface{}, d *Diff, del bool, 
 		if del {
 			callback(d.ToApplyAction(0, 2))
 
-			err := d.Object.Resource.Delete(ctx, meta)
+			err := d.Object.Resource.(ResourceCUD).Delete(ctx, meta)
 			if err != nil {
 				return err
 			}
@@ -613,7 +643,7 @@ func handleDiffAction(ctx context.Context, meta interface{}, d *Diff, del bool, 
 			d.Object.Resource.SetState(ResourceStateDeleted)
 			callback(d.ToApplyAction(1, 2))
 		} else {
-			err := d.Object.Resource.Create(ctx, meta)
+			err := d.Object.Resource.(ResourceCUD).Create(ctx, meta)
 			if err != nil {
 				return err
 			}
@@ -622,6 +652,11 @@ func handleDiffAction(ctx context.Context, meta interface{}, d *Diff, del bool, 
 			d.Object.MarkAllWantedAsCurrent()
 			callback(d.ToApplyAction(2, 2))
 		}
+
+	case DiffTypeNone:
+		panic("unexpected diff type")
+	default:
+		panic("unknown diff type")
 	}
 
 	return nil
@@ -652,7 +687,7 @@ func (r *Registry) Apply(ctx context.Context, meta interface{}, diff []*Diff, ca
 					return fmt.Errorf("applying changes to %s '%s' error: %w", d.ObjectType(), d.Object.Resource.GetName(), err)
 				}
 
-				if action.diff.Type == DiffTypeCreate || action.diff.Type == DiffTypeUpdate || (action.diff.Type == DiffTypeRecreate && !t.delete) {
+				if action.diff.Type == DiffTypeCreate || action.diff.Type == DiffTypeUpdate || action.diff.Type == DiffTypeProcess || (action.diff.Type == DiffTypeRecreate && !t.delete) {
 					// Tell all objects that depend on me that I have been created.
 					for dep := range action.diff.Object.DependedBy {
 						a, ok := diffActionMap[diffActionType{rw: dep, delete: false}]
@@ -660,6 +695,8 @@ func (r *Registry) Apply(ctx context.Context, meta interface{}, diff []*Diff, ca
 							a.wg.Done()
 						}
 					}
+
+					action.diff.Applied = true
 
 					return nil
 				}
@@ -679,6 +716,8 @@ func (r *Registry) Apply(ctx context.Context, meta interface{}, diff []*Diff, ca
 						a.wg.Done()
 					}
 				}
+
+				action.diff.Applied = true
 
 				return nil
 			})

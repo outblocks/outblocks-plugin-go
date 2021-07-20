@@ -20,6 +20,7 @@ type FieldInfo struct {
 type FieldProperties struct {
 	Ignored  bool
 	ForceNew bool
+	Computed bool
 }
 
 func parseFieldPropertiesTag(tag string) *FieldProperties {
@@ -30,6 +31,9 @@ func parseFieldPropertiesTag(tag string) *FieldProperties {
 		switch t {
 		case "-":
 			ret.Ignored = true
+
+		case "computed":
+			ret.Computed = true
 
 		case "force_new":
 			ret.ForceNew = true

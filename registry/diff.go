@@ -10,16 +10,19 @@ import (
 type DiffType int
 
 const (
-	DiffTypeCreate DiffType = iota + 1
+	DiffTypeNone DiffType = iota + 1
+	DiffTypeCreate
 	DiffTypeUpdate
 	DiffTypeRecreate
 	DiffTypeDelete
+	DiffTypeProcess
 )
 
 type Diff struct {
-	Object *ResourceWrapper
-	Type   DiffType
-	Fields []string
+	Object  *ResourceWrapper
+	Type    DiffType
+	Fields  []string
+	Applied bool
 }
 
 func (d *Diff) ObjectType() string {
@@ -43,9 +46,13 @@ func (d *Diff) ToPlanAction() *types.PlanAction {
 		return types.NewPlanActionRecreate(d.Object.ID, d.ObjectType(), d.Object.Resource.GetName())
 	case DiffTypeDelete:
 		return types.NewPlanActionDelete(d.Object.ID, d.ObjectType(), d.Object.Resource.GetName())
+	case DiffTypeProcess:
+		return types.NewPlanActionProcess(d.Object.ID, d.ObjectType(), d.Object.Resource.GetName())
+	case DiffTypeNone:
+		panic("unexpected diff type")
+	default:
+		panic("unknown diff type")
 	}
-
-	panic("unknown diff type")
 }
 
 func (d *Diff) ToApplyAction(step, total int) *types.ApplyAction {
@@ -60,6 +67,10 @@ func (d *Diff) ToApplyAction(step, total int) *types.ApplyAction {
 		typ = types.PlanDelete
 	case DiffTypeRecreate:
 		typ = types.PlanRecreate
+	case DiffTypeProcess:
+		typ = types.PlanProcess
+	case DiffTypeNone:
+		panic("unexpected diff type")
 	default:
 		panic("unknown diff type")
 	}
@@ -76,6 +87,19 @@ func (d *Diff) ToApplyAction(step, total int) *types.ApplyAction {
 }
 
 func calculateDiff(r *ResourceWrapper, recreate bool) *Diff {
+	if rdc, ok := r.Resource.(ResourceDiffCalculator); ok {
+		typ := rdc.CalculateDiff()
+		if typ != DiffTypeNone {
+			return &Diff{
+				Object: r,
+				Type:   typ,
+				Fields: r.FieldList(),
+			}
+		}
+
+		return nil
+	}
+
 	if r.Resource.IsNew() || recreate {
 		typ := DiffTypeCreate
 

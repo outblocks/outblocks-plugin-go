@@ -12,6 +12,7 @@ const (
 	RequestTypeSaveState
 	RequestTypeReleaseLock
 	RequestTypeCommand
+	RequestTypePromptConfirmation
 	RequestTypePromptAnswer
 )
 

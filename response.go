@@ -11,11 +11,14 @@ const (
 	ResponseTypePlan
 	ResponseTypeApply
 	ResponseTypeApplyDone
-	ResponseTypePrompt
 	ResponseTypeMessage
 	ResponseTypeError
 	ResponseTypeValidationError
 	ResponseTypeUnhandled
+	ResponseTypeInit
+	ResponseTypePromptConfirmation
+	ResponseTypePromptSelect
+	ResponseTypePromptInput
 )
 
 type Response interface {
@@ -90,14 +93,6 @@ type EmptyResponse struct{}
 
 func (r *EmptyResponse) Type() ResponseType {
 	return ResponseTypeEmpty
-}
-
-type PromptResponse struct {
-	// TODO: prompt support
-}
-
-func (r *PromptResponse) Type() ResponseType {
-	return ResponseTypePrompt
 }
 
 type ValidationErrorResponse struct {

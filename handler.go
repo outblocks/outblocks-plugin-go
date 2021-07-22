@@ -1,11 +1,7 @@
 package plugin
 
 import (
-	"bufio"
 	"context"
-	"encoding/json"
-	"fmt"
-	"io"
 	"net"
 
 	"github.com/outblocks/outblocks-plugin-go/log"
@@ -13,17 +9,17 @@ import (
 
 type ReqHandler struct {
 	Init               func(ctx context.Context, r *InitRequest) (Response, error)
-	InitInteractive    func(ctx context.Context, r *InitRequest, in <-chan Request, out chan<- Response) error
+	InitInteractive    func(ctx context.Context, r *InitRequest, stream *ReceiverStream) error
 	Start              func(ctx context.Context, r *StartRequest) (Response, error)
-	StartInteractive   func(ctx context.Context, r *StartRequest, in <-chan Request, out chan<- Response) error
+	StartInteractive   func(ctx context.Context, r *StartRequest, stream *ReceiverStream) error
 	Plan               func(ctx context.Context, r *PlanRequest) (Response, error)
-	PlanInteractive    func(ctx context.Context, r *PlanRequest, in <-chan Request, out chan<- Response) error
+	PlanInteractive    func(ctx context.Context, r *PlanRequest, stream *ReceiverStream) error
 	Apply              func(ctx context.Context, r *ApplyRequest) (Response, error)
-	ApplyInteractive   func(ctx context.Context, r *ApplyRequest, in <-chan Request, out chan<- Response) error
+	ApplyInteractive   func(ctx context.Context, r *ApplyRequest, stream *ReceiverStream) error
 	Run                func(ctx context.Context, r *RunRequest) (Response, error)
-	RunInteractive     func(ctx context.Context, r *RunRequest, in <-chan Request, out chan<- Response) error
+	RunInteractive     func(ctx context.Context, r *RunRequest, stream *ReceiverStream) error
 	Command            func(ctx context.Context, r *CommandRequest) (Response, error)
-	CommandInteractive func(ctx context.Context, r *CommandRequest, in <-chan Request, out chan<- Response) error
+	CommandInteractive func(ctx context.Context, r *CommandRequest, stream *ReceiverStream) error
 
 	// Cleanup
 	Cleanup func() error
@@ -77,97 +73,49 @@ func (h *ReqHandler) handleSync(ctx context.Context, req Request) (res Response,
 	return res, err
 }
 
-func (h *ReqHandler) interactiveHandler(ctx context.Context, req Request, in chan Request, out chan Response) func() error {
+func (h *ReqHandler) interactiveHandler(ctx context.Context, req Request, stream *ReceiverStream) func() error {
 	switch v := req.(type) {
 	case *InitRequest:
 		if h.InitInteractive != nil {
-			return func() error { return h.InitInteractive(ctx, v, in, out) }
+			return func() error { return h.InitInteractive(ctx, v, stream) }
 		}
 	case *StartRequest:
 		if h.StartInteractive != nil {
-			return func() error { return h.StartInteractive(ctx, v, in, out) }
+			return func() error { return h.StartInteractive(ctx, v, stream) }
 		}
 	case *PlanRequest:
 		if h.PlanInteractive != nil {
-			return func() error { return h.PlanInteractive(ctx, v, in, out) }
+			return func() error { return h.PlanInteractive(ctx, v, stream) }
 		}
 	case *ApplyRequest:
 		if h.ApplyInteractive != nil {
-			return func() error { return h.ApplyInteractive(ctx, v, in, out) }
+			return func() error { return h.ApplyInteractive(ctx, v, stream) }
 		}
 	case *RunRequest:
 		if h.RunInteractive != nil {
-			return func() error { return h.RunInteractive(ctx, v, in, out) }
+			return func() error { return h.RunInteractive(ctx, v, stream) }
 		}
 	case *CommandRequest:
 		if h.CommandInteractive != nil {
-			return func() error { return h.CommandInteractive(ctx, v, in, out) }
+			return func() error { return h.CommandInteractive(ctx, v, stream) }
 		}
 	}
 
 	return nil
 }
 
-func (h *ReqHandler) handleInteractive(ctx context.Context, logger log.Logger, c net.Conn, r *bufio.Reader, req Request) (handled bool, err error) {
-	var handler func() error
-
-	in := make(chan Request)
-	out := make(chan Response)
-
-	handler = h.interactiveHandler(ctx, req, in, out)
+func (h *ReqHandler) handleInteractive(ctx context.Context, req Request, stream *ReceiverStream) (handled bool, err error) {
+	handler := h.interactiveHandler(ctx, req, stream)
 	if handler == nil {
 		return false, nil
 	}
 
-	writeWait := make(chan struct{})
-
-	errCh := make(chan error, 2)
-
-	go func() {
-		for {
-			req, err := readRequest(logger, r)
-			if err != nil {
-				if err != io.EOF {
-					errCh <- err
-				}
-
-				close(in)
-
-				return
-			}
-
-			in <- req
-		}
-	}()
-
-	go func() {
-		defer close(writeWait)
-
-		for res := range out {
-			err := writeResponse(c, res)
-			if err != nil {
-				errCh <- err
-
-				return
-			}
-		}
-	}()
-
 	err = handler()
-
-	close(out)
-	<-writeWait
-
 	if err != nil {
 		return true, err
 	}
 
-	select {
-	case err = <-errCh:
-	default:
-	}
-
-	return true, err
+	return true, nil
 }
 
 func handleError(c net.Conn, err error) {
@@ -183,9 +131,10 @@ func handleError(c net.Conn, err error) {
 }
 
 func (h *ReqHandler) Handle(ctx context.Context, logger log.Logger, c net.Conn) error {
-	r := bufio.NewReader(c)
+	stream := NewReceiverStream(c)
+	defer stream.Close()
 
-	req, err := readRequest(logger, r)
+	req, err := stream.Recv()
 	if err != nil {
 		return err
 	}
@@ -199,11 +148,11 @@ func (h *ReqHandler) Handle(ctx context.Context, logger log.Logger, c net.Conn) 
 	}
 
 	if res != nil {
-		return writeResponse(c, res)
+		return stream.Send(res)
 	}
 
 	// Handle interactive responses.
-	handled, err := h.handleInteractive(ctx, logger, c, r, req)
+	handled, err := h.handleInteractive(ctx, req, stream)
 	if err != nil {
 		handleError(c, err)
 
@@ -214,82 +163,5 @@ func (h *ReqHandler) Handle(ctx context.Context, logger log.Logger, c net.Conn) 
 		return nil
 	}
 
-	return writeResponse(c, &UnhandledResponse{})
-}
-
-func writeResponse(w io.Writer, res Response) error {
-	header := &ResponseHeader{
-		Type: res.Type(),
-	}
-
-	// Prepare header.
-	headerData, err := json.Marshal(header)
-	if err != nil {
-		return err
-	}
-
-	// Prepare response itself.
-	responseData, err := json.Marshal(res)
-	if err != nil {
-		return err
-	}
-
-	data := headerData
-	data = append(data, byte('\n'))
-	data = append(data, responseData...)
-	data = append(data, byte('\n'))
-
-	_, err = w.Write(data)
-
-	return err
-}
-
-func readRequest(logger log.Logger, r *bufio.Reader) (Request, error) {
-	data, err := r.ReadBytes('\n')
-	if err != nil {
-		return nil, fmt.Errorf("unable to read header: %w", err)
-	}
-
-	var header RequestHeader
-	if err := json.Unmarshal(data, &header); err != nil {
-		return nil, fmt.Errorf("header unmarshal error: %s", err)
-	}
-
-	var req Request
-
-	switch header.Type {
-	case RequestTypeInit:
-		req = &InitRequest{}
-	case RequestTypeStart:
-		req = &StartRequest{}
-	case RequestTypePlan:
-		req = &PlanRequest{}
-	case RequestTypeApply:
-		req = &ApplyRequest{}
-	case RequestTypeRun:
-		req = &RunRequest{}
-	case RequestTypeGetState:
-		req = &GetStateRequest{}
-	case RequestTypeSaveState:
-		req = &SaveStateRequest{}
-	case RequestTypeCommand:
-		req = &CommandRequest{}
-	case RequestTypeReleaseLock:
-		req = &ReleaseLockRequest{}
-	case RequestTypePromptAnswer:
-		req = &PromptAnswerRequest{}
-	default:
-		logger.Fatalf("unknown request type: %d\n", header.Type)
-	}
-
-	data, err = r.ReadBytes('\n')
-	if err != nil {
-		return nil, fmt.Errorf("unable to read request: %w", err)
-	}
-
-	if err := json.Unmarshal(data, &req); err != nil {
-		return nil, fmt.Errorf("request unmarshal error: %s", err)
-	}
-
-	return req, nil
+	return stream.Send(&UnhandledResponse{})
 }

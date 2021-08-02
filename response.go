@@ -19,6 +19,7 @@ const (
 	ResponseTypePromptConfirmation
 	ResponseTypePromptSelect
 	ResponseTypePromptInput
+	ResponseTypeRunDone
 )
 
 type Response interface {

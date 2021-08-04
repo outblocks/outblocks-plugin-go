@@ -214,11 +214,28 @@ func (f *SprintfField) FieldDependencies() []interface{} {
 }
 
 func (f *SprintfField) LookupCurrent() (v string, ok bool) {
-	if !f.currentDefined {
-		return "", f.currentDefined
+	if f.currentDefined {
+		return f.current.(string), true
 	}
 
-	return f.current.(string), true
+	var args []interface{}
+
+	for _, a := range f.args {
+		v, ok := a.(InputField)
+		if !ok {
+			args = append(args, a)
+			continue
+		}
+
+		a, ok = v.LookupCurrentRaw()
+		if !ok {
+			return "", false
+		}
+
+		args = append(args, a)
+	}
+
+	return fmt.Sprintf(f.fmt, args...), true
 }
 
 func (f *SprintfField) LookupCurrentRaw() (v interface{}, ok bool) {

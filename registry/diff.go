@@ -1,7 +1,7 @@
 package registry
 
 import (
-	"fmt"
+	"context"
 
 	"github.com/outblocks/outblocks-plugin-go/registry/fields"
 	"github.com/outblocks/outblocks-plugin-go/types"
@@ -19,10 +19,88 @@ const (
 )
 
 type Diff struct {
-	Object  *ResourceWrapper
-	Type    DiffType
-	Fields  []string
-	Applied bool
+	Object *ResourceWrapper
+	Type   DiffType
+	Fields []string
+
+	applied []chan struct{}
+}
+
+func NewDiff(o *ResourceWrapper, t DiffType, fieldList []string) *Diff {
+	var applied []chan struct{}
+
+	applied = append(applied, make(chan struct{}))
+
+	if t == DiffTypeRecreate {
+		applied = append(applied, make(chan struct{}))
+	}
+
+	return &Diff{
+		Object: o,
+		Type:   t,
+		Fields: fieldList,
+
+		applied: applied,
+	}
+}
+
+func (d *Diff) Wait(steps int) {
+	for i := 0; (i < steps || steps <= 0) && i < len(d.applied); i++ {
+		<-d.applied[i]
+	}
+}
+
+func (d *Diff) WaitContext(ctx context.Context, steps int) error {
+	for i := 0; (i < steps || steps <= 0) && i < len(d.applied); i++ {
+		select {
+		case <-d.applied[i]:
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
+
+	return nil
+}
+
+func (d *Diff) IsApplied(steps int) bool {
+	for i := 0; (i < steps || steps <= 0) && i < len(d.applied); i++ {
+		select {
+		case <-d.applied[i]:
+			return true
+		default:
+			return false
+		}
+	}
+
+	return false
+}
+
+func (d *Diff) MarkStepAsApplied() {
+	d.SetApplied(d.AppliedSteps())
+}
+
+func (d *Diff) SetApplied(step int) {
+	close(d.applied[step])
+}
+
+func (d *Diff) AppliedSteps() int {
+	for i := 0; i < len(d.applied); i++ {
+		select {
+		case <-d.applied[i]:
+		default:
+			return i
+		}
+	}
+
+	return 0
+}
+
+func (d *Diff) RequiredSteps() int {
+	return len(d.applied)
+}
+
+func (d *Diff) Applied() bool {
+	return d.AppliedSteps() == d.RequiredSteps()
 }
 
 func (d *Diff) ObjectType() string {
@@ -90,11 +168,7 @@ func calculateDiff(r *ResourceWrapper, recreate bool) *Diff {
 	if rdc, ok := r.Resource.(ResourceDiffCalculator); ok {
 		typ := rdc.CalculateDiff()
 		if typ != DiffTypeNone {
-			return &Diff{
-				Object: r,
-				Type:   typ,
-				Fields: r.FieldList(),
-			}
+			return NewDiff(r, typ, r.FieldList())
 		}
 
 		return nil
@@ -107,11 +181,7 @@ func calculateDiff(r *ResourceWrapper, recreate bool) *Diff {
 			typ = DiffTypeRecreate
 		}
 
-		return &Diff{
-			Object: r,
-			Type:   typ,
-			Fields: r.FieldList(),
-		}
+		return NewDiff(r, typ, r.FieldList())
 	}
 
 	forceNew := false
@@ -144,11 +214,7 @@ func calculateDiff(r *ResourceWrapper, recreate bool) *Diff {
 		typ = DiffTypeRecreate
 	}
 
-	return &Diff{
-		Type:   typ,
-		Object: r,
-		Fields: fieldsList,
-	}
+	return NewDiff(r, typ, fieldsList)
 }
 
 func recreateObjectTree(r *ResourceWrapper, diffMap map[*ResourceWrapper]*Diff) {
@@ -166,21 +232,18 @@ func recreateObjectTree(r *ResourceWrapper, diffMap map[*ResourceWrapper]*Diff) 
 }
 
 func deleteObjectTree(r *ResourceWrapper, diffMap map[*ResourceWrapper]*Diff) {
-	fmt.Println(diffMap[r])
-
 	for d := range r.DependedBy {
+		if _, ok := d.Dependencies[r]; !ok {
+			// If it's a hanging dependency (non-mutual), skip it.
+			continue
+		}
+
 		deleteObjectTree(d, diffMap)
 	}
 
-	if !r.Resource.IsExisting() {
+	if !r.Resource.IsExisting() || r.Resource.SkipState() {
 		return
 	}
 
-	d := &Diff{
-		Type:   DiffTypeDelete,
-		Object: r,
-		Fields: r.FieldList(),
-	}
-
-	diffMap[r] = d
+	diffMap[r] = NewDiff(r, DiffTypeDelete, r.FieldList())
 }

@@ -286,6 +286,9 @@ func (r *Registry) Load(ctx context.Context, state []byte) error {
 		}
 
 		resourceMap[v.ResourceID] = rw
+
+		rw.Resource.SetState(ResourceStateExisting)
+
 		missing = append(missing, rw)
 	}
 
@@ -480,6 +483,10 @@ func (r *Registry) Diff(ctx context.Context, destroy bool) ([]*Diff, error) {
 	var diff []*Diff
 
 	for k, v := range diffMap {
+		if v == nil {
+			continue
+		}
+
 		k.Resource.SetDiff(v)
 
 		diff = append(diff, v)
@@ -501,16 +508,6 @@ func (r *Registry) Dump() ([]byte, error) {
 	return json.Marshal(resources)
 }
 
-type diffActionType struct {
-	rw     *ResourceWrapper
-	delete bool
-}
-
-type diffAction struct {
-	diff *Diff
-	wg   sync.WaitGroup
-}
-
 func waitContext(ctx context.Context, wg *sync.WaitGroup) error {
 	c := make(chan struct{})
 
@@ -527,60 +524,7 @@ func waitContext(ctx context.Context, wg *sync.WaitGroup) error {
 	}
 }
 
-func calculateDependencyWaitGroup(diffActionMap map[diffActionType]*diffAction, deps map[*ResourceWrapper]struct{}, del bool) int {
-	add := 0
-
-	for d := range deps {
-		if _, ok := diffActionMap[diffActionType{rw: d, delete: del}]; ok {
-			add++
-		}
-	}
-
-	return add
-}
-
-func prepareDiffActionMap(diff []*Diff) map[diffActionType]*diffAction {
-	diffActionMap := make(map[diffActionType]*diffAction)
-
-	for _, d := range diff {
-		action := &diffAction{
-			diff: d,
-		}
-		typ := diffActionType{rw: d.Object, delete: false}
-
-		switch d.Type {
-		case DiffTypeCreate, DiffTypeUpdate, DiffTypeProcess:
-		case DiffTypeDelete:
-			typ.delete = true
-
-		case DiffTypeRecreate:
-			// Add one more action before create.
-			diffActionMap[diffActionType{rw: d.Object, delete: true}] = &diffAction{
-				diff: d,
-			}
-
-			action.wg.Add(1)
-		case DiffTypeNone:
-			panic("unexpected diff type")
-		default:
-			panic("unknown diff type")
-		}
-
-		diffActionMap[typ] = action
-	}
-
-	for t, a := range diffActionMap {
-		if t.delete {
-			a.wg.Add(calculateDependencyWaitGroup(diffActionMap, a.diff.Object.DependedBy, t.delete))
-		} else {
-			a.wg.Add(calculateDependencyWaitGroup(diffActionMap, a.diff.Object.Dependencies, t.delete))
-		}
-	}
-
-	return diffActionMap
-}
-
-func handleDiffAction(ctx context.Context, meta interface{}, d *Diff, del bool, callback func(*types.ApplyAction)) error {
+func handleDiffAction(ctx context.Context, meta interface{}, d *Diff, callback func(*types.ApplyAction)) error {
 	if callback == nil {
 		callback = func(*types.ApplyAction) {}
 	}
@@ -632,7 +576,7 @@ func handleDiffAction(ctx context.Context, meta interface{}, d *Diff, del bool, 
 		callback(d.ToApplyAction(1, 1))
 
 	case DiffTypeRecreate:
-		if del {
+		if d.AppliedSteps() == 0 {
 			callback(d.ToApplyAction(0, 2))
 
 			err := d.Object.Resource.(ResourceCUD).Delete(ctx, meta)
@@ -662,68 +606,83 @@ func handleDiffAction(ctx context.Context, meta interface{}, d *Diff, del bool, 
 	return nil
 }
 
+func waitForDiffDeps(ctx context.Context, d *Diff, step int) error {
+	// Wait for all dependencies to finish on create/update/process.
+	if d.Type == DiffTypeCreate || d.Type == DiffTypeUpdate || d.Type == DiffTypeProcess || (d.Type == DiffTypeRecreate && step == 1) {
+		for dep := range d.Object.Dependencies {
+			resDiff := dep.Resource.Diff()
+
+			if resDiff != nil {
+				if err := resDiff.WaitContext(ctx, -1); err != nil {
+					return err
+				}
+			}
+		}
+
+		return nil
+	}
+
+	// Wait for objects that depend on me to be deleted first.
+	if d.Type == DiffTypeDelete || (d.Type == DiffTypeRecreate && step == 0) {
+		for dep := range d.Object.DependedBy {
+			resDiff := dep.Resource.Diff()
+
+			// Only wait for deletions/first-phase recreations or (if it's a simple deletion) updates.
+			if resDiff != nil && (resDiff.Type == DiffTypeDelete || resDiff.Type == DiffTypeRecreate || (d.Type == DiffTypeDelete && resDiff.Type == DiffTypeUpdate)) {
+				if err := resDiff.WaitContext(ctx, 1); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
 func (r *Registry) Apply(ctx context.Context, meta interface{}, diff []*Diff, callback func(*types.ApplyAction)) error {
 	pool, ctx := errgroup.WithConcurrency(ctx, defaultConcurrency)
-	g, _ := errgroup.WithContext(ctx)
 
-	diffActionMap := prepareDiffActionMap(diff)
+	// Add another cancel for errgroup context so that we can handle error from pool at all times.
+	ctxErrgroup, cancelErrgroup := context.WithCancel(ctx)
 
-	for t, action := range diffActionMap {
-		t := t
-		action := action
+	defer cancelErrgroup()
 
-		g.Go(func() error {
-			// Wait for all dependencies to finish.
-			err := waitContext(ctx, &action.wg)
-			if err != nil {
-				return err
-			}
+	g, _ := errgroup.WithContext(ctxErrgroup)
 
-			pool.Go(func() error {
-				d := action.diff
+	for _, d := range diff {
+		d := d
 
-				err = handleDiffAction(ctx, meta, d, t.delete, callback)
-				if err != nil {
-					return fmt.Errorf("applying changes to %s '%s' error: %w", d.ObjectType(), d.Object.Resource.GetName(), err)
+		for step := 0; step < d.RequiredSteps(); step++ {
+			step := step
+
+			g.Go(func() error {
+				if step > 0 {
+					if err := d.WaitContext(ctxErrgroup, step); err != nil {
+						return err
+					}
 				}
 
-				if action.diff.Type == DiffTypeCreate || action.diff.Type == DiffTypeUpdate || action.diff.Type == DiffTypeProcess || (action.diff.Type == DiffTypeRecreate && !t.delete) {
-					// Tell all objects that depend on me that I have been created.
-					for dep := range action.diff.Object.DependedBy {
-						a, ok := diffActionMap[diffActionType{rw: dep, delete: false}]
-						if ok {
-							a.wg.Done()
-						}
+				err := waitForDiffDeps(ctxErrgroup, d, step)
+				if err != nil {
+					return err
+				}
+
+				pool.Go(func() error {
+					err := handleDiffAction(ctx, meta, d, callback)
+					if err != nil {
+						cancelErrgroup()
+
+						return fmt.Errorf("applying changes to %s '%s' error: %w", d.ObjectType(), d.Object.Resource.GetName(), err)
 					}
 
-					action.diff.Applied = true
+					d.MarkStepAsApplied()
 
 					return nil
-				}
-
-				// When dealing with delete, tell all my dependencies that I have been deleted so they can be deleted safely as well.
-				for dep := range action.diff.Object.Dependencies {
-					a, ok := diffActionMap[diffActionType{rw: dep, delete: true}]
-					if ok {
-						a.wg.Done()
-					}
-				}
-
-				if action.diff.Type == DiffTypeRecreate {
-					// Tell myself that I have been deleted as well if we are dealing with recreate.
-					a, ok := diffActionMap[diffActionType{rw: action.diff.Object, delete: false}]
-					if ok {
-						a.wg.Done()
-					}
-				}
-
-				action.diff.Applied = true
+				})
 
 				return nil
 			})
-
-			return nil
-		})
+		}
 	}
 
 	err := g.Wait()

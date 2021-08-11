@@ -3,12 +3,13 @@ package types
 import "fmt"
 
 type App struct {
-	ID         string                 `json:"id"`
-	Name       string                 `json:"name"`
-	Type       string                 `json:"type"`
-	URL        string                 `json:"url"`
-	Needs      map[string]*AppNeed    `json:"needs"`
-	Properties map[string]interface{} `json:"properties"`
+	ID           string                 `json:"id"`
+	Name         string                 `json:"name"`
+	Type         string                 `json:"type"`
+	URL          string                 `json:"url"`
+	PathRedirect string                 `json:"path_redirect"`
+	Needs        map[string]*AppNeed    `json:"needs"`
+	Properties   map[string]interface{} `json:"properties"`
 }
 
 func (a *App) TargetName() string {

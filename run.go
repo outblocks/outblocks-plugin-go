@@ -3,8 +3,8 @@ package plugin
 import "github.com/outblocks/outblocks-plugin-go/types"
 
 type RunRequest struct {
-	Apps         []*types.App           `json:"apps"`
-	Dependencies []*types.Dependency    `json:"dependencies"`
+	Apps         []*types.AppRun        `json:"apps,omitempty"`
+	Dependencies []*types.DependencyRun `json:"dependencies,omitempty"`
 	Args         map[string]interface{} `json:"args"`
 }
 
@@ -12,11 +12,27 @@ func (r *RunRequest) Type() RequestType {
 	return RequestTypeRun
 }
 
-type RunDoneResponse struct {
-	AppStates        map[string]*types.LocalAccessInfo `json:"app_states"`
-	DependencyStates map[string]*types.LocalAccessInfo `json:"dep_states"`
+type RunningResponse struct{}
+
+func (r *RunningResponse) Type() ResponseType {
+	return ResponseTypeRunning
 }
 
-func (r *RunDoneResponse) Type() ResponseType {
-	return ResponseTypeRunDone
+type RunOutpoutSource int
+
+const (
+	RunOutpoutSourceApp RunOutpoutSource = iota + 1
+	RunOutpoutSourceDependency
+)
+
+type RunOutputResponse struct {
+	Source   RunOutpoutSource `json:"source"`
+	ID       string           `json:"id"`
+	Name     string           `json:"name"`
+	IsStderr bool             `json:"is_stderr"`
+	Message  string           `json:"message"`
+}
+
+func (r *RunOutputResponse) Type() ResponseType {
+	return ResponseTypeRunOutput
 }

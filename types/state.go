@@ -14,6 +14,7 @@ type DNS struct {
 	InternalURL string `json:"internal_url,omitempty"`
 	URL         string `json:"url"`
 	Manual      bool   `json:"manual"`
+	SSLStatus   string `json:"ssl_status"`
 }
 
 type AppState struct {

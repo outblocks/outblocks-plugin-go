@@ -7,14 +7,25 @@ type StateSource struct {
 	Created bool   `json:"created"`
 }
 
+type SSLStatus string
+
+const (
+	SSLStatusUnknown            SSLStatus = "UNKNOWN"
+	SSLStatusOK                 SSLStatus = "OK"
+	SSLStatusProvisioning       SSLStatus = "PROVISIONING"
+	SSLStatusProvisioningFailed SSLStatus = "PROVISIONING FAILED"
+	SSLStatusRenewalFailed      SSLStatus = "RENEWAL FAILED"
+)
+
 type DNS struct {
-	InternalIP  string `json:"internal_ip,omitempty"`
-	IP          string `json:"ip"`
-	CNAME       string `json:"cname,omitempty"`
-	InternalURL string `json:"internal_url,omitempty"`
-	URL         string `json:"url"`
-	Manual      bool   `json:"manual"`
-	SSLStatus   string `json:"ssl_status"`
+	InternalIP    string    `json:"internal_ip,omitempty"`
+	IP            string    `json:"ip"`
+	CNAME         string    `json:"cname,omitempty"`
+	InternalURL   string    `json:"internal_url,omitempty"`
+	URL           string    `json:"url"`
+	Manual        bool      `json:"manual"`
+	SSLStatus     SSLStatus `json:"ssl_status"`
+	SSLStatusInfo string    `json:"ssl_status_info`
 }
 
 type AppState struct {

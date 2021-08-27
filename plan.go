@@ -11,6 +11,7 @@ type PlanRequest struct {
 	PluginMap        types.PluginStateMap              `json:"plugin_state"`
 	AppStates        map[string]*types.AppState        `json:"app_states"`
 	DependencyStates map[string]*types.DependencyState `json:"dep_states"`
+	Args             map[string]interface{}            `json:"args"`
 }
 
 func (r *PlanRequest) Type() RequestType {

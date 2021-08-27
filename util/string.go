@@ -41,3 +41,11 @@ func StringSliceContains(arr []string, s string) bool {
 
 	return false
 }
+
+var (
+	validEnvVarRegex = regexp.MustCompile(`[^A-Za-z0-9_]`)
+)
+
+func SanitizeEnvVar(in string) string {
+	return validEnvVarRegex.ReplaceAllString(in, "_")
+}

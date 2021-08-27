@@ -5,6 +5,7 @@ import "github.com/outblocks/outblocks-plugin-go/types"
 type RunRequest struct {
 	Apps         []*types.AppRun        `json:"apps,omitempty"`
 	Dependencies []*types.DependencyRun `json:"dependencies,omitempty"`
+	Hosts        map[string]string      `json:"hosts,omitempty"`
 	Args         map[string]interface{} `json:"args"`
 }
 

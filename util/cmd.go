@@ -7,7 +7,7 @@ import (
 )
 
 func NewCmdAsUser(command string) *exec.Cmd {
-	if runtime.GOOS == "windows" {
+	if runtime.GOOS == GOOSWindows {
 		return exec.Command("cmd", "/C", command)
 	}
 

@@ -24,7 +24,7 @@ func CheckDir(path string) (string, bool) {
 }
 
 func ChownToUser(path string) error {
-	if runtime.GOOS == "windows" {
+	if runtime.GOOS == GOOSWindows {
 		return nil
 	}
 
@@ -51,7 +51,7 @@ func ChownRToUser(path string) error {
 }
 
 func LchownToUser(path string) error {
-	if runtime.GOOS == "windows" {
+	if runtime.GOOS == GOOSWindows {
 		return nil
 	}
 

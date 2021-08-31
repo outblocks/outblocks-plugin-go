@@ -49,3 +49,9 @@ var (
 func SanitizeEnvVar(in string) string {
 	return validEnvVarRegex.ReplaceAllString(in, "_")
 }
+
+var ansiRegex = regexp.MustCompile("[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]")
+
+func StripAnsi(in string) string {
+	return ansiRegex.ReplaceAllString(in, "")
+}

@@ -24,7 +24,7 @@ func CheckDir(path string) (string, bool) {
 }
 
 func ChownToUser(path string) error {
-	if runtime.GOOS != "windows" {
+	if runtime.GOOS == "windows" {
 		return nil
 	}
 
@@ -45,6 +45,33 @@ func ChownRToUser(path string) error {
 	return filepath.Walk(path, func(name string, info os.FileInfo, err error) error {
 		if err == nil {
 			err = ChownToUser(name)
+		}
+		return err
+	})
+}
+
+func LchownToUser(path string) error {
+	if runtime.GOOS == "windows" {
+		return nil
+	}
+
+	uidStr, ok1 := os.LookupEnv("SUDO_UID")
+	gidStr, ok2 := os.LookupEnv("SUDO_GID")
+
+	if ok1 && ok2 {
+		uid, _ := strconv.Atoi(uidStr)
+		gid, _ := strconv.Atoi(gidStr)
+
+		return os.Lchown(path, uid, gid)
+	}
+
+	return nil
+}
+
+func LchownRToUser(path string) error {
+	return filepath.Walk(path, func(name string, info os.FileInfo, err error) error {
+		if err == nil {
+			err = LchownToUser(name)
 		}
 		return err
 	})

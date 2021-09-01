@@ -23,7 +23,7 @@ func (a *AppRun) String() string {
 }
 
 func (a *AppRun) EnvPrefix() string {
-	return fmt.Sprintf("APP_%s_%s", strings.ToUpper(a.App.Type), util.SanitizeEnvVar(strings.ToUpper(a.App.Name)))
+	return fmt.Sprintf("APP_%s_%s_", strings.ToUpper(a.App.Type), util.SanitizeEnvVar(strings.ToUpper(a.App.Name)))
 }
 
 type DependencyRun struct {
@@ -39,5 +39,5 @@ func (d *DependencyRun) String() string {
 }
 
 func (d *DependencyRun) EnvPrefix() string {
-	return fmt.Sprintf("DEP_%s_%s", strings.ToUpper(d.Dependency.Type), util.SanitizeEnvVar((strings.ToUpper(d.Dependency.Name))))
+	return fmt.Sprintf("DEP_%s_%s_", strings.ToUpper(d.Dependency.Type), util.SanitizeEnvVar((strings.ToUpper(d.Dependency.Name))))
 }

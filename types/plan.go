@@ -11,7 +11,7 @@ const (
 type AppPlan struct {
 	IsDeploy bool   `json:"is_deploy"`
 	IsDNS    bool   `json:"is_dns"`
-	Path     string `json:"path"`
+	Dir      string `json:"dir"`
 	App      *App   `json:"app"`
 }
 

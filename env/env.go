@@ -12,8 +12,8 @@ func (e *Env) PluginDir() string {
 	return os.Getenv("OUTBLOCKS_PLUGIN_DIR")
 }
 
-func (e *Env) ProjectPath() string {
-	return os.Getenv("OUTBLOCKS_PROJECT_PATH")
+func (e *Env) ProjectDir() string {
+	return os.Getenv("OUTBLOCKS_PROJECT_DIR")
 }
 
 func (e *Env) ProjectName() string {

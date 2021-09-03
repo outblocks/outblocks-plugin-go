@@ -1,8 +1,6 @@
 name: CI
 on:
   push:
-    tags:
-      - v*
     branches:
       - master
   pull_request:
@@ -12,15 +10,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v2.5.2
+      - name: Install Go
+        uses: actions/setup-go@v2
         with:
-          version: v1.40.1
-          skip-build-cache: true
+          go-version: 1.17
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v2
+        with:
+          version: v1.42.0
+          skip-go-installation: true
       - name: Run go list
         run: go list -json -m all > go.list
-      - name: Nancy
-        uses: sonatype-nexus-community/nancy-github-action@v1.0.2
 
   tests-on-windows:
     needs: lint

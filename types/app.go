@@ -4,6 +4,7 @@ import "fmt"
 
 type App struct {
 	ID           string                 `json:"id"`
+	Dir          string                 `json:"dir"`
 	Name         string                 `json:"name"`
 	Type         string                 `json:"type"`
 	URL          string                 `json:"url"`

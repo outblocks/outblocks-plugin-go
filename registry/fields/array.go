@@ -16,6 +16,7 @@ type ArrayInputField interface {
 
 	LookupWanted() ([]interface{}, bool)
 	Wanted() []interface{}
+	SetWanted([]interface{})
 	Any() []interface{}
 }
 
@@ -54,6 +55,10 @@ func (f *ArrayField) LookupCurrent() (v []interface{}, ok bool) {
 	}
 
 	return f.Serialize(f.current).([]interface{}), true
+}
+
+func (f *ArrayField) SetWanted(i []interface{}) {
+	f.setWanted(interfaceArrayToFieldArray(i))
 }
 
 func (f *ArrayField) LookupWanted() (v []interface{}, ok bool) {

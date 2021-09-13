@@ -12,6 +12,7 @@ type BoolInputField interface {
 
 	LookupWanted() (bool, bool)
 	Wanted() bool
+	SetWanted(bool)
 	Any() bool
 }
 
@@ -50,6 +51,10 @@ func (f *BoolField) LookupCurrent() (v, ok bool) {
 	}
 
 	return f.current.(bool), true
+}
+
+func (f *BoolField) SetWanted(i bool) {
+	f.setWanted(i)
 }
 
 func (f *BoolField) LookupWanted() (v, ok bool) {

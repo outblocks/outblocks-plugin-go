@@ -69,6 +69,11 @@ func (f *FieldBase) setCurrent(i interface{}) {
 	f.current = i
 }
 
+func (f *FieldBase) setWanted(i interface{}) {
+	f.wantedDefined = true
+	f.wanted = i
+}
+
 func (f *FieldBase) IsChanged() bool {
 	if !f.wantedDefined {
 		return false

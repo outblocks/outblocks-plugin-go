@@ -17,6 +17,7 @@ type MapInputField interface {
 
 	LookupWanted() (map[string]interface{}, bool)
 	Wanted() map[string]interface{}
+	SetWanted(map[string]interface{})
 	Any() map[string]interface{}
 }
 
@@ -59,6 +60,10 @@ func (f *MapField) LookupCurrent() (v map[string]interface{}, ok bool) {
 	}
 
 	return f.Serialize(f.current).(map[string]interface{}), true
+}
+
+func (f *MapField) SetWanted(i map[string]interface{}) {
+	f.setWanted(interfaceMapToFieldMap(i))
 }
 
 func (f *MapField) LookupWanted() (v map[string]interface{}, ok bool) {

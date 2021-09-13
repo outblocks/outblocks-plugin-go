@@ -36,6 +36,10 @@ type ResourceReader interface {
 	Read(ctx context.Context, meta interface{}) error
 }
 
+type ResourceIniter interface {
+	Init(ctx context.Context, meta interface{}, opts *Options) error
+}
+
 type ResourceProcessor interface {
 	Process(ctx context.Context, meta interface{}) error
 }
@@ -155,7 +159,7 @@ func (w *ResourceWrapper) MarshalJSON() ([]byte, error) {
 	props := make(map[string]interface{})
 
 	for k, v := range w.Fields {
-		if v.Type.Properties.Ignored || v.Type.Properties.Computed {
+		if v.Type.Properties.Ignored {
 			continue
 		}
 

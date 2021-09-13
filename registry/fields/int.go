@@ -12,6 +12,7 @@ type IntInputField interface {
 
 	LookupWanted() (int, bool)
 	Wanted() int
+	SetWanted(int)
 	Any() int
 }
 
@@ -50,6 +51,10 @@ func (f *IntField) LookupCurrent() (v int, ok bool) {
 	}
 
 	return f.current.(int), true
+}
+
+func (f *IntField) SetWanted(i int) {
+	f.setWanted(i)
 }
 
 func (f *IntField) LookupWanted() (v int, ok bool) {

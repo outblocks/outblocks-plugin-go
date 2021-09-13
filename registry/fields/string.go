@@ -17,6 +17,7 @@ type StringInputField interface {
 
 	LookupWanted() (string, bool)
 	Wanted() string
+	SetWanted(string)
 	Any() string
 }
 
@@ -55,6 +56,10 @@ func (f *StringField) LookupCurrent() (v string, ok bool) {
 	}
 
 	return f.current.(string), true
+}
+
+func (f *StringField) SetWanted(i string) {
+	f.setWanted(i)
 }
 
 func (f *StringField) LookupWanted() (v string, ok bool) {
@@ -178,6 +183,10 @@ func (f *SprintfField) LookupWanted() (string, bool) {
 	}
 
 	return fmt.Sprintf(f.fmt, args...), true
+}
+
+func (f *SprintfField) SetWanted(i string) {
+	f.setWanted(i)
 }
 
 func (f *SprintfField) LookupWantedRaw() (interface{}, bool) {

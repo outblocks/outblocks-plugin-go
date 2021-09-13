@@ -29,6 +29,10 @@ type Registry struct {
 	existing    []*ResourceWrapper
 }
 
+type Options struct {
+	Read bool
+}
+
 func NewRegistry() *Registry {
 	return &Registry{
 		fieldMap:    make(map[interface{}]*ResourceWrapper),
@@ -218,7 +222,11 @@ func (r *Registry) Register(o Resource, namespace, id string) error {
 	return nil
 }
 
-func (r *Registry) Load(ctx context.Context, state []byte) error {
+func (r *Registry) Load(ctx context.Context, state []byte, meta interface{}, opts *Options) error {
+	if opts == nil {
+		opts = &Options{}
+	}
+
 	if len(state) == 0 {
 		return nil
 	}
@@ -317,10 +325,42 @@ func (r *Registry) Load(ctx context.Context, state []byte) error {
 
 	r.existing = missing
 
+	// Init where needed.
+	err = r.init(ctx, meta, opts)
+	if err != nil {
+		return err
+	}
+
+	// Read where needed.
+	err = r.read(ctx, meta)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func (r *Registry) Read(ctx context.Context, meta interface{}) error {
+func (r *Registry) init(ctx context.Context, meta interface{}, opts *Options) error {
+	return r.processInOrder(ctx, func(res *ResourceWrapper) error {
+		if rr, ok := res.Resource.(ResourceIniter); ok {
+			return rr.Init(ctx, meta, opts)
+		}
+
+		return nil
+	})
+}
+
+func (r *Registry) read(ctx context.Context, meta interface{}) error {
+	return r.processInOrder(ctx, func(res *ResourceWrapper) error {
+		if rr, ok := res.Resource.(ResourceReader); ok {
+			return rr.Read(ctx, meta)
+		}
+
+		return nil
+	})
+}
+
+func (r *Registry) processInOrder(ctx context.Context, f func(res *ResourceWrapper) error) error {
 	pool, ctx := errgroup.WithConcurrency(ctx, defaultConcurrency)
 	g, _ := errgroup.WithContext(ctx)
 
@@ -346,11 +386,9 @@ func (r *Registry) Read(ctx context.Context, meta interface{}) error {
 			}
 
 			pool.Go(func() error {
-				if rr, ok := res.Resource.(ResourceReader); ok {
-					err := rr.Read(ctx, meta)
-					if err != nil {
-						return err
-					}
+				err := f(res)
+				if err != nil {
+					return err
 				}
 
 				for dep := range res.DependedBy {
@@ -385,63 +423,73 @@ var (
 	arrayOutputType  = reflect.TypeOf((*fields.ArrayOutputField)(nil)).Elem()
 )
 
+func mapFieldDefaultValue(typ *FieldTypeInfo) interface{} {
+	defaultTag := typ.Default
+	ok := typ.DefaultSet
+
+	var val interface{}
+
+	switch typ.ReflectType.Type {
+	// String.
+	case stringInputType:
+		if ok {
+			val = fields.String(defaultTag)
+		} else {
+			val = fields.StringUnset()
+		}
+	case stringOutputType:
+		val = fields.StringUnsetOutput()
+
+		// Bool.
+	case boolInputType:
+		if ok {
+			val = fields.Bool(defaultTag == "1" || defaultTag == "true")
+		} else {
+			val = fields.BoolUnset()
+		}
+	case boolOutputType:
+		val = fields.StringUnsetOutput()
+
+		// Int.
+	case intInputType:
+		if ok {
+			v, _ := strconv.Atoi(defaultTag)
+			val = fields.Int(v)
+		} else {
+			val = fields.IntUnset()
+		}
+	case intOutputType:
+		val = fields.IntUnsetOutput()
+
+		// Map.
+	case mapInputType:
+		val = fields.MapUnset()
+	case mapOutputType:
+		val = fields.MapUnsetOutput()
+
+		// Array.
+	case arrayInputType:
+		val = fields.ArrayUnset()
+	case arrayOutputType:
+		val = fields.ArrayUnsetOutput()
+	}
+
+	return val
+}
+
 func setFieldDefaults(r *ResourceWrapper) error {
 	for _, f := range r.Fields {
-		if f.Type.Properties.Ignored || f.Type.Properties.Computed || !f.Value.IsNil() || !f.Value.CanSet() {
+		if f.Type.Properties.Ignored || !f.Value.IsNil() || !f.Value.CanSet() {
 			continue
 		}
 
-		defaultTag := f.Type.Default
-		ok := f.Type.DefaultSet
+		if f.Type.Properties.Computed && !f.Value.IsNil() {
+			return fmt.Errorf("%s.%s: computed field set to non-nil", r.Type, f.Type.ReflectType.Name)
+		}
 
-		var val interface{}
-
-		switch f.Type.ReflectType.Type {
-		// String.
-		case stringInputType:
-			if ok {
-				val = fields.String(defaultTag)
-			} else {
-				val = fields.StringUnset()
-			}
-		case stringOutputType:
-			val = fields.StringUnsetOutput()
-
-			// Bool.
-		case boolInputType:
-			if ok {
-				val = fields.Bool(defaultTag == "1" || defaultTag == "true")
-			} else {
-				val = fields.BoolUnset()
-			}
-		case boolOutputType:
-			val = fields.StringUnsetOutput()
-
-			// Int.
-		case intInputType:
-			if ok {
-				v, _ := strconv.Atoi(defaultTag)
-				val = fields.Int(v)
-			} else {
-				val = fields.IntUnset()
-			}
-		case intOutputType:
-			val = fields.IntUnsetOutput()
-
-			// Map.
-		case mapInputType:
-			val = fields.MapUnset()
-		case mapOutputType:
-			val = fields.MapUnsetOutput()
-
-			// Array.
-		case arrayInputType:
-			val = fields.ArrayUnset()
-		case arrayOutputType:
-			val = fields.ArrayUnsetOutput()
-
-		default:
-			return fmt.Errorf("unknown field type %s", f.Type.ReflectType.Type)
+		val := mapFieldDefaultValue(f.Type)
+		if val == nil {
+			return fmt.Errorf("%s.%s: unknown field type %s", r.Type, f.Type.ReflectType.Name, f.Type.ReflectType.Type)
 		}
 
 		f.Value.Set(reflect.ValueOf(val))

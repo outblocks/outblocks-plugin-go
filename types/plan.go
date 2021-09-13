@@ -9,10 +9,9 @@ const (
 )
 
 type AppPlan struct {
-	IsDeploy bool   `json:"is_deploy"`
-	IsDNS    bool   `json:"is_dns"`
-	Dir      string `json:"dir"`
-	App      *App   `json:"app"`
+	IsDeploy bool `json:"is_deploy"`
+	IsDNS    bool `json:"is_dns"`
+	App      *App `json:"app"`
 }
 
 func (a *AppPlan) String() string {

@@ -10,7 +10,6 @@ import (
 type AppRun struct {
 	App        *App                   `json:"app"`
 	Command    string                 `json:"command"`
-	Dir        string                 `json:"Dir"`
 	Env        map[string]string      `json:"env"`
 	URL        string                 `json:"url"`
 	IP         string                 `json:"ip"`

@@ -2,9 +2,6 @@ package types
 
 import (
 	"fmt"
-	"strings"
-
-	"github.com/outblocks/outblocks-plugin-go/util"
 )
 
 type AppRun struct {
@@ -21,10 +18,6 @@ func (a *AppRun) String() string {
 	return fmt.Sprintf("AppRun<App=%s,IP=%s,Port=%d>", a.App, a.IP, a.Port)
 }
 
-func (a *AppRun) EnvPrefix() string {
-	return fmt.Sprintf("APP_%s_%s_", strings.ToUpper(a.App.Type), util.SanitizeEnvVar(strings.ToUpper(a.App.Name)))
-}
-
 type DependencyRun struct {
 	Dependency *Dependency            `json:"dependency"`
 	Env        map[string]string      `json:"env"`
@@ -35,8 +28,4 @@ type DependencyRun struct {
 
 func (d *DependencyRun) String() string {
 	return fmt.Sprintf("DepRun<Dep=%s>", d.Dependency)
-}
-
-func (d *DependencyRun) EnvPrefix() string {
-	return fmt.Sprintf("DEP_%s_%s_", strings.ToUpper(d.Dependency.Type), util.SanitizeEnvVar((strings.ToUpper(d.Dependency.Name))))
 }

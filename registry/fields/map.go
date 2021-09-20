@@ -149,7 +149,7 @@ func (f *MapField) FieldDependencies() []interface{} {
 }
 
 func (f *MapField) IsChanged() bool {
-	if f.current == nil || f.wanted == nil {
+	if f.current == nil || f.wanted == nil || f.invalidated {
 		return f.FieldBase.IsChanged()
 	}
 

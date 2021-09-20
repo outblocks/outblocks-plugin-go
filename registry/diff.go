@@ -174,6 +174,10 @@ func calculateDiff(r *ResourceWrapper, recreate bool) *Diff {
 		return nil
 	}
 
+	if rbdh, ok := r.Resource.(ResourceBeforeDiffHook); ok {
+		rbdh.BeforeDiff()
+	}
+
 	if r.Resource.IsNew() || recreate {
 		typ := DiffTypeCreate
 

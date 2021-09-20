@@ -54,6 +54,10 @@ type ResourceDiffCalculator interface {
 	CalculateDiff() DiffType
 }
 
+type ResourceBeforeDiffHook interface {
+	BeforeDiff()
+}
+
 type ResourceTypeVerbose interface {
 	GetType() string
 }
@@ -123,10 +127,10 @@ type ResourceSerialized struct {
 type ResourceWrapper struct {
 	ResourceID
 
-	Fields       map[string]*FieldInfo         `json:"-"`
-	DependedBy   map[*ResourceWrapper]struct{} `json:"-"`
-	Dependencies map[*ResourceWrapper]struct{} `json:"-"`
-	Resource     Resource                      `json:"-"`
+	Fields       map[string]*FieldInfo
+	DependedBy   map[*ResourceWrapper]struct{}
+	Dependencies map[*ResourceWrapper]struct{}
+	Resource     Resource
 }
 
 func (w *ResourceWrapper) SetFieldValues(props map[string]interface{}) error {

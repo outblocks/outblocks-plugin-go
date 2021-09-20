@@ -143,7 +143,7 @@ func (f *ArrayField) FieldDependencies() []interface{} {
 }
 
 func (f *ArrayField) IsChanged() bool {
-	if f.current == nil || f.wanted == nil {
+	if f.current == nil || f.wanted == nil || f.invalidated {
 		return f.FieldBase.IsChanged()
 	}
 

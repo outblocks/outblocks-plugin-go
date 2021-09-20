@@ -94,7 +94,7 @@ type IStringField struct {
 }
 
 func (f *IStringField) IsChanged() bool {
-	if f.current == nil || f.wanted == nil {
+	if f.current == nil || f.wanted == nil || f.invalidated {
 		return f.StringField.IsChanged()
 	}
 
@@ -142,7 +142,7 @@ func (f *SprintfField) Any() string {
 		}
 
 		a, ok = v.LookupCurrentRaw()
-		if !ok {
+		if !ok || !v.IsValid() {
 			panic("cannot get value of argument")
 		}
 
@@ -175,7 +175,7 @@ func (f *SprintfField) LookupWanted() (string, bool) {
 		}
 
 		a, ok = v.LookupCurrentRaw()
-		if !ok {
+		if !ok || !v.IsValid() {
 			return "", false
 		}
 
@@ -237,7 +237,7 @@ func (f *SprintfField) LookupCurrent() (v string, ok bool) {
 		}
 
 		a, ok = v.LookupCurrentRaw()
-		if !ok {
+		if !ok || !v.IsValid() {
 			return "", false
 		}
 

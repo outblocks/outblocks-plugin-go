@@ -4,6 +4,8 @@ import "fmt"
 
 type ValueTracker interface {
 	IsChanged() bool
+	IsValid() bool
+	Invalidate()
 }
 
 type FieldDependencyHolder interface {
@@ -34,6 +36,7 @@ type FieldBase struct {
 	isOutput                      bool
 	currentDefined, wantedDefined bool
 	current, wanted               interface{}
+	invalidated                   bool
 }
 
 func BasicValue(n interface{}, output bool) FieldBase {
@@ -66,6 +69,7 @@ func (f *FieldBase) UnsetCurrent() {
 
 func (f *FieldBase) setCurrent(i interface{}) {
 	f.currentDefined = true
+	f.invalidated = false
 	f.current = i
 }
 
@@ -74,7 +78,19 @@ func (f *FieldBase) setWanted(i interface{}) {
 	f.wanted = i
 }
 
+func (f *FieldBase) IsValid() bool {
+	return !f.invalidated
+}
+
+func (f *FieldBase) Invalidate() {
+	f.invalidated = true
+}
+
 func (f *FieldBase) IsChanged() bool {
+	if f.invalidated {
+		return true
+	}
+
 	if !f.wantedDefined {
 		return false
 	}

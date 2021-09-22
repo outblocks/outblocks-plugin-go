@@ -227,7 +227,10 @@ func recreateObjectTree(r *ResourceWrapper, diffMap map[*ResourceWrapper]*Diff) 
 			continue
 		}
 
-		diffMap[d] = calculateDiff(d, true)
+		diff := calculateDiff(d, true)
+		if diff != nil {
+			diffMap[d] = diff
+		}
 
 		if len(d.DependedBy) > 0 {
 			recreateObjectTree(d, diffMap)
@@ -235,17 +238,12 @@ func recreateObjectTree(r *ResourceWrapper, diffMap map[*ResourceWrapper]*Diff) 
 	}
 }
 
-func deleteObjectTree(r *ResourceWrapper, diffMap map[*ResourceWrapper]*Diff) {
+func deleteObjectTree(r *ResourceWrapper, diffMap map[*ResourceWrapper]*Diff, onlyUnregistered bool) {
 	for d := range r.DependedBy {
-		if _, ok := d.Dependencies[r]; !ok {
-			// If it's a hanging dependency (non-mutual), skip it.
-			continue
-		}
-
-		deleteObjectTree(d, diffMap)
+		deleteObjectTree(d, diffMap, onlyUnregistered)
 	}
 
-	if !r.Resource.IsExisting() || r.Resource.SkipState() {
+	if !r.Resource.IsExisting() || r.Resource.SkipState() || (onlyUnregistered && r.IsRegistered) {
 		return
 	}
 

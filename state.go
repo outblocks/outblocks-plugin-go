@@ -9,7 +9,6 @@ import (
 // Get State.
 type GetStateRequest struct {
 	StateType  string                 `json:"type"`
-	Env        string                 `json:"env"`
 	Properties map[string]interface{} `json:"properties"`
 	Lock       bool                   `json:"lock"`
 }
@@ -32,7 +31,6 @@ func (r *GetStateResponse) Type() ResponseType {
 type ReleaseLockRequest struct {
 	LockID     string                 `json:"lock_id"`
 	StateType  string                 `json:"type"`
-	Env        string                 `json:"env"`
 	Properties map[string]interface{} `json:"properties"`
 }
 
@@ -58,7 +56,6 @@ func (r *LockErrorResponse) Error() string {
 type SaveStateRequest struct {
 	State      *types.StateData       `json:"state"`
 	StateType  string                 `json:"type"`
-	Env        string                 `json:"env"`
 	Properties map[string]interface{} `json:"properties"`
 }
 

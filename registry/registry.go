@@ -173,6 +173,7 @@ func (r *Registry) Register(o Resource, namespace, id string) error {
 		Resource:     o,
 		DependedBy:   make(map[*ResourceWrapper]struct{}),
 		Dependencies: make(map[*ResourceWrapper]struct{}),
+		IsRegistered: true,
 	}
 	r.resourceMap[resourceID] = rw
 
@@ -281,6 +282,7 @@ func (r *Registry) Load(ctx context.Context, state []byte, meta interface{}, opt
 			Resource:     obj.Interface().(Resource),
 			DependedBy:   make(map[*ResourceWrapper]struct{}),
 			Dependencies: make(map[*ResourceWrapper]struct{}),
+			IsRegistered: false,
 		}
 
 		err := setFieldDefaults(rw)
@@ -311,6 +313,7 @@ func (r *Registry) Load(ctx context.Context, state []byte, meta interface{}, opt
 			}
 
 			rw.DependedBy[dep] = struct{}{}
+			dep.Dependencies[rw] = struct{}{}
 		}
 
 		for _, d := range v.Dependencies {
@@ -320,6 +323,7 @@ func (r *Registry) Load(ctx context.Context, state []byte, meta interface{}, opt
 			}
 
 			rw.Dependencies[dep] = struct{}{}
+			dep.DependedBy[rw] = struct{}{}
 		}
 	}
 
@@ -364,9 +368,13 @@ func (r *Registry) processInOrder(ctx context.Context, f func(res *ResourceWrapp
 	pool, ctx := errgroup.WithConcurrency(ctx, defaultConcurrency)
 	g, _ := errgroup.WithContext(ctx)
 
-	resMap := make(map[*ResourceWrapper]*sync.WaitGroup, len(r.resources))
+	allResources := make([]*ResourceWrapper, len(r.resources), len(r.resources)+len(r.existing))
+	copy(allResources, r.resources)
+	allResources = append(allResources, r.existing...)
 
-	for _, res := range r.resources {
+	resMap := make(map[*ResourceWrapper]*sync.WaitGroup, len(allResources))
+
+	for _, res := range allResources {
 		var wg sync.WaitGroup
 
 		wg.Add(len(res.Dependencies))
@@ -503,13 +511,13 @@ func (r *Registry) Diff(ctx context.Context, destroy bool) ([]*Diff, error) {
 
 	// Add all missing resources as deletions.
 	for _, o := range r.existing {
-		deleteObjectTree(o, diffMap)
+		deleteObjectTree(o, diffMap, true)
 	}
 
 	// Process other ops.
 	for _, o := range r.resources {
 		if destroy {
-			deleteObjectTree(o, diffMap)
+			deleteObjectTree(o, diffMap, false)
 			continue
 		}
 
@@ -660,7 +668,8 @@ func waitForDiffDeps(ctx context.Context, d *Diff, step int) error {
 		for dep := range d.Object.Dependencies {
 			resDiff := dep.Resource.Diff()
 
-			if resDiff != nil {
+			// No need to wait for deletions, otherwise wait for dependency.
+			if resDiff != nil && resDiff.Type != DiffTypeDelete {
 				if err := resDiff.WaitContext(ctx, -1); err != nil {
 					return err
 				}

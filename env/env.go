@@ -19,3 +19,11 @@ func (e *Env) ProjectDir() string {
 func (e *Env) ProjectName() string {
 	return os.Getenv("OUTBLOCKS_PROJECT_NAME")
 }
+
+func (e *Env) ProjectID() string {
+	return os.Getenv("OUTBLOCKS_PROJECT_ID")
+}
+
+func (e *Env) Env() string {
+	return os.Getenv("OUTBLOCKS_ENV")
+}

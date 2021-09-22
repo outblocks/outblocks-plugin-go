@@ -3,6 +3,7 @@ package registry
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/outblocks/outblocks-plugin-go/registry/fields"
 )
@@ -131,6 +132,11 @@ type ResourceWrapper struct {
 	DependedBy   map[*ResourceWrapper]struct{}
 	Dependencies map[*ResourceWrapper]struct{}
 	Resource     Resource
+	IsRegistered bool
+}
+
+func (w *ResourceWrapper) String() string {
+	return fmt.Sprintf("ResourceWrapper<ID=%s,Type=%s,Ns=%s>", w.ID, w.Type, w.Namespace)
 }
 
 func (w *ResourceWrapper) SetFieldValues(props map[string]interface{}) error {

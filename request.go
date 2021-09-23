@@ -21,7 +21,7 @@ type Request interface {
 }
 
 var (
-	_ Request = (*InitRequest)(nil)
+	_ Request = (*ProjectInitRequest)(nil)
 	_ Request = (*StartRequest)(nil)
 	_ Request = (*ApplyRequest)(nil)
 	_ Request = (*PlanRequest)(nil)

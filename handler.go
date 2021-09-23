@@ -8,18 +8,18 @@ import (
 )
 
 type ReqHandler struct {
-	Init               func(ctx context.Context, r *InitRequest) (Response, error)
-	InitInteractive    func(ctx context.Context, r *InitRequest, stream *ReceiverStream) error
-	Start              func(ctx context.Context, r *StartRequest) (Response, error)
-	StartInteractive   func(ctx context.Context, r *StartRequest, stream *ReceiverStream) error
-	Plan               func(ctx context.Context, r *PlanRequest) (Response, error)
-	PlanInteractive    func(ctx context.Context, r *PlanRequest, stream *ReceiverStream) error
-	Apply              func(ctx context.Context, r *ApplyRequest) (Response, error)
-	ApplyInteractive   func(ctx context.Context, r *ApplyRequest, stream *ReceiverStream) error
-	Run                func(ctx context.Context, r *RunRequest) (Response, error)
-	RunInteractive     func(ctx context.Context, r *RunRequest, stream *ReceiverStream) error
-	Command            func(ctx context.Context, r *CommandRequest) (Response, error)
-	CommandInteractive func(ctx context.Context, r *CommandRequest, stream *ReceiverStream) error
+	ProjectInit            func(ctx context.Context, r *ProjectInitRequest) (Response, error)
+	ProjectInitInteractive func(ctx context.Context, r *ProjectInitRequest, stream *ReceiverStream) error
+	Start                  func(ctx context.Context, r *StartRequest) (Response, error)
+	StartInteractive       func(ctx context.Context, r *StartRequest, stream *ReceiverStream) error
+	Plan                   func(ctx context.Context, r *PlanRequest) (Response, error)
+	PlanInteractive        func(ctx context.Context, r *PlanRequest, stream *ReceiverStream) error
+	Apply                  func(ctx context.Context, r *ApplyRequest) (Response, error)
+	ApplyInteractive       func(ctx context.Context, r *ApplyRequest, stream *ReceiverStream) error
+	Run                    func(ctx context.Context, r *RunRequest) (Response, error)
+	RunInteractive         func(ctx context.Context, r *RunRequest, stream *ReceiverStream) error
+	Command                func(ctx context.Context, r *CommandRequest) (Response, error)
+	CommandInteractive     func(ctx context.Context, r *CommandRequest, stream *ReceiverStream) error
 
 	// Cleanup
 	Cleanup func() error
@@ -32,9 +32,9 @@ type ReqHandler struct {
 
 func (h *ReqHandler) handleSync(ctx context.Context, req Request) (res Response, err error) {
 	switch v := req.(type) {
-	case *InitRequest:
-		if h.Init != nil {
-			res, err = h.Init(ctx, v)
+	case *ProjectInitRequest:
+		if h.ProjectInit != nil {
+			res, err = h.ProjectInit(ctx, v)
 		}
 	case *StartRequest:
 		if h.Start != nil {
@@ -75,9 +75,9 @@ func (h *ReqHandler) handleSync(ctx context.Context, req Request) (res Response,
 
 func (h *ReqHandler) interactiveHandler(ctx context.Context, req Request, stream *ReceiverStream) func() error {
 	switch v := req.(type) {
-	case *InitRequest:
-		if h.InitInteractive != nil {
-			return func() error { return h.InitInteractive(ctx, v, stream) }
+	case *ProjectInitRequest:
+		if h.ProjectInitInteractive != nil {
+			return func() error { return h.ProjectInitInteractive(ctx, v, stream) }
 		}
 	case *StartRequest:
 		if h.StartInteractive != nil {

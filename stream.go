@@ -73,7 +73,7 @@ func readRequest(r *bufio.Reader) (Request, error) {
 
 	switch header.Type {
 	case RequestTypeInit:
-		req = &InitRequest{}
+		req = &ProjectInitRequest{}
 	case RequestTypeStart:
 		req = &StartRequest{}
 	case RequestTypePlan:

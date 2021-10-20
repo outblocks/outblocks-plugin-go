@@ -23,6 +23,8 @@ type ArrayInputField interface {
 type ArrayOutputField interface {
 	arrayBaseField
 	OutputField
+
+	Input() ArrayInputField
 }
 
 type ArrayField struct {
@@ -151,6 +153,10 @@ func (f *ArrayField) IsChanged() bool {
 	wanted := f.Wanted()
 
 	return !reflect.DeepEqual(cur, wanted)
+}
+
+func (f *ArrayField) Input() ArrayInputField {
+	return f
 }
 
 func interfaceArrayToFieldArray(in []interface{}) []Field {

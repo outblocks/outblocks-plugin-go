@@ -336,9 +336,11 @@ func (r *Registry) Load(ctx context.Context, state []byte, meta interface{}, opt
 	}
 
 	// Read where needed.
-	err = r.read(ctx, meta)
-	if err != nil {
-		return err
+	if opts.Read {
+		err = r.read(ctx, meta)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

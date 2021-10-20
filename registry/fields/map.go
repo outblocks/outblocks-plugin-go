@@ -25,9 +25,7 @@ type MapOutputField interface {
 	mapBaseField
 	OutputField
 
-	SetCurrent(map[string]interface{})
-	LookupCurrent() (map[string]interface{}, bool)
-	Current() map[string]interface{}
+	Input() MapInputField
 }
 
 type MapField struct {
@@ -157,6 +155,10 @@ func (f *MapField) IsChanged() bool {
 	wanted := f.Wanted()
 
 	return !reflect.DeepEqual(cur, wanted)
+}
+
+func (f *MapField) Input() MapInputField {
+	return f
 }
 
 func mapFieldFromInterface(i interface{}) Field {

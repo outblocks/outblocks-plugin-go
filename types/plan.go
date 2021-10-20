@@ -12,6 +12,7 @@ type AppPlan struct {
 	IsDeploy   bool                   `json:"is_deploy"`
 	IsDNS      bool                   `json:"is_dns"`
 	App        *App                   `json:"app"`
+	Env        map[string]string      `json:"env"`
 	Properties map[string]interface{} `json:"properties"`
 }
 
@@ -20,8 +21,7 @@ func (a *AppPlan) String() string {
 }
 
 type DependencyPlan struct {
-	Dependency *Dependency            `json:"dependency"`
-	Properties map[string]interface{} `json:"properties"`
+	Dependency *Dependency `json:"dependency"`
 }
 
 func (d *DependencyPlan) String() string {

@@ -19,6 +19,8 @@ type BoolInputField interface {
 type BoolOutputField interface {
 	boolBaseField
 	OutputField
+
+	Input() BoolInputField
 }
 
 type BoolField struct {
@@ -82,4 +84,8 @@ func (f *BoolField) Any() bool {
 	}
 
 	return any.(bool)
+}
+
+func (f *BoolField) Input() BoolInputField {
+	return f
 }

@@ -19,6 +19,8 @@ type IntInputField interface {
 type IntOutputField interface {
 	intBaseField
 	OutputField
+
+	Input() IntInputField
 }
 
 type IntField struct {
@@ -82,4 +84,8 @@ func (f *IntField) Any() int {
 	}
 
 	return any.(int)
+}
+
+func (f *IntField) Input() IntInputField {
+	return f
 }

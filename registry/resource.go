@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/outblocks/outblocks-plugin-go/registry/fields"
+	"github.com/outblocks/outblocks-plugin-go/util"
 )
 
 type ResourceState int
@@ -15,6 +16,8 @@ const (
 	ResourceStateExisting
 	ResourceStateDeleted
 )
+
+var mutexKV = util.NewMutexKV()
 
 type Resource interface {
 	GetName() string
@@ -110,6 +113,14 @@ func (b *ResourceBase) MarkAsDeleted() {
 
 func (b *ResourceBase) SkipState() bool {
 	return false
+}
+
+func (b *ResourceBase) Lock(k string) {
+	mutexKV.Lock(k)
+}
+
+func (b *ResourceBase) Unlock(k string) {
+	mutexKV.Unlock(k)
 }
 
 type ResourceID struct {

@@ -24,6 +24,8 @@ type StringInputField interface {
 type StringOutputField interface {
 	stringBaseField
 	OutputField
+
+	Input() StringInputField
 }
 
 type StringField struct {
@@ -87,6 +89,10 @@ func (f *StringField) Any() string {
 	}
 
 	return any.(string)
+}
+
+func (f *StringField) Input() StringInputField {
+	return f
 }
 
 type IStringField struct {

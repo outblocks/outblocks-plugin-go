@@ -34,3 +34,7 @@ type AppNeed struct {
 	Dependency string                 `json:"dependency"`
 	Properties map[string]interface{} `json:"properties"`
 }
+
+func (a *AppNeed) String() string {
+	return fmt.Sprintf("AppNeed<Dep=%s>", a.Dependency)
+}

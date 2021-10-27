@@ -7,6 +7,11 @@ import (
 	"golang.org/x/sync/semaphore"
 )
 
+type Runner interface {
+	Go(f func() error)
+	Wait() error
+}
+
 type Group struct {
 	*errgroup.Group
 
@@ -14,11 +19,11 @@ type Group struct {
 	sem *semaphore.Weighted
 }
 
-func WithContext(ctx context.Context) (*errgroup.Group, context.Context) {
+func WithContext(ctx context.Context) (Runner, context.Context) {
 	return errgroup.WithContext(ctx)
 }
 
-func WithConcurrency(ctx context.Context, concurrency int) (*Group, context.Context) {
+func WithConcurrency(ctx context.Context, concurrency int) (Runner, context.Context) {
 	sem := semaphore.NewWeighted(int64(concurrency))
 	gr, ctx := errgroup.WithContext(ctx)
 

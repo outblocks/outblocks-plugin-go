@@ -58,7 +58,6 @@ linters:
     - gocyclo
     - gofmt
     - goimports
-    - golint
     - goprintffuncname
     - gosimple
     - govet
@@ -68,6 +67,7 @@ linters:
     - nestif
     - noctx
     - nolintlint
+    - revive
     - rowserrcheck
     - staticcheck
     - structcheck
@@ -85,6 +85,7 @@ linters:
     # - gochecknoglobals
     # - gochecknoinits
     # - godox
+    # - golint
     # - gocognit
     # - gomnd
     # - gosec

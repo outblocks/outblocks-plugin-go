@@ -36,6 +36,10 @@ func Map(val map[string]Field) MapInputField {
 	return &MapField{FieldBase: BasicValue(val, false)}
 }
 
+func MapLazy(f func() map[string]Field) MapInputField {
+	return &MapField{FieldBase: BasicValueLazy(func() interface{} { return f() })}
+}
+
 func MapUnset() MapInputField {
 	return &MapField{FieldBase: BasicValueUnset(false)}
 }
@@ -57,7 +61,7 @@ func (f *MapField) LookupCurrent() (v map[string]interface{}, ok bool) {
 		return nil, f.currentDefined
 	}
 
-	return f.Serialize(f.current).(map[string]interface{}), true
+	return f.Serialize(f.currentVal).(map[string]interface{}), true
 }
 
 func (f *MapField) SetWanted(i map[string]interface{}) {
@@ -69,7 +73,7 @@ func (f *MapField) LookupWanted() (v map[string]interface{}, ok bool) {
 		return nil, false
 	}
 
-	return f.Serialize(f.wanted).(map[string]interface{}), true
+	return f.Serialize(f.wanted()).(map[string]interface{}), true
 }
 
 func (f *MapField) Wanted() map[string]interface{} {
@@ -123,13 +127,13 @@ func (f *MapField) Serialize(i interface{}) interface{} {
 }
 
 func (f *MapField) FieldDependencies() []interface{} {
-	if f.wanted == nil {
+	if f.wanted() == nil {
 		return nil
 	}
 
 	var deps []interface{}
 
-	for _, v := range f.wanted.(map[string]Field) {
+	for _, v := range f.wanted().(map[string]Field) {
 		if v == nil {
 			continue
 		}
@@ -147,7 +151,7 @@ func (f *MapField) FieldDependencies() []interface{} {
 }
 
 func (f *MapField) IsChanged() bool {
-	if f.current == nil || f.wanted == nil || f.invalidated {
+	if f.currentVal == nil || f.wanted() == nil || f.invalidated {
 		return f.FieldBase.IsChanged()
 	}
 
@@ -199,4 +203,9 @@ func interfaceMapToFieldMap(i map[string]interface{}) map[string]Field {
 	}
 
 	return o
+}
+
+func (f *MapField) EmptyValue() interface{} {
+	var ret map[string]interface{}
+	return ret
 }

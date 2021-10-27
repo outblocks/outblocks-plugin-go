@@ -3,7 +3,6 @@ package registry
 import (
 	"context"
 
-	"github.com/outblocks/outblocks-plugin-go/registry/fields"
 	"github.com/outblocks/outblocks-plugin-go/types"
 )
 
@@ -117,15 +116,15 @@ func (d *Diff) ObjectType() string {
 func (d *Diff) ToPlanAction() *types.PlanAction {
 	switch d.Type {
 	case DiffTypeCreate:
-		return types.NewPlanActionCreate(d.Object.ID, d.ObjectType(), d.Object.Resource.GetName())
+		return types.NewPlanActionCreate(d.Object.Namespace, d.Object.ID, d.ObjectType(), d.Object.Resource.GetName())
 	case DiffTypeUpdate:
-		return types.NewPlanActionUpdate(d.Object.ID, d.ObjectType(), d.Object.Resource.GetName())
+		return types.NewPlanActionUpdate(d.Object.Namespace, d.Object.ID, d.ObjectType(), d.Object.Resource.GetName())
 	case DiffTypeRecreate:
-		return types.NewPlanActionRecreate(d.Object.ID, d.ObjectType(), d.Object.Resource.GetName())
+		return types.NewPlanActionRecreate(d.Object.Namespace, d.Object.ID, d.ObjectType(), d.Object.Resource.GetName())
 	case DiffTypeDelete:
-		return types.NewPlanActionDelete(d.Object.ID, d.ObjectType(), d.Object.Resource.GetName())
+		return types.NewPlanActionDelete(d.Object.Namespace, d.Object.ID, d.ObjectType(), d.Object.Resource.GetName())
 	case DiffTypeProcess:
-		return types.NewPlanActionProcess(d.Object.ID, d.ObjectType(), d.Object.Resource.GetName())
+		return types.NewPlanActionProcess(d.Object.Namespace, d.Object.ID, d.ObjectType(), d.Object.Resource.GetName())
 	case DiffTypeNone:
 		panic("unexpected diff type")
 	default:
@@ -161,80 +160,6 @@ func (d *Diff) ToApplyAction(step, total int) *types.ApplyAction {
 		ObjectName: d.Object.Resource.GetName(),
 		Progress:   step,
 		Total:      total,
-	}
-}
-
-func calculateDiff(r *ResourceWrapper, recreate bool) *Diff {
-	if rdc, ok := r.Resource.(ResourceDiffCalculator); ok {
-		typ := rdc.CalculateDiff()
-		if typ != DiffTypeNone {
-			return NewDiff(r, typ, r.FieldList())
-		}
-
-		return nil
-	}
-
-	if rbdh, ok := r.Resource.(ResourceBeforeDiffHook); ok {
-		rbdh.BeforeDiff()
-	}
-
-	if r.Resource.IsNew() || recreate {
-		typ := DiffTypeCreate
-
-		if recreate && r.Resource.IsExisting() {
-			typ = DiffTypeRecreate
-		}
-
-		return NewDiff(r, typ, r.FieldList())
-	}
-
-	forceNew := false
-
-	var fieldsList []string
-
-	for name, f := range r.Fields {
-		if f.Type.Properties.Ignored {
-			continue
-		}
-
-		v := f.Value.Interface().(fields.ValueTracker)
-		if !v.IsChanged() {
-			continue
-		}
-
-		fieldsList = append(fieldsList, name)
-
-		if f.Type.Properties.ForceNew {
-			forceNew = true
-		}
-	}
-
-	if len(fieldsList) == 0 {
-		return nil
-	}
-
-	typ := DiffTypeUpdate
-	if forceNew {
-		typ = DiffTypeRecreate
-	}
-
-	return NewDiff(r, typ, fieldsList)
-}
-
-func recreateObjectTree(r *ResourceWrapper, diffMap map[*ResourceWrapper]*Diff) {
-	for d := range r.DependedBy {
-		if c, ok := diffMap[d]; ok && c.Type == DiffTypeRecreate {
-			continue
-		}
-
-		diff := calculateDiff(d, true)
-		if diff != nil {
-			diffMap[d] = diff
-		}
-
-		if len(d.DependedBy) > 0 {
-			recreateObjectTree(d, diffMap)
-		}
 	}
 }
 

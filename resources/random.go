@@ -2,18 +2,12 @@ package resources
 
 import (
 	"context"
-	"crypto/rand"
 	"fmt"
-	"math/big"
 
 	"github.com/outblocks/outblocks-plugin-go/registry"
 	"github.com/outblocks/outblocks-plugin-go/registry/fields"
+	"github.com/outblocks/outblocks-plugin-go/util"
 )
-
-const numChars = "0123456789"
-const lowerChars = "abcdefghijklmnopqrstuvwxyz"
-const upperChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-const specialChars = "!@#$%&*()-_=+[]{}<>:?"
 
 type RandomString struct {
 	registry.ResourceBase
@@ -28,42 +22,18 @@ type RandomString struct {
 	Result fields.StringOutputField
 }
 
+func (o *RandomString) GetID() string {
+	return fmt.Sprintf("randomstring/%s", o.Name.Any())
+}
+
 func (o *RandomString) GetName() string {
 	return o.Name.Any()
 }
 
 func (o *RandomString) Create(ctx context.Context, meta interface{}) error {
-	var chars string
+	res := util.RandomStringCryptoCustom(o.Lower.Wanted(), o.Upper.Wanted(), o.Numeric.Wanted(), o.Special.Wanted(), o.Length.Wanted())
 
-	if o.Lower.Wanted() {
-		chars += lowerChars
-	}
-
-	if o.Upper.Wanted() {
-		chars += upperChars
-	}
-
-	if o.Numeric.Wanted() {
-		chars += numChars
-	}
-
-	if o.Special.Wanted() {
-		chars += specialChars
-	}
-
-	bytes := make([]byte, o.Length.Wanted())
-	setLen := big.NewInt(int64(len(chars)))
-
-	for i := range bytes {
-		idx, err := rand.Int(rand.Reader, setLen)
-		if err != nil {
-			return err
-		}
-
-		bytes[i] = chars[idx.Int64()]
-	}
-
-	o.Result.SetCurrent(string(bytes))
+	o.Result.SetCurrent(res)
 
 	return nil
 }

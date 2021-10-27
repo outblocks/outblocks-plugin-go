@@ -1,6 +1,9 @@
 package fields
 
-import "fmt"
+import (
+	"fmt"
+	"sync"
+)
 
 type ValueTracker interface {
 	IsChanged() bool
@@ -19,6 +22,7 @@ type Field interface {
 	LookupCurrentRaw() (interface{}, bool)
 	UnsetCurrent()
 	IsOutput() bool
+	EmptyValue() interface{}
 }
 
 type InputField interface {
@@ -35,21 +39,34 @@ type OutputField interface {
 type FieldBase struct {
 	isOutput                      bool
 	currentDefined, wantedDefined bool
-	current, wanted               interface{}
+	currentVal                    interface{}
+	wantedVal                     interface{}
+	lazyWanted                    func() interface{}
 	invalidated                   bool
+
+	once struct {
+		lazyWanted sync.Once
+	}
 }
 
 func BasicValue(n interface{}, output bool) FieldBase {
 	if output {
 		return FieldBase{
 			currentDefined: true,
-			current:        n,
+			currentVal:     n,
 		}
 	}
 
 	return FieldBase{
 		wantedDefined: true,
-		wanted:        n,
+		wantedVal:     n,
+	}
+}
+
+func BasicValueLazy(f func() interface{}) FieldBase {
+	return FieldBase{
+		wantedDefined: true,
+		lazyWanted:    f,
 	}
 }
 
@@ -70,12 +87,23 @@ func (f *FieldBase) UnsetCurrent() {
 func (f *FieldBase) setCurrent(i interface{}) {
 	f.currentDefined = true
 	f.invalidated = false
-	f.current = i
+	f.currentVal = i
 }
 
 func (f *FieldBase) setWanted(i interface{}) {
 	f.wantedDefined = true
-	f.wanted = i
+	f.lazyWanted = nil
+	f.wantedVal = i
+}
+
+func (f *FieldBase) wanted() interface{} {
+	if f.lazyWanted != nil {
+		f.once.lazyWanted.Do(func() {
+			f.wantedVal = f.lazyWanted()
+		})
+	}
+
+	return f.wantedVal
 }
 
 func (f *FieldBase) IsValid() bool {
@@ -95,7 +123,11 @@ func (f *FieldBase) IsChanged() bool {
 		return false
 	}
 
-	return f.current != f.wanted
+	if !f.currentDefined {
+		return true
+	}
+
+	return f.currentVal != f.wanted()
 }
 
 func (f *FieldBase) IsOutput() bool {
@@ -112,18 +144,18 @@ func (f *FieldBase) IsWantedDefined() bool {
 
 func (f *FieldBase) lookupAny() (interface{}, bool) {
 	if f.currentDefined {
-		return f.current, true
+		return f.currentVal, true
 	}
 
-	return f.wanted, f.wantedDefined
+	return f.wanted(), f.wantedDefined
 }
 
 func (f *FieldBase) LookupCurrentRaw() (interface{}, bool) {
-	return f.current, f.currentDefined
+	return f.currentVal, f.currentDefined
 }
 
 func (f *FieldBase) LookupWantedRaw() (interface{}, bool) {
-	return f.wanted, f.wantedDefined
+	return f.wanted(), f.wantedDefined
 }
 
 func (f *FieldBase) Serialize(i interface{}) interface{} {

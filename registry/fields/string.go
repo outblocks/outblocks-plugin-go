@@ -3,6 +3,8 @@ package fields
 import (
 	"fmt"
 	"strings"
+
+	"github.com/outblocks/outblocks-plugin-go/util"
 )
 
 type stringBaseField interface {
@@ -57,7 +59,7 @@ func (f *StringField) LookupCurrent() (v string, ok bool) {
 		return "", false
 	}
 
-	return f.current.(string), true
+	return f.currentVal.(string), true
 }
 
 func (f *StringField) SetWanted(i string) {
@@ -69,7 +71,7 @@ func (f *StringField) LookupWanted() (v string, ok bool) {
 		return "", false
 	}
 
-	return f.wanted.(string), true
+	return f.wanted().(string), true
 }
 
 func (f *StringField) Wanted() string {
@@ -95,16 +97,20 @@ func (f *StringField) Input() StringInputField {
 	return f
 }
 
+func (f *StringField) EmptyValue() interface{} {
+	return ""
+}
+
 type IStringField struct {
 	StringField
 }
 
 func (f *IStringField) IsChanged() bool {
-	if f.current == nil || f.wanted == nil || f.invalidated {
+	if f.currentVal == nil || f.wanted() == nil || f.invalidated {
 		return f.StringField.IsChanged()
 	}
 
-	return strings.EqualFold(f.current.(string), f.wanted.(string))
+	return strings.EqualFold(f.currentVal.(string), f.wanted().(string))
 }
 
 func IString(val string) StringInputField {
@@ -127,7 +133,7 @@ func Sprintf(format string, args ...interface{}) StringInputField {
 
 func (f *SprintfField) Any() string {
 	if f.currentDefined {
-		return f.current.(string)
+		return f.currentVal.(string)
 	}
 
 	var args []interface{}
@@ -149,7 +155,7 @@ func (f *SprintfField) Any() string {
 
 		a, ok = v.LookupCurrentRaw()
 		if !ok || !v.IsValid() {
-			panic("cannot get value of argument")
+			a = v.EmptyValue()
 		}
 
 		args = append(args, a)
@@ -230,7 +236,7 @@ func (f *SprintfField) FieldDependencies() []interface{} {
 
 func (f *SprintfField) LookupCurrent() (v string, ok bool) {
 	if f.currentDefined {
-		return f.current.(string), true
+		return f.currentVal.(string), true
 	}
 
 	var args []interface{}
@@ -263,4 +269,65 @@ func (f *SprintfField) SetCurrent(i string) {
 
 func (f *SprintfField) IsChanged() bool {
 	return f.Current() != f.Wanted()
+}
+
+func (f *SprintfField) EmptyValue() interface{} {
+	return ""
+}
+
+// Random string field with lazy initialization. If current value is defined in state, it is used instead.
+
+type RandomStringField struct {
+	StringField
+
+	prefix, suffix string
+}
+
+func RandomString(lower, upper, numeric, special bool, length int) StringInputField {
+	return &RandomStringField{
+		StringField: StringField{
+			FieldBase: BasicValueLazy(func() interface{} {
+				return util.RandomStringCustom(lower, upper, numeric, special, length)
+			}),
+		}}
+}
+
+func RandomStringWithPrefix(prefix string, lower, upper, numeric, special bool, length int) StringInputField {
+	return &RandomStringField{
+		StringField: StringField{
+			FieldBase: BasicValueLazy(func() interface{} {
+				return prefix + util.RandomStringCustom(lower, upper, numeric, special, length)
+			}),
+		},
+		prefix: prefix,
+	}
+}
+
+func RandomStringWithSuffix(suffix string, lower, upper, numeric, special bool, length int) StringInputField {
+	return &RandomStringField{
+		StringField: StringField{
+			FieldBase: BasicValueLazy(func() interface{} {
+				return util.RandomStringCustom(lower, upper, numeric, special, length) + suffix
+			}),
+		},
+		suffix: suffix,
+	}
+}
+
+func (f *RandomStringField) SetCurrent(i string) {
+	f.setCurrent(i)
+	f.setWanted(i)
+}
+
+func (f *RandomStringField) IsChanged() bool {
+	if f.StringField.IsChanged() {
+		return true
+	}
+
+	cur := f.Current()
+	if !strings.HasSuffix(cur, f.suffix) || !strings.HasPrefix(cur, f.prefix) {
+		return true
+	}
+
+	return false
 }

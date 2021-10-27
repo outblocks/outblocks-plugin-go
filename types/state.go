@@ -17,20 +17,25 @@ const (
 	SSLStatusRenewalFailed      SSLStatus = "RENEWAL FAILED"
 )
 
-type DNS struct {
-	InternalIP    string    `json:"internal_ip,omitempty"`
-	IP            string    `json:"ip"`
-	CNAME         string    `json:"cname,omitempty"`
-	InternalURL   string    `json:"internal_url,omitempty"`
-	URL           string    `json:"url"`
-	Manual        bool      `json:"manual"`
-	SSLStatus     SSLStatus `json:"ssl_status"`
-	SSLStatusInfo string    `json:"ssl_status_info`
+type DNSState struct {
+	InternalIP     string                 `json:"internal_ip,omitempty"`
+	IP             string                 `json:"ip"`
+	CNAME          string                 `json:"cname,omitempty"`
+	InternalURL    string                 `json:"internal_url,omitempty"`
+	URL            string                 `json:"url"`
+	Manual         bool                   `json:"manual"`
+	SSLStatus      SSLStatus              `json:"ssl_status"`
+	SSLStatusInfo  string                 `json:"ssl_status_info"`
+	ConnectionInfo string                 `json:"connection_info"`
+	Properties     map[string]interface{} `json:"properties"`
 }
 
 type AppState struct {
-	App *App `json:"app"`
-	DNS *DNS `json:"dns"`
+	App     *App   `json:"app"`
+	Ready   bool   `json:"ready"`
+	Message string `json:"message"`
+
+	DNS *DNSState `json:"dns_state"`
 }
 
 func NewAppState(app *App) *AppState {
@@ -41,11 +46,13 @@ func NewAppState(app *App) *AppState {
 
 type DependencyState struct {
 	Dependency *Dependency `json:"dependency"`
-	DNS        *DNS        `json:"dns"`
+	DNS        *DNSState   `json:"dns"`
 }
 
-func NewDependencyState() *DependencyState {
-	return &DependencyState{}
+func NewDependencyState(dep *Dependency) *DependencyState {
+	return &DependencyState{
+		Dependency: dep,
+	}
 }
 
 type PluginStateMap map[string]json.RawMessage

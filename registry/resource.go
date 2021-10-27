@@ -40,6 +40,10 @@ type ResourceReader interface {
 	Read(ctx context.Context, meta interface{}) error
 }
 
+type ResourceMerger interface {
+	UniqueID() string
+}
+
 type ResourceIniter interface {
 	Init(ctx context.Context, meta interface{}, opts *Options) error
 }
@@ -132,7 +136,6 @@ type ResourceID struct {
 type ResourceSerialized struct {
 	ResourceID
 	Properties   map[string]interface{} `json:"properties,omitempty"`
-	DependedBy   []ResourceID           `json:"depended_by,omitempty"`
 	Dependencies []ResourceID           `json:"dependencies,omitempty"`
 }
 
@@ -192,16 +195,7 @@ func (w *ResourceWrapper) MarshalJSON() ([]byte, error) {
 		}
 	}
 
-	var (
-		dependedBy []ResourceID
-		deps       []ResourceID
-	)
-
-	for d := range w.DependedBy {
-		if d.Resource.State() == ResourceStateExisting {
-			dependedBy = append(dependedBy, d.ResourceID)
-		}
-	}
+	var deps []ResourceID
 
 	for d := range w.Dependencies {
 		if d.Resource.State() == ResourceStateExisting {
@@ -216,7 +210,6 @@ func (w *ResourceWrapper) MarshalJSON() ([]byte, error) {
 			Type:      w.Type,
 		},
 		Properties:   props,
-		DependedBy:   dependedBy,
 		Dependencies: deps,
 	})
 }

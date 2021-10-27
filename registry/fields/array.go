@@ -56,7 +56,7 @@ func (f *ArrayField) LookupCurrent() (v []interface{}, ok bool) {
 		return nil, f.currentDefined
 	}
 
-	return f.Serialize(f.current).([]interface{}), true
+	return f.Serialize(f.currentVal).([]interface{}), true
 }
 
 func (f *ArrayField) SetWanted(i []interface{}) {
@@ -68,7 +68,7 @@ func (f *ArrayField) LookupWanted() (v []interface{}, ok bool) {
 		return nil, false
 	}
 
-	return f.Serialize(f.wanted).([]interface{}), true
+	return f.Serialize(f.wanted()).([]interface{}), true
 }
 
 func (f *ArrayField) Wanted() []interface{} {
@@ -121,13 +121,13 @@ func (f *ArrayField) Serialize(i interface{}) interface{} {
 }
 
 func (f *ArrayField) FieldDependencies() []interface{} {
-	if f.wanted == nil {
+	if f.wanted() == nil {
 		return nil
 	}
 
 	var deps []interface{}
 
-	for _, v := range f.wanted.([]Field) {
+	for _, v := range f.wanted().([]Field) {
 		if v == nil {
 			continue
 		}
@@ -145,7 +145,7 @@ func (f *ArrayField) FieldDependencies() []interface{} {
 }
 
 func (f *ArrayField) IsChanged() bool {
-	if f.current == nil || f.wanted == nil || f.invalidated {
+	if f.currentVal == nil || f.wanted() == nil || f.invalidated {
 		return f.FieldBase.IsChanged()
 	}
 
@@ -157,6 +157,11 @@ func (f *ArrayField) IsChanged() bool {
 
 func (f *ArrayField) Input() ArrayInputField {
 	return f
+}
+
+func (f *ArrayField) EmptyValue() interface{} {
+	var ret []interface{}
+	return ret
 }
 
 func interfaceArrayToFieldArray(in []interface{}) []Field {

@@ -4,11 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"net"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/outblocks/outblocks-plugin-go/env"
 	"github.com/outblocks/outblocks-plugin-go/log"
@@ -24,6 +26,8 @@ type Server struct {
 }
 
 func NewServer() *Server {
+	rand.Seed(time.Now().UnixNano())
+
 	return &Server{
 		quit: make(chan struct{}),
 		log:  log.NewLogger(),

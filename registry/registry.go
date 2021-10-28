@@ -615,7 +615,6 @@ func (r *Registry) Diff(ctx context.Context, destroy bool) ([]*Diff, error) {
 			mu.Lock()
 			diffMap[res] = d
 			mu.Unlock()
-			res.Resource.SetDiff(d)
 		}
 
 		return nil
@@ -626,8 +625,9 @@ func (r *Registry) Diff(ctx context.Context, destroy bool) ([]*Diff, error) {
 
 	var diff []*Diff
 
-	for _, v := range diffMap {
-		diff = append(diff, v)
+	for res, d := range diffMap {
+		diff = append(diff, d)
+		res.Resource.SetDiff(d)
 	}
 
 	return diff, nil

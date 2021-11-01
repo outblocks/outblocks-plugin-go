@@ -18,25 +18,33 @@ func GenerateID(format string, a ...interface{}) string {
 			return ""
 		}
 
-		if v, ok := field.LookupCurrentRaw(); ok {
+		if v, ok2 := field.LookupCurrentRaw(); ok2 {
 			params = append(params, v)
 			continue
 		}
 
+		var param interface{}
+
 		switch input := f.(type) {
 		case StringInputField:
-			params = append(params, input.Any())
+			param, ok = input.LookupWanted()
 		case BoolInputField:
-			params = append(params, input.Any())
+			param, ok = input.LookupWanted()
 		case IntInputField:
-			params = append(params, input.Any())
+			param, ok = input.LookupWanted()
 		case MapInputField:
-			params = append(params, input.Any())
+			param, ok = input.LookupWanted()
 		case ArrayInputField:
-			params = append(params, input.Any())
+			param, ok = input.LookupWanted()
 		default:
 			return ""
 		}
+
+		if !ok {
+			return ""
+		}
+
+		params = append(params, param)
 	}
 
 	return fmt.Sprintf(format, params...)

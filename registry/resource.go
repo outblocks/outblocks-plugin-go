@@ -40,7 +40,7 @@ type ResourceReader interface {
 	Read(ctx context.Context, meta interface{}) error
 }
 
-type ResourceMerger interface {
+type ResourceUnique interface {
 	UniqueID() string
 }
 

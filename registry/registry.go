@@ -20,19 +20,28 @@ type ResourceTypeInfo struct {
 	Fields map[string]*FieldTypeInfo
 }
 
+type Options struct {
+	Read            bool
+	Destroy         bool
+	AllowDuplicates bool
+	TargetApps      []string
+}
+
 type Registry struct {
+	opts     *Options
 	types    map[string]*ResourceTypeInfo
 	fieldMap map[interface{}]*ResourceWrapper
 
 	resources map[ResourceID]*ResourceWrapper
 }
 
-type Options struct {
-	Read bool
-}
+func NewRegistry(opts *Options) *Registry {
+	if opts == nil {
+		opts = &Options{}
+	}
 
-func NewRegistry() *Registry {
 	return &Registry{
+		opts:      opts,
 		fieldMap:  make(map[interface{}]*ResourceWrapper),
 		resources: make(map[ResourceID]*ResourceWrapper),
 		types:     make(map[string]*ResourceTypeInfo),
@@ -168,8 +177,14 @@ func (r *Registry) register(namespace, id string, o Resource) error {
 		Type:      t.Name(),
 	}
 
-	if _, ok := r.resources[resourceID]; ok {
-		return fmt.Errorf("resource already registered: %s", id)
+	if erw, ok := r.resources[resourceID]; ok {
+		if !r.opts.AllowDuplicates {
+			return fmt.Errorf("resource already registered: %s", id)
+		}
+
+		reflect.ValueOf(o).Elem().Set(reflect.ValueOf(erw.Resource).Elem())
+
+		return nil
 	}
 
 	o.SetState(ResourceStateNew)
@@ -229,11 +244,7 @@ func (r *Registry) register(namespace, id string, o Resource) error {
 	return nil
 }
 
-func (r *Registry) Load(ctx context.Context, state []byte, meta interface{}, opts *Options) error { //nolint: gocyclo
-	if opts == nil {
-		opts = &Options{}
-	}
-
+func (r *Registry) Load(ctx context.Context, state []byte, meta interface{}) error {
 	if len(state) == 0 {
 		return nil
 	}
@@ -337,13 +348,13 @@ func (r *Registry) Load(ctx context.Context, state []byte, meta interface{}, opt
 	}
 
 	// Init where needed.
-	err = r.init(ctx, meta, opts)
+	err = r.init(ctx, meta)
 	if err != nil {
 		return err
 	}
 
 	// Read where needed.
-	if opts.Read {
+	if r.opts.Read {
 		err = r.read(ctx, meta)
 		if err != nil {
 			return err
@@ -355,38 +366,41 @@ func (r *Registry) Load(ctx context.Context, state []byte, meta interface{}, opt
 
 func mergeUniqueResource(res *ResourceWrapper, resourceUniqueIDMap map[string]*ResourceWrapper) (obsoleteID *ResourceID, err error) {
 	// Merge potentially obsolete resources with newly registered.
-	if rm, ok := res.Resource.(ResourceMerger); ok { // nolint: nestif
-		uniqID := rm.UniqueID()
-		if uniqID == "" {
-			return nil, nil
-		}
-
-		existing, ok := resourceUniqueIDMap[uniqID]
-
-		if ok {
-			if existing.IsRegistered == res.IsRegistered {
-				return nil, fmt.Errorf("multiple resources registered with same unique ID! one is: %s, another: %s",
-					res.ResourceID, existing.ResourceID)
-			}
-
-			if res.IsRegistered {
-				resourceUniqueIDMap[uniqID] = res
-				return &existing.ResourceID, nil
-			}
-
-			return &res.ResourceID, nil
-		}
-
-		resourceUniqueIDMap[uniqID] = res
+	rm, ok := res.Resource.(ResourceUnique)
+	if !ok {
+		return nil, nil
 	}
+
+	uniqID := rm.UniqueID()
+	if uniqID == "" {
+		return nil, nil
+	}
+
+	existing, ok := resourceUniqueIDMap[uniqID]
+
+	if ok {
+		if existing.IsRegistered == res.IsRegistered {
+			return nil, fmt.Errorf("multiple resources registered with same unique ID! one is: %s, another: %s",
+				res.ResourceID, existing.ResourceID)
+		}
+
+		if res.IsRegistered {
+			resourceUniqueIDMap[uniqID] = res
+			return &existing.ResourceID, nil
+		}
+
+		return &res.ResourceID, nil
+	}
+
+	resourceUniqueIDMap[uniqID] = res
 
 	return nil, nil
 }
 
-func (r *Registry) init(ctx context.Context, meta interface{}, opts *Options) error {
-	return r.processInOrder(ctx, defaultConcurrency, func(res *ResourceWrapper) error {
+func (r *Registry) init(ctx context.Context, meta interface{}) error {
+	return r.processInOrder(ctx, r.resources, defaultConcurrency, func(res *ResourceWrapper) error {
 		if rr, ok := res.Resource.(ResourceIniter); ok {
-			return rr.Init(ctx, meta, opts)
+			return rr.Init(ctx, meta, r.opts)
 		}
 
 		return nil
@@ -401,7 +415,7 @@ func (r *Registry) read(ctx context.Context, meta interface{}) error {
 
 	resourceUniqueIDMap := make(map[string]*ResourceWrapper)
 
-	err := r.processInOrder(ctx, defaultConcurrency, func(res *ResourceWrapper) error {
+	err := r.processInOrder(ctx, r.resources, defaultConcurrency, func(res *ResourceWrapper) error {
 		rr, ok := res.Resource.(ResourceReader)
 		if !ok {
 			return nil
@@ -410,6 +424,11 @@ func (r *Registry) read(ctx context.Context, meta interface{}) error {
 		// Merge potentially obsolete resources with newly registered.
 		mu.Lock()
 		defer mu.Unlock()
+
+		// Skip reading objects that do not have unique id defined.
+		if rm, ok := res.Resource.(ResourceUnique); ok && rm.UniqueID() == "" {
+			return nil
+		}
 
 		obsoleteID, err := mergeUniqueResource(res, resourceUniqueIDMap)
 		if err != nil {
@@ -433,7 +452,7 @@ func (r *Registry) read(ctx context.Context, meta interface{}) error {
 	return nil
 }
 
-func (r *Registry) processInOrder(ctx context.Context, concurrency int, f func(res *ResourceWrapper) error) error {
+func (r *Registry) processInOrder(ctx context.Context, resources map[ResourceID]*ResourceWrapper, concurrency int, f func(res *ResourceWrapper) error) error {
 	var pool errgroup.Runner
 
 	if concurrency > 0 {
@@ -444,12 +463,16 @@ func (r *Registry) processInOrder(ctx context.Context, concurrency int, f func(r
 
 	g, _ := errgroup.WithContext(ctx)
 
-	resMap := make(map[*ResourceWrapper]*sync.WaitGroup, len(r.resources))
+	resMap := make(map[*ResourceWrapper]*sync.WaitGroup, len(resources))
 
-	for _, res := range r.resources {
+	for _, res := range resources {
 		var wg sync.WaitGroup
 
-		wg.Add(len(res.Dependencies))
+		for dep := range res.Dependencies {
+			if _, ok := resources[dep.ResourceID]; ok {
+				wg.Add(1)
+			}
+		}
 
 		resMap[res] = &wg
 	}
@@ -472,7 +495,9 @@ func (r *Registry) processInOrder(ctx context.Context, concurrency int, f func(r
 				}
 
 				for dep := range res.DependedBy {
-					resMap[dep].Done()
+					if depWg, ok := resMap[dep]; ok {
+						depWg.Done()
+					}
 				}
 
 				return nil
@@ -578,13 +603,63 @@ func setFieldDefaults(r *ResourceWrapper) error {
 	return nil
 }
 
-func (r *Registry) Diff(ctx context.Context, destroy bool) ([]*Diff, error) {
+func filterFunc(opts *Options) func(res *ResourceWrapper) bool {
+	if len(opts.TargetApps) > 0 {
+		namespaceFilter := make(map[string]struct{})
+		for _, app := range opts.TargetApps {
+			namespaceFilter[app] = struct{}{}
+		}
+
+		return func(res *ResourceWrapper) bool {
+			_, ok := namespaceFilter[res.Namespace]
+			return ok
+		}
+	}
+
+	return nil
+}
+
+func addRecursiveDependencies(out map[ResourceID]*ResourceWrapper, rw *ResourceWrapper) {
+	if _, ok := out[rw.ResourceID]; ok {
+		return
+	}
+
+	out[rw.ResourceID] = rw
+
+	for dep := range rw.Dependencies {
+		addRecursiveDependencies(out, dep)
+	}
+}
+
+func filterResources(resources map[ResourceID]*ResourceWrapper, opts *Options) map[ResourceID]*ResourceWrapper {
+	filterFunc := filterFunc(opts)
+
+	if filterFunc == nil {
+		return resources
+	}
+
+	out := make(map[ResourceID]*ResourceWrapper)
+
+	for _, rw := range resources {
+		if !filterFunc(rw) {
+			continue
+		}
+
+		addRecursiveDependencies(out, rw)
+	}
+
+	return out
+}
+
+func (r *Registry) Diff(ctx context.Context) ([]*Diff, error) {
+	resources := filterResources(r.resources, r.opts)
+
 	var mu sync.RWMutex
 
 	diffMap := make(map[*ResourceWrapper]*Diff)
 
-	// Process other ops.
-	err := r.processInOrder(ctx, -1, func(res *ResourceWrapper) error {
+	// Process actual diff.
+	err := r.processInOrder(ctx, resources, -1, func(res *ResourceWrapper) error {
 		// Add all missing resources as deletions.
 		if !res.IsRegistered {
 			mu.Lock()
@@ -594,7 +669,7 @@ func (r *Registry) Diff(ctx context.Context, destroy bool) ([]*Diff, error) {
 			return nil
 		}
 
-		if destroy {
+		if r.opts.Destroy {
 			mu.Lock()
 			deleteObjectTree(res, diffMap, false)
 			mu.Unlock()
@@ -746,7 +821,7 @@ func handleDiffAction(ctx context.Context, meta interface{}, d *Diff, callback f
 }
 
 func waitForDiffDeps(ctx context.Context, d *Diff, step int) error {
-	// Wait for all dependencies to finish on create/update/process.
+	// During creation/update/process - wait for all dependencies to finish on create/update/process.
 	if d.Type == DiffTypeCreate || d.Type == DiffTypeUpdate || d.Type == DiffTypeProcess || (d.Type == DiffTypeRecreate && step == 1) {
 		for dep := range d.Object.Dependencies {
 			resDiff := dep.Resource.Diff()
@@ -762,7 +837,7 @@ func waitForDiffDeps(ctx context.Context, d *Diff, step int) error {
 		return nil
 	}
 
-	// Wait for objects that depend on me to be deleted first.
+	// During deletion - wait for objects that depend on me to be deleted first.
 	if d.Type == DiffTypeDelete || (d.Type == DiffTypeRecreate && step == 0) {
 		for dep := range d.Object.DependedBy {
 			resDiff := dep.Resource.Diff()
@@ -781,6 +856,10 @@ func waitForDiffDeps(ctx context.Context, d *Diff, step int) error {
 
 func (r *Registry) Apply(ctx context.Context, meta interface{}, diff []*Diff, callback func(*types.ApplyAction)) error {
 	pool, ctx := errgroup.WithConcurrency(ctx, defaultConcurrency)
+
+	for _, d := range diff {
+		d.Object.Resource.SetDiff(d)
+	}
 
 	// Add another cancel for errgroup context so that we can handle error from pool at all times.
 	ctxErrgroup, cancelErrgroup := context.WithCancel(ctx)

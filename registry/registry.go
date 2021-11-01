@@ -21,10 +21,10 @@ type ResourceTypeInfo struct {
 }
 
 type Options struct {
-	Read            bool
-	Destroy         bool
-	AllowDuplicates bool
-	TargetApps      []string
+	Read                 bool
+	Destroy              bool
+	AllowDuplicates      bool
+	TargetApps, SkipApps []string
 }
 
 type Registry struct {
@@ -143,18 +143,18 @@ func generateResourceFields(o Resource, rti *ResourceTypeInfo) map[string]*Field
 }
 
 func (r *Registry) RegisterAppResource(app *types.App, id string, o Resource) error {
-	return r.register(app.ID, id, o)
+	return r.register(SourceApp, app.ID, id, o)
 }
 
 func (r *Registry) RegisterDependencyResource(dep *types.Dependency, id string, o Resource) error {
-	return r.register(dep.ID, id, o)
+	return r.register(SourceDependency, dep.ID, id, o)
 }
 
 func (r *Registry) RegisterPluginResource(scope, id string, o Resource) error {
-	return r.register(scope, id, o)
+	return r.register(SourcePlugin, scope, id, o)
 }
 
-func (r *Registry) register(namespace, id string, o Resource) error {
+func (r *Registry) register(source, namespace, id string, o Resource) error {
 	t := reflect.TypeOf(o)
 	if t.Kind() == reflect.Ptr {
 		t = t.Elem()
@@ -175,6 +175,7 @@ func (r *Registry) register(namespace, id string, o Resource) error {
 		ID:        id,
 		Namespace: namespace,
 		Type:      t.Name(),
+		Source:    source,
 	}
 
 	if erw, ok := r.resources[resourceID]; ok {
@@ -603,20 +604,44 @@ func setFieldDefaults(r *ResourceWrapper) error {
 	return nil
 }
 
-func filterFunc(opts *Options) func(res *ResourceWrapper) bool {
-	if len(opts.TargetApps) > 0 {
-		namespaceFilter := make(map[string]struct{})
-		for _, app := range opts.TargetApps {
-			namespaceFilter[app] = struct{}{}
-		}
-
-		return func(res *ResourceWrapper) bool {
-			_, ok := namespaceFilter[res.Namespace]
-			return ok
-		}
+func filterFunc(resources map[ResourceID]*ResourceWrapper, opts *Options) func(res *ResourceWrapper) bool {
+	if len(opts.TargetApps) == 0 && len(opts.SkipApps) == 0 {
+		return nil
 	}
 
-	return nil
+	targetAppsMap := make(map[string]struct{})
+	skipAppsMap := make(map[string]struct{})
+
+	for _, app := range opts.TargetApps {
+		targetAppsMap[app] = struct{}{}
+	}
+
+	for _, app := range opts.SkipApps {
+		skipAppsMap[app] = struct{}{}
+	}
+
+	appFilter := make(map[string]struct{})
+
+	for _, rw := range resources {
+		if rw.Source != SourceApp {
+			continue
+		}
+
+		if _, ok := targetAppsMap[rw.Namespace]; !ok && len(targetAppsMap) > 0 {
+			continue
+		}
+
+		if _, ok := skipAppsMap[rw.Namespace]; ok {
+			continue
+		}
+
+		appFilter[rw.Namespace] = struct{}{}
+	}
+
+	return func(res *ResourceWrapper) bool {
+		_, ok := appFilter[res.Namespace]
+		return ok
+	}
 }
 
 func addRecursiveDependencies(out map[ResourceID]*ResourceWrapper, rw *ResourceWrapper) {
@@ -632,7 +657,7 @@ func addRecursiveDependencies(out map[ResourceID]*ResourceWrapper, rw *ResourceW
 }
 
 func filterResources(resources map[ResourceID]*ResourceWrapper, opts *Options) map[ResourceID]*ResourceWrapper {
-	filterFunc := filterFunc(opts)
+	filterFunc := filterFunc(resources, opts)
 
 	if filterFunc == nil {
 		return resources

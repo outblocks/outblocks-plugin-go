@@ -6,8 +6,10 @@ type PlanRequest struct {
 	Apps         []*types.AppPlan        `json:"apps"`
 	Dependencies []*types.DependencyPlan `json:"dependencies"`
 	TargetApps   []string                `json:"target_apps"`
-	Verify       bool                    `json:"verify"`
-	Destroy      bool                    `json:"destroy"`
+	SkipApps     []string                `json:"skip_apps"`
+
+	Verify  bool `json:"verify"`
+	Destroy bool `json:"destroy"`
 
 	PluginMap types.PluginStateMap   `json:"plugin_state"`
 	Args      map[string]interface{} `json:"args"`

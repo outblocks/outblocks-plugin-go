@@ -9,6 +9,12 @@ import (
 	"github.com/outblocks/outblocks-plugin-go/util"
 )
 
+const (
+	SourceApp        = "app"
+	SourceDependency = "dependency"
+	SourcePlugin     = "plugin"
+)
+
 type ResourceState int
 
 const (
@@ -131,6 +137,7 @@ type ResourceID struct {
 	ID        string `json:"id"`
 	Namespace string `json:"namespace"`
 	Type      string `json:"type"`
+	Source    string `json:"source"`
 }
 
 type ResourceSerialized struct {
@@ -204,11 +211,7 @@ func (w *ResourceWrapper) MarshalJSON() ([]byte, error) {
 	}
 
 	return json.Marshal(ResourceSerialized{
-		ResourceID: ResourceID{
-			ID:        w.ID,
-			Namespace: w.Namespace,
-			Type:      w.Type,
-		},
+		ResourceID:   w.ResourceID,
 		Properties:   props,
 		Dependencies: deps,
 	})

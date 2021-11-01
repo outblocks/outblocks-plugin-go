@@ -44,15 +44,17 @@ const (
 
 type PlanAction struct {
 	Type       PlanType `json:"type"`
+	Source     string   `json:"source"`
 	Namespace  string   `json:"namespace"`
 	ObjectID   string   `json:"object_id"`
 	ObjectType string   `json:"object_type"`
 	ObjectName string   `json:"object_name"`
 }
 
-func NewPlanAction(typ PlanType, namespace, objectID, objectType, objectName string) *PlanAction {
+func NewPlanAction(typ PlanType, source, namespace, objectID, objectType, objectName string) *PlanAction {
 	return &PlanAction{
 		Type:       typ,
+		Source:     source,
 		Namespace:  namespace,
 		ObjectID:   objectID,
 		ObjectType: objectType,
@@ -60,22 +62,22 @@ func NewPlanAction(typ PlanType, namespace, objectID, objectType, objectName str
 	}
 }
 
-func NewPlanActionCreate(namespace, objectID, objectType, objectName string) *PlanAction {
-	return NewPlanAction(PlanCreate, namespace, objectID, objectType, objectName)
+func NewPlanActionCreate(source, namespace, objectID, objectType, objectName string) *PlanAction {
+	return NewPlanAction(PlanCreate, source, namespace, objectID, objectType, objectName)
 }
 
-func NewPlanActionRecreate(namespace, objectID, objectType, objectName string) *PlanAction {
-	return NewPlanAction(PlanRecreate, namespace, objectID, objectType, objectName)
+func NewPlanActionRecreate(source, namespace, objectID, objectType, objectName string) *PlanAction {
+	return NewPlanAction(PlanRecreate, source, namespace, objectID, objectType, objectName)
 }
 
-func NewPlanActionUpdate(namespace, objectID, objectType, objectName string) *PlanAction {
-	return NewPlanAction(PlanUpdate, namespace, objectID, objectType, objectName)
+func NewPlanActionUpdate(source, namespace, objectID, objectType, objectName string) *PlanAction {
+	return NewPlanAction(PlanUpdate, source, namespace, objectID, objectType, objectName)
 }
 
-func NewPlanActionDelete(namespace, objectID, objectType, objectName string) *PlanAction {
-	return NewPlanAction(PlanDelete, namespace, objectID, objectType, objectName)
+func NewPlanActionDelete(source, namespace, objectID, objectType, objectName string) *PlanAction {
+	return NewPlanAction(PlanDelete, source, namespace, objectID, objectType, objectName)
 }
 
-func NewPlanActionProcess(namespace, objectID, objectType, objectName string) *PlanAction {
-	return NewPlanAction(PlanProcess, namespace, objectID, objectType, objectName)
+func NewPlanActionProcess(source, namespace, objectID, objectType, objectName string) *PlanAction {
+	return NewPlanAction(PlanProcess, source, namespace, objectID, objectType, objectName)
 }

@@ -1,6 +1,7 @@
 package types
 
 type ApplyAction struct {
+	Source     string   `json:"source"`
 	Type       PlanType `json:"type"`
 	Namespace  string   `json:"namespace"`
 	ObjectID   string   `json:"object_id"`

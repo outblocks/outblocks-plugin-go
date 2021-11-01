@@ -143,15 +143,15 @@ func generateResourceFields(o Resource, rti *ResourceTypeInfo) map[string]*Field
 }
 
 func (r *Registry) RegisterAppResource(app *types.App, id string, o Resource) error {
-	return r.register(SourceApp, app.ID, id, o)
+	return r.register(types.SourceApp, app.ID, id, o)
 }
 
 func (r *Registry) RegisterDependencyResource(dep *types.Dependency, id string, o Resource) error {
-	return r.register(SourceDependency, dep.ID, id, o)
+	return r.register(types.SourceDependency, dep.ID, id, o)
 }
 
 func (r *Registry) RegisterPluginResource(scope, id string, o Resource) error {
-	return r.register(SourcePlugin, scope, id, o)
+	return r.register(types.SourcePlugin, scope, id, o)
 }
 
 func (r *Registry) register(source, namespace, id string, o Resource) error {
@@ -623,7 +623,7 @@ func filterFunc(resources map[ResourceID]*ResourceWrapper, opts *Options) func(r
 	namespaceFilter := make(map[string]bool)
 
 	for _, rw := range resources {
-		if rw.Source == SourceApp {
+		if rw.Source == types.SourceApp {
 			if len(targetAppsMap) > 0 && !targetAppsMap[rw.Namespace] {
 				continue
 			}

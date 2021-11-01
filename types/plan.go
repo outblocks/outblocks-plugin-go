@@ -8,6 +8,12 @@ const (
 	DNSObject = "dns"
 )
 
+const (
+	SourceApp        = "app"
+	SourceDependency = "dependency"
+	SourcePlugin     = "plugin"
+)
+
 type AppPlan struct {
 	IsDeploy   bool                   `json:"is_deploy"`
 	IsDNS      bool                   `json:"is_dns"`

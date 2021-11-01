@@ -9,12 +9,6 @@ import (
 	"github.com/outblocks/outblocks-plugin-go/util"
 )
 
-const (
-	SourceApp        = "app"
-	SourceDependency = "dependency"
-	SourcePlugin     = "plugin"
-)
-
 type ResourceState int
 
 const (

@@ -609,38 +609,35 @@ func filterFunc(resources map[ResourceID]*ResourceWrapper, opts *Options) func(r
 		return nil
 	}
 
-	targetAppsMap := make(map[string]struct{})
-	skipAppsMap := make(map[string]struct{})
+	targetAppsMap := make(map[string]bool)
+	skipAppsMap := make(map[string]bool)
 
 	for _, app := range opts.TargetApps {
-		targetAppsMap[app] = struct{}{}
+		targetAppsMap[app] = true
 	}
 
 	for _, app := range opts.SkipApps {
-		skipAppsMap[app] = struct{}{}
+		skipAppsMap[app] = true
 	}
 
-	appFilter := make(map[string]struct{})
+	namespaceFilter := make(map[string]bool)
 
 	for _, rw := range resources {
-		if rw.Source != SourceApp {
-			continue
+		if rw.Source == SourceApp {
+			if len(targetAppsMap) > 0 && !targetAppsMap[rw.Namespace] {
+				continue
+			}
+
+			if skipAppsMap[rw.Namespace] {
+				continue
+			}
 		}
 
-		if _, ok := targetAppsMap[rw.Namespace]; !ok && len(targetAppsMap) > 0 {
-			continue
-		}
-
-		if _, ok := skipAppsMap[rw.Namespace]; ok {
-			continue
-		}
-
-		appFilter[rw.Namespace] = struct{}{}
+		namespaceFilter[rw.Namespace] = true
 	}
 
 	return func(res *ResourceWrapper) bool {
-		_, ok := appFilter[res.Namespace]
-		return ok
+		return namespaceFilter[res.Namespace]
 	}
 }
 
@@ -652,6 +649,10 @@ func addRecursiveDependencies(out map[ResourceID]*ResourceWrapper, rw *ResourceW
 	out[rw.ResourceID] = rw
 
 	for dep := range rw.Dependencies {
+		if dep.Resource.IsExisting() {
+			continue
+		}
+
 		addRecursiveDependencies(out, dep)
 	}
 }

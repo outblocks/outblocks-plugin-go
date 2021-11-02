@@ -55,8 +55,9 @@ func mapstructureJSONDecode(in, out interface{}) error {
 // Service app properties.
 
 type ServiceAppBuild struct {
-	Dockerfile    string `json:"dockerfile"`
-	DockerContext string `json:"context"`
+	Dockerfile      string            `json:"dockerfile"`
+	DockerContext   string            `json:"context"`
+	DockerBuildArgs map[string]string `json:"build_args"`
 }
 
 type ServiceAppContainer struct {
@@ -103,8 +104,9 @@ func (p *ServiceAppProperties) Encode() (map[string]interface{}, error) {
 // Static app properties.
 
 type StaticAppBuild struct {
-	Command string `json:"command"`
-	Dir     string `json:"dir"`
+	Env     map[string]string `json:"env"`
+	Command string            `json:"command"`
+	Dir     string            `json:"dir"`
 }
 
 type StaticAppCDN struct {

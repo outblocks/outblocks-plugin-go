@@ -623,14 +623,12 @@ func filterFunc(resources map[ResourceID]*ResourceWrapper, opts *Options) func(r
 	namespaceFilter := make(map[string]bool)
 
 	for _, rw := range resources {
-		if rw.Source == types.SourceApp {
-			if len(targetAppsMap) > 0 && !targetAppsMap[rw.Namespace] {
-				continue
-			}
+		if len(targetAppsMap) > 0 && (rw.Source != types.SourceApp || !targetAppsMap[rw.Namespace]) {
+			continue
+		}
 
-			if skipAppsMap[rw.Namespace] {
-				continue
-			}
+		if skipAppsMap[rw.Namespace] && rw.Source == types.SourceApp {
+			continue
 		}
 
 		namespaceFilter[rw.Namespace] = true

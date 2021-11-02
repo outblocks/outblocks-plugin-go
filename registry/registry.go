@@ -711,6 +711,8 @@ func (r *Registry) Diff(ctx context.Context) ([]*Diff, error) {
 
 		d := r.calculateDiff(res)
 		if d != nil {
+			res.Resource.SetDiff(d)
+
 			mu.Lock()
 			diffMap[res] = d
 			mu.Unlock()
@@ -822,6 +824,7 @@ func handleDiffAction(ctx context.Context, meta interface{}, d *Diff, callback f
 				return err
 			}
 
+			d.Object.UnsetAllCurrent()
 			d.Object.Resource.SetState(ResourceStateDeleted)
 			callback(d.ToApplyAction(1, 2))
 		} else {
@@ -967,12 +970,15 @@ func (r *Registry) calculateDiff(rw *ResourceWrapper) *Diff {
 
 		v := f.Value.Interface().(fields.ValueTracker)
 
+		// If field is a dep holder (depends on multiple fields) check each field if it is associated with a resource to be deleted/recreated.
 		if fdh, ok := f.Value.Interface().(fields.FieldDependencyHolder); ok && f.Type.Properties.ForceNew {
 			for _, fd := range fdh.FieldDependencies() {
 				if dep, ok := r.fieldMap[fd]; ok && dep.Resource.Diff() != nil {
 					if dep.Resource.Diff().Type != DiffTypeUpdate || f.Value.Interface().(fields.Field).IsOutput() {
 						fieldsList = append(fieldsList, name)
 						forceNew = true
+
+						break
 					}
 				}
 			}

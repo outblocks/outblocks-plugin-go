@@ -242,3 +242,9 @@ func (w *ResourceWrapper) MarkAllWantedAsCurrent() {
 		}
 	}
 }
+
+func (w *ResourceWrapper) UnsetAllCurrent() {
+	for _, f := range w.Fields {
+		f.Value.Interface().(fields.Field).UnsetCurrent()
+	}
+}

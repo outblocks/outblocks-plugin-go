@@ -284,39 +284,53 @@ type RandomStringField struct {
 }
 
 func RandomString(lower, upper, numeric, special bool, length int) StringInputField {
-	return &RandomStringField{
-		StringField: StringField{
-			FieldBase: BasicValueLazy(func() interface{} {
-				return util.RandomStringCustom(lower, upper, numeric, special, length)
-			}),
-		}}
+	f := &RandomStringField{
+		StringField: StringField{},
+	}
+
+	f.StringField.FieldBase = BasicValueFunc(func() interface{} {
+		if f.currentDefined {
+			return f.currentVal
+		}
+
+		return util.RandomStringCustom(lower, upper, numeric, special, length)
+	})
+
+	return f
 }
 
 func RandomStringWithPrefix(prefix string, lower, upper, numeric, special bool, length int) StringInputField {
-	return &RandomStringField{
-		StringField: StringField{
-			FieldBase: BasicValueLazy(func() interface{} {
-				return prefix + util.RandomStringCustom(lower, upper, numeric, special, length)
-			}),
-		},
-		prefix: prefix,
+	f := &RandomStringField{
+		StringField: StringField{},
+		prefix:      prefix,
 	}
+
+	f.StringField.FieldBase = BasicValueFunc(func() interface{} {
+		if f.currentDefined {
+			return f.currentVal
+		}
+
+		return prefix + util.RandomStringCustom(lower, upper, numeric, special, length)
+	})
+
+	return f
 }
 
 func RandomStringWithSuffix(suffix string, lower, upper, numeric, special bool, length int) StringInputField {
-	return &RandomStringField{
-		StringField: StringField{
-			FieldBase: BasicValueLazy(func() interface{} {
-				return util.RandomStringCustom(lower, upper, numeric, special, length) + suffix
-			}),
-		},
-		suffix: suffix,
+	f := &RandomStringField{
+		StringField: StringField{},
+		suffix:      suffix,
 	}
-}
 
-func (f *RandomStringField) SetCurrent(i string) {
-	f.setCurrent(i)
-	f.setWanted(i)
+	f.StringField.FieldBase = BasicValueFunc(func() interface{} {
+		if f.currentDefined {
+			return f.currentVal
+		}
+
+		return util.RandomStringCustom(lower, upper, numeric, special, length) + suffix
+	})
+
+	return f
 }
 
 func (f *RandomStringField) IsChanged() bool {

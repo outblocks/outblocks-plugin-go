@@ -15,11 +15,9 @@ const (
 )
 
 type AppPlan struct {
-	IsDeploy   bool                   `json:"is_deploy"`
-	IsDNS      bool                   `json:"is_dns"`
-	App        *App                   `json:"app"`
-	Env        map[string]string      `json:"env"`
-	Properties map[string]interface{} `json:"properties"`
+	IsDeploy bool `json:"is_deploy"`
+	IsDNS    bool `json:"is_dns"`
+	App      *App `json:"app"`
 }
 
 func (a *AppPlan) String() string {

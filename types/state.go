@@ -62,5 +62,7 @@ func NewDependencyState(dep *Dependency) *DependencyState {
 type PluginStateMap map[string]json.RawMessage
 
 type StateData struct {
-	PluginsMap map[string]PluginStateMap `json:"plugins_state"` // plugin name -> object -> state
+	Apps         map[string]*App           `json:"apps"`
+	Dependencies map[string]*Dependency    `json:"dependencies"`
+	PluginsMap   map[string]PluginStateMap `json:"plugins_state"` // plugin name -> object -> state
 }

@@ -11,7 +11,6 @@ type Dependency struct {
 	ID         string                 `json:"id"`
 	Name       string                 `json:"name"`
 	Type       string                 `json:"type"`
-	Deploy     string                 `json:"deploy"`
 	Properties map[string]interface{} `json:"properties"`
 }
 

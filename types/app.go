@@ -16,6 +16,7 @@ type App struct {
 	Type         string                 `json:"type"`
 	URL          string                 `json:"url"`
 	PathRedirect string                 `json:"path_redirect"`
+	Env          map[string]string      `json:"env"`
 	Needs        map[string]*AppNeed    `json:"needs"`
 	Properties   map[string]interface{} `json:"properties"`
 }

@@ -5,13 +5,11 @@ import (
 )
 
 type AppRun struct {
-	App        *App                   `json:"app"`
-	Command    string                 `json:"command"`
-	Env        map[string]string      `json:"env"`
-	URL        string                 `json:"url"`
-	IP         string                 `json:"ip"`
-	Port       int                    `json:"port"`
-	Properties map[string]interface{} `json:"properties"`
+	App     *App   `json:"app"`
+	Command string `json:"command"`
+	URL     string `json:"url"`
+	IP      string `json:"ip"`
+	Port    int    `json:"port"`
 }
 
 func (a *AppRun) String() string {
@@ -19,11 +17,10 @@ func (a *AppRun) String() string {
 }
 
 type DependencyRun struct {
-	Dependency *Dependency            `json:"dependency"`
-	Env        map[string]string      `json:"env"`
-	IP         string                 `json:"ip"`
-	Port       int                    `json:"port"`
-	Properties map[string]interface{} `json:"properties"`
+	Dependency *Dependency       `json:"dependency"`
+	Env        map[string]string `json:"env"`
+	IP         string            `json:"ip"`
+	Port       int               `json:"port"`
 }
 
 func (d *DependencyRun) String() string {

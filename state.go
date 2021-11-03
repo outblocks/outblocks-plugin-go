@@ -1,6 +1,7 @@
 package plugin
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/outblocks/outblocks-plugin-go/types"
@@ -18,7 +19,7 @@ func (r *GetStateRequest) Type() RequestType {
 }
 
 type GetStateResponse struct {
-	State    *types.StateData   `json:"state"`
+	State    json.RawMessage    `json:"state"`
 	LockInfo string             `json:"lockinfo"`
 	Source   *types.StateSource `json:"source"`
 }
@@ -54,7 +55,7 @@ func (r *LockErrorResponse) Error() string {
 
 // Save State.
 type SaveStateRequest struct {
-	State      *types.StateData       `json:"state"`
+	State      json.RawMessage        `json:"state"`
 	StateType  string                 `json:"type"`
 	Properties map[string]interface{} `json:"properties"`
 }

@@ -12,6 +12,7 @@ import (
 type App struct {
 	ID           string                 `json:"id"`
 	DeployPlugin string                 `json:"deploy_plugin"`
+	DNSPlugin    string                 `json:"dns_plugin"`
 	Dir          string                 `json:"dir"`
 	Name         string                 `json:"name"`
 	Type         string                 `json:"type"`

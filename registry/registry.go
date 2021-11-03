@@ -399,7 +399,7 @@ func mergeUniqueResource(res *ResourceWrapper, resourceUniqueIDMap map[string]*R
 }
 
 func (r *Registry) init(ctx context.Context, meta interface{}) error {
-	return r.processInOrder(ctx, r.resources, defaultConcurrency, func(res *ResourceWrapper) error {
+	return r.processInOrder(ctx, defaultConcurrency, func(res *ResourceWrapper) error {
 		if rr, ok := res.Resource.(ResourceIniter); ok {
 			return rr.Init(ctx, meta, r.opts)
 		}
@@ -416,7 +416,7 @@ func (r *Registry) read(ctx context.Context, meta interface{}) error {
 
 	resourceUniqueIDMap := make(map[string]*ResourceWrapper)
 
-	err := r.processInOrder(ctx, r.resources, defaultConcurrency, func(res *ResourceWrapper) error {
+	err := r.processInOrder(ctx, defaultConcurrency, func(res *ResourceWrapper) error {
 		rr, ok := res.Resource.(ResourceReader)
 		if !ok {
 			return nil
@@ -453,7 +453,7 @@ func (r *Registry) read(ctx context.Context, meta interface{}) error {
 	return nil
 }
 
-func (r *Registry) processInOrder(ctx context.Context, resources map[ResourceID]*ResourceWrapper, concurrency int, f func(res *ResourceWrapper) error) error {
+func (r *Registry) processInOrder(ctx context.Context, concurrency int, f func(res *ResourceWrapper) error) error {
 	var pool errgroup.Runner
 
 	if concurrency > 0 {
@@ -464,13 +464,13 @@ func (r *Registry) processInOrder(ctx context.Context, resources map[ResourceID]
 
 	g, _ := errgroup.WithContext(ctx)
 
-	resMap := make(map[*ResourceWrapper]*sync.WaitGroup, len(resources))
+	resMap := make(map[*ResourceWrapper]*sync.WaitGroup, len(r.resources))
 
-	for _, res := range resources {
+	for _, res := range r.resources {
 		var wg sync.WaitGroup
 
 		for dep := range res.Dependencies {
-			if _, ok := resources[dep.ResourceID]; ok {
+			if _, ok := r.resources[dep.ResourceID]; ok {
 				wg.Add(1)
 			}
 		}
@@ -639,12 +639,12 @@ func filterFunc(resources map[ResourceID]*ResourceWrapper, opts *Options) func(r
 	}
 }
 
-func addRecursiveDependencies(out map[ResourceID]*ResourceWrapper, rw *ResourceWrapper) {
+func addRecursiveDependencies(out map[ResourceID]bool, rw *ResourceWrapper) {
 	if _, ok := out[rw.ResourceID]; ok {
 		return
 	}
 
-	out[rw.ResourceID] = rw
+	out[rw.ResourceID] = true
 
 	for dep := range rw.Dependencies {
 		if dep.Resource.IsExisting() {
@@ -655,14 +655,19 @@ func addRecursiveDependencies(out map[ResourceID]*ResourceWrapper, rw *ResourceW
 	}
 }
 
-func filterResources(resources map[ResourceID]*ResourceWrapper, opts *Options) map[ResourceID]*ResourceWrapper {
+func filterResources(resources map[ResourceID]*ResourceWrapper, opts *Options) map[ResourceID]bool {
 	filterFunc := filterFunc(resources, opts)
 
 	if filterFunc == nil {
-		return resources
+		out := make(map[ResourceID]bool, len(resources))
+		for r := range resources {
+			out[r] = true
+		}
+
+		return out
 	}
 
-	out := make(map[ResourceID]*ResourceWrapper)
+	out := make(map[ResourceID]bool)
 
 	for _, rw := range resources {
 		if !filterFunc(rw) {
@@ -676,14 +681,22 @@ func filterResources(resources map[ResourceID]*ResourceWrapper, opts *Options) m
 }
 
 func (r *Registry) Diff(ctx context.Context) ([]*Diff, error) {
-	resources := filterResources(r.resources, r.opts)
+	filtered := filterResources(r.resources, r.opts)
 
 	var mu sync.RWMutex
 
 	diffMap := make(map[*ResourceWrapper]*Diff)
 
 	// Process actual diff.
-	err := r.processInOrder(ctx, resources, -1, func(res *ResourceWrapper) error {
+	err := r.processInOrder(ctx, -1, func(res *ResourceWrapper) error {
+		mu.Lock()
+		process := filtered[res.ResourceID]
+		mu.Unlock()
+
+		if !process {
+			return nil
+		}
+
 		// Add all missing resources as deletions.
 		if !res.IsRegistered {
 			mu.Lock()
@@ -715,6 +728,12 @@ func (r *Registry) Diff(ctx context.Context) ([]*Diff, error) {
 
 			mu.Lock()
 			diffMap[res] = d
+
+			if d.Type == DiffTypeRecreate {
+				for dep := range res.DependedBy {
+					filtered[dep.ResourceID] = true
+				}
+			}
 			mu.Unlock()
 		}
 
@@ -964,27 +983,8 @@ func (r *Registry) calculateDiff(rw *ResourceWrapper) *Diff {
 	var fieldsList []string
 
 	for name, f := range rw.Fields {
-		if f.Type.Properties.Ignored {
-			continue
-		}
-
-		v := f.Value.Interface().(fields.ValueTracker)
-
-		// If field is a dep holder (depends on multiple fields) check each field if it is associated with a resource to be deleted/recreated.
-		if fdh, ok := f.Value.Interface().(fields.FieldDependencyHolder); ok && f.Type.Properties.ForceNew {
-			for _, fd := range fdh.FieldDependencies() {
-				if dep, ok := r.fieldMap[fd]; ok && dep.Resource.Diff() != nil {
-					if dep.Resource.Diff().Type != DiffTypeUpdate || f.Value.Interface().(fields.Field).IsOutput() {
-						fieldsList = append(fieldsList, name)
-						forceNew = true
-
-						break
-					}
-				}
-			}
-		}
-
-		if !v.IsChanged() {
+		changed := r.calculateFieldDiff(f)
+		if !changed {
 			continue
 		}
 
@@ -1005,4 +1005,25 @@ func (r *Registry) calculateDiff(rw *ResourceWrapper) *Diff {
 	}
 
 	return NewDiff(rw, typ, fieldsList)
+}
+
+func (r *Registry) calculateFieldDiff(field *FieldInfo) (changed bool) {
+	if field.Type.Properties.Ignored {
+		return false
+	}
+
+	v := field.Value.Interface().(fields.ValueTracker)
+
+	// If field is a dep holder (depends on multiple fields) check each field if it is associated with a resource to be deleted/recreated.
+	if fdh, ok := field.Value.Interface().(fields.FieldDependencyHolder); ok {
+		for _, fd := range fdh.FieldDependencies() {
+			if dep, ok := r.fieldMap[fd]; ok && dep.Resource.Diff() != nil {
+				if dep.Resource.Diff().Type != DiffTypeUpdate || field.Value.Interface().(fields.Field).IsOutput() {
+					return true
+				}
+			}
+		}
+	}
+
+	return v.IsChanged()
 }

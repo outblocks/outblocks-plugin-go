@@ -280,57 +280,23 @@ func (f *SprintfField) EmptyValue() interface{} {
 type RandomStringField struct {
 	StringField
 
-	prefix, suffix string
+	prefix, suffix                 string
+	lower, upper, numeric, special bool
+	length                         int
 }
 
-func RandomString(lower, upper, numeric, special bool, length int) StringInputField {
-	f := &RandomStringField{
-		StringField: StringField{},
-	}
-
-	f.StringField.FieldBase = BasicValueFunc(func() interface{} {
-		if f.currentDefined {
-			return f.currentVal
-		}
-
-		return util.RandomStringCustom(lower, upper, numeric, special, length)
-	})
-
-	return f
+func (f *RandomStringField) SetCurrent(i string) {
+	f.StringField.SetCurrent(i)
+	f.SetWanted(i)
 }
 
-func RandomStringWithPrefix(prefix string, lower, upper, numeric, special bool, length int) StringInputField {
-	f := &RandomStringField{
-		StringField: StringField{},
-		prefix:      prefix,
-	}
-
-	f.StringField.FieldBase = BasicValueFunc(func() interface{} {
-		if f.currentDefined {
-			return f.currentVal
-		}
-
-		return prefix + util.RandomStringCustom(lower, upper, numeric, special, length)
-	})
-
-	return f
+func (f *RandomStringField) UnsetCurrent() {
+	f.StringField.UnsetCurrent()
+	f.SetWantedLazy(f.newValue)
 }
 
-func RandomStringWithSuffix(suffix string, lower, upper, numeric, special bool, length int) StringInputField {
-	f := &RandomStringField{
-		StringField: StringField{},
-		suffix:      suffix,
-	}
-
-	f.StringField.FieldBase = BasicValueFunc(func() interface{} {
-		if f.currentDefined {
-			return f.currentVal
-		}
-
-		return util.RandomStringCustom(lower, upper, numeric, special, length) + suffix
-	})
-
-	return f
+func (f *RandomStringField) newValue() interface{} {
+	return f.prefix + util.RandomStringCustom(f.lower, f.upper, f.numeric, f.special, f.length) + f.suffix
 }
 
 func (f *RandomStringField) IsChanged() bool {
@@ -344,4 +310,31 @@ func (f *RandomStringField) IsChanged() bool {
 	}
 
 	return false
+}
+
+func randomString(prefix, suffix string, lower, upper, numeric, special bool, length int) StringInputField {
+	f := &RandomStringField{
+		prefix:  prefix,
+		suffix:  suffix,
+		lower:   lower,
+		upper:   upper,
+		numeric: numeric,
+		special: special,
+		length:  length,
+	}
+	f.SetWantedLazy(f.newValue)
+
+	return f
+}
+
+func RandomString(lower, upper, numeric, special bool, length int) StringInputField {
+	return randomString("", "", lower, upper, numeric, special, length)
+}
+
+func RandomStringWithPrefix(prefix string, lower, upper, numeric, special bool, length int) StringInputField {
+	return randomString(prefix, "", lower, upper, numeric, special, length)
+}
+
+func RandomStringWithSuffix(suffix string, lower, upper, numeric, special bool, length int) StringInputField {
+	return randomString("", suffix, lower, upper, numeric, special, length)
 }

@@ -41,7 +41,7 @@ type FieldBase struct {
 	currentDefined, wantedDefined bool
 	currentVal                    interface{}
 	wantedVal                     interface{}
-	lazyWanted                    func() interface{}
+	wantedLazy                    func() interface{}
 	wantedFunc                    func() interface{}
 	invalidated                   bool
 
@@ -67,7 +67,7 @@ func BasicValue(n interface{}, output bool) FieldBase {
 func BasicValueLazy(f func() interface{}) FieldBase {
 	return FieldBase{
 		wantedDefined: true,
-		lazyWanted:    f,
+		wantedLazy:    f,
 	}
 }
 
@@ -100,15 +100,22 @@ func (f *FieldBase) setCurrent(i interface{}) {
 
 func (f *FieldBase) setWanted(i interface{}) {
 	f.wantedDefined = true
-	f.lazyWanted = nil
+	f.wantedLazy = nil
 	f.wantedFunc = nil
 	f.wantedVal = i
 }
 
+func (f *FieldBase) SetWantedLazy(i func() interface{}) {
+	f.once.lazyWanted = sync.Once{}
+	f.wantedDefined = true
+	f.wantedLazy = i
+	f.wantedFunc = nil
+}
+
 func (f *FieldBase) wanted() interface{} {
-	if f.lazyWanted != nil {
+	if f.wantedLazy != nil {
 		f.once.lazyWanted.Do(func() {
-			f.wantedVal = f.lazyWanted()
+			f.wantedVal = f.wantedLazy()
 		})
 	}
 

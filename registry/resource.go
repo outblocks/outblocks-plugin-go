@@ -245,6 +245,10 @@ func (w *ResourceWrapper) MarkAllWantedAsCurrent() {
 
 func (w *ResourceWrapper) UnsetAllCurrent() {
 	for _, f := range w.Fields {
+		if f.Type.Properties.Ignored || f.Value.Interface() == nil {
+			continue
+		}
+
 		f.Value.Interface().(fields.Field).UnsetCurrent()
 	}
 }

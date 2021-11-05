@@ -58,12 +58,12 @@ func TestExpand_Invalid(t *testing.T) {
 		{
 			content:  "\nabc ${}",
 			vars:     nil,
-			expected: "[2:5] empty expansion found",
+			expected: "[2:4] empty expansion found",
 		},
 		{
 			content:  "abc ${var.abc}",
 			vars:     nil,
-			expected: "[1:5] expansion value 'var.abc' could not be evaluated",
+			expected: "[1:4] expansion value 'var.abc' could not be evaluated",
 		},
 	}
 

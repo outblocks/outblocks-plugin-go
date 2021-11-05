@@ -2,9 +2,13 @@ package fields
 
 import (
 	"fmt"
+	"regexp"
+	"strings"
 
 	"github.com/outblocks/outblocks-plugin-go/util"
 )
+
+var escapePercent = regexp.MustCompile(`%([^{]|$)`)
 
 type FieldVarEvaluator struct {
 	*util.BaseVarEvaluator
@@ -14,7 +18,8 @@ func NewFieldVarEvaluator(vars map[string]interface{}) *FieldVarEvaluator {
 	return &FieldVarEvaluator{
 		BaseVarEvaluator: util.NewBaseVarEvaluator(vars).
 			WithEncoder(fieldsVarEncoder).
-			WithVarChar('%'),
+			WithVarChar('%').
+			WithIgnoreInvalid(true),
 	}
 }
 
@@ -30,10 +35,12 @@ func fieldsVarEncoder(input interface{}) ([]byte, error) {
 }
 
 func (e *FieldVarEvaluator) Expand(input string) (StringInputField, error) {
+	input = escapePercent.ReplaceAllString(input, "%$0")
+
 	format, params, err := e.ExpandRaw([]byte(input))
 	if err != nil {
 		return nil, err
 	}
 
-	return Sprintf(string(format), params...), nil
+	return Sprintf(strings.ReplaceAll(string(format), "%{", "%%{"), params...), nil
 }

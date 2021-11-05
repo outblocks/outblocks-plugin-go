@@ -3,14 +3,18 @@ package util
 import (
 	"bytes"
 	"fmt"
+	"regexp"
 	"strings"
 )
+
+var validKey = regexp.MustCompile(`^[a-z]+(\.[a-zA-Z0-9_-]+)*$`)
 
 type BaseVarEvaluator struct {
 	vars                  map[string]interface{}
 	encoder               func(val interface{}) ([]byte, error)
 	keyGetter             func(vars map[string]interface{}, key string) (val interface{}, ok bool)
 	ignoreComments        bool
+	ignoreInvalid         bool
 	varChar, commentsChar byte
 }
 
@@ -20,6 +24,7 @@ func NewBaseVarEvaluator(vars map[string]interface{}) *BaseVarEvaluator {
 		keyGetter:      defaultVarKeyGetter,
 		encoder:        defaultVarEncoder,
 		ignoreComments: false,
+		ignoreInvalid:  false,
 		varChar:        '$',
 		commentsChar:   '#',
 	}
@@ -37,6 +42,11 @@ func (e *BaseVarEvaluator) WithKeyGetter(keyGetter func(vars map[string]interfac
 
 func (e *BaseVarEvaluator) WithIgnoreComments(ignoreComments bool) *BaseVarEvaluator {
 	e.ignoreComments = ignoreComments
+	return e
+}
+
+func (e *BaseVarEvaluator) WithIgnoreInvalid(ignoreInvalid bool) *BaseVarEvaluator {
+	e.ignoreInvalid = ignoreInvalid
 	return e
 }
 
@@ -70,8 +80,6 @@ func defaultVarKeyGetter(vars map[string]interface{}, key string) (val interface
 }
 
 func (e *BaseVarEvaluator) ExpandRaw(input []byte) (output []byte, params []interface{}, err error) {
-	tokenStart := -1
-
 	var token string
 
 	in := bytes.Split(bytes.ReplaceAll(input, []byte{'\r', '\n'}, []byte{'\n'}), []byte{'\n'})
@@ -90,43 +98,52 @@ func (e *BaseVarEvaluator) ExpandRaw(input []byte) (output []byte, params []inte
 			}
 		}
 
-		for c := range line {
-			switch {
-			case tokenStart == -1:
-				// todo: magic marker set
-				if c+1 < ll && line[c] == e.varChar && line[c+1] == '{' {
-					c++
-					tokenStart = c
-				}
-
-			case line[c] == '}':
-				token = string(line[tokenStart+1 : c])
-				if token == "" {
-					return nil, nil, fmt.Errorf("[%d:%d] empty expansion found", l+1, tokenStart)
-				}
-
-				out[l] = append(out[l], line[done:tokenStart-1]...)
-
-				val, ok := e.keyGetter(e.vars, token)
-				if !ok {
-					return nil, nil, fmt.Errorf("[%d:%d] expansion value '%s' could not be evaluated", l+1, tokenStart, token)
-				}
-
-				valOut, err := e.encoder(val)
-				if err != nil {
-					return nil, nil, fmt.Errorf("[%d:%d] expansion value '%s' could not be encoded, unknown field\nerror: %w",
-						l+1, tokenStart, token, err)
-				}
-
-				out[l] = append(out[l], valOut...)
-				params = append(params, val)
-
-				done = c + 1
-				tokenStart = -1
+		for start := range line {
+			if start+1 >= ll || line[start] != e.varChar || line[start+1] != '{' {
+				continue
 			}
+
+			idx := strings.Index(string(line[start+2:]), "}")
+			if idx == -1 {
+				continue
+			}
+
+			token = string(line[start+2 : start+2+idx])
+
+			if !validKey.MatchString(token) {
+				if e.ignoreInvalid {
+					continue
+				}
+
+				if token == "" {
+					return nil, nil, fmt.Errorf("[%d:%d] empty expansion found", l+1, start)
+				}
+
+				return nil, nil, fmt.Errorf("[%d:%d] invalid expansion found: %s", l+1, start, token)
+			}
+
+			out[l] = append(out[l], line[done:start]...)
+
+			val, ok := e.keyGetter(e.vars, token)
+			if !ok {
+				return nil, nil, fmt.Errorf("[%d:%d] expansion value '%s' could not be evaluated", l+1, start, token)
+			}
+
+			valOut, err := e.encoder(val)
+			if err != nil {
+				return nil, nil, fmt.Errorf("[%d:%d] expansion value '%s' could not be encoded, unknown field\nerror: %w",
+					l+1, start, token, err)
+			}
+
+			out[l] = append(out[l], valOut...)
+			params = append(params, val)
+
+			done = start + 2 + idx
 		}
 
-		out[l] = append(out[l], line[done:]...)
+		if done < ll-1 {
+			out[l] = append(out[l], line[done:]...)
+		}
 	}
 
 	return bytes.Join(out, []byte{'\n'}), params, nil

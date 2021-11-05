@@ -103,7 +103,7 @@ func (e *BaseVarEvaluator) ExpandRaw(input []byte) (output []byte, params []inte
 				continue
 			}
 
-			idx := strings.Index(string(line[start+2:]), "}")
+			idx := bytes.Index(line[start+2:], []byte("}"))
 			if idx == -1 {
 				continue
 			}

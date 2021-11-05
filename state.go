@@ -3,6 +3,7 @@ package plugin
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/outblocks/outblocks-plugin-go/types"
 )
@@ -12,6 +13,7 @@ type GetStateRequest struct {
 	StateType  string                 `json:"type"`
 	Properties map[string]interface{} `json:"properties"`
 	Lock       bool                   `json:"lock"`
+	LockWait   time.Duration          `json:"lock_wait"`
 }
 
 func (r *GetStateRequest) Type() RequestType {

@@ -5,8 +5,6 @@ import "github.com/outblocks/outblocks-plugin-go/types"
 type DeployBaseRequest struct {
 	Apps         []*types.AppPlan        `json:"apps"`
 	Dependencies []*types.DependencyPlan `json:"dependencies"`
-	TargetApps   []string                `json:"target_apps"`
-	SkipApps     []string                `json:"skip_apps"`
 
 	Destroy bool `json:"destroy"`
 

@@ -148,6 +148,7 @@ type ResourceWrapper struct {
 	Dependencies map[*ResourceWrapper]struct{}
 	Resource     Resource
 	IsRegistered bool
+	IsSkipped    bool
 }
 
 func (w *ResourceWrapper) String() string {

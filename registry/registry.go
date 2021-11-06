@@ -21,16 +21,16 @@ type ResourceTypeInfo struct {
 }
 
 type Options struct {
-	Read                 bool
-	Destroy              bool
-	AllowDuplicates      bool
-	TargetApps, SkipApps []string
+	Read            bool
+	Destroy         bool
+	AllowDuplicates bool
 }
 
 type Registry struct {
-	opts     *Options
-	types    map[string]*ResourceTypeInfo
-	fieldMap map[interface{}]*ResourceWrapper
+	opts          *Options
+	types         map[string]*ResourceTypeInfo
+	fieldMap      map[interface{}]*ResourceWrapper
+	skippedAppIDs map[string]bool
 
 	resources map[ResourceID]*ResourceWrapper
 }
@@ -41,10 +41,11 @@ func NewRegistry(opts *Options) *Registry {
 	}
 
 	return &Registry{
-		opts:      opts,
-		fieldMap:  make(map[interface{}]*ResourceWrapper),
-		resources: make(map[ResourceID]*ResourceWrapper),
-		types:     make(map[string]*ResourceTypeInfo),
+		opts:          opts,
+		types:         make(map[string]*ResourceTypeInfo),
+		fieldMap:      make(map[interface{}]*ResourceWrapper),
+		skippedAppIDs: make(map[string]bool),
+		resources:     make(map[ResourceID]*ResourceWrapper),
 	}
 }
 
@@ -140,6 +141,10 @@ func generateResourceFields(o Resource, rti *ResourceTypeInfo) map[string]*Field
 	mapFieldInfo(rti, fieldsMap, t, v, "")
 
 	return fieldsMap
+}
+
+func (r *Registry) SkipAppResources(app *types.App) {
+	r.skippedAppIDs[app.ID] = true
 }
 
 func (r *Registry) RegisterAppResource(app *types.App, id string, o Resource) error {
@@ -604,84 +609,38 @@ func setFieldDefaults(r *ResourceWrapper) error {
 	return nil
 }
 
-func filterFunc(resources map[ResourceID]*ResourceWrapper, opts *Options) func(res *ResourceWrapper) bool {
-	if len(opts.TargetApps) == 0 && len(opts.SkipApps) == 0 {
-		return nil
-	}
-
-	targetAppsMap := make(map[string]bool)
-	skipAppsMap := make(map[string]bool)
-
-	for _, app := range opts.TargetApps {
-		targetAppsMap[app] = true
-	}
-
-	for _, app := range opts.SkipApps {
-		skipAppsMap[app] = true
-	}
-
-	namespaceFilter := make(map[string]bool)
-
-	for _, rw := range resources {
-		if len(targetAppsMap) > 0 && rw.Source == types.SourceApp && !targetAppsMap[rw.Namespace] {
-			continue
-		}
-
-		if skipAppsMap[rw.Namespace] && rw.Source == types.SourceApp {
-			continue
-		}
-
-		namespaceFilter[rw.Namespace] = true
-	}
-
-	return func(res *ResourceWrapper) bool {
-		return namespaceFilter[res.Namespace]
-	}
-}
-
-func addRecursiveDependencies(out map[ResourceID]bool, rw *ResourceWrapper) {
-	if _, ok := out[rw.ResourceID]; ok {
+func unskipRecursiveDependencies(rw *ResourceWrapper) {
+	if !rw.IsSkipped {
 		return
 	}
 
-	out[rw.ResourceID] = true
+	rw.IsSkipped = false
 
 	for dep := range rw.Dependencies {
-		if dep.Resource.IsExisting() {
+		if rw.Resource.IsExisting() {
 			continue
 		}
 
-		addRecursiveDependencies(out, dep)
+		unskipRecursiveDependencies(dep)
 	}
 }
 
-func filterResources(resources map[ResourceID]*ResourceWrapper, opts *Options) map[ResourceID]bool {
-	filterFunc := filterFunc(resources, opts)
-
-	if filterFunc == nil {
-		out := make(map[ResourceID]bool, len(resources))
-		for r := range resources {
-			out[r] = true
+func (r *Registry) checkResources(resources map[ResourceID]*ResourceWrapper) {
+	for _, rw := range resources {
+		if rw.Source == types.SourceApp && r.skippedAppIDs[rw.Namespace] {
+			rw.IsSkipped = true
 		}
-
-		return out
 	}
-
-	out := make(map[ResourceID]bool)
 
 	for _, rw := range resources {
-		if !filterFunc(rw) {
-			continue
+		if !rw.IsSkipped {
+			unskipRecursiveDependencies(rw)
 		}
-
-		addRecursiveDependencies(out, rw)
 	}
-
-	return out
 }
 
 func (r *Registry) Diff(ctx context.Context) ([]*Diff, error) {
-	filtered := filterResources(r.resources, r.opts)
+	r.checkResources(r.resources)
 
 	var mu sync.RWMutex
 
@@ -689,11 +648,7 @@ func (r *Registry) Diff(ctx context.Context) ([]*Diff, error) {
 
 	// Process actual diff.
 	err := r.processInOrder(ctx, -1, func(res *ResourceWrapper) error {
-		mu.Lock()
-		process := filtered[res.ResourceID]
-		mu.Unlock()
-
-		if !process {
+		if res.IsSkipped {
 			return nil
 		}
 
@@ -731,7 +686,7 @@ func (r *Registry) Diff(ctx context.Context) ([]*Diff, error) {
 
 			if d.Type == DiffTypeRecreate {
 				for dep := range res.DependedBy {
-					filtered[dep.ResourceID] = true
+					dep.IsSkipped = false
 				}
 			}
 			mu.Unlock()

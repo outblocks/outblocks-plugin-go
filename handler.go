@@ -5,17 +5,22 @@ import (
 	"net"
 
 	"github.com/outblocks/outblocks-plugin-go/log"
+	"github.com/outblocks/outblocks-plugin-go/registry"
 )
+
+type ReqHandlerOptions struct {
+	RegistryAllowDuplicates bool
+}
 
 type ReqHandler struct {
 	ProjectInit            func(ctx context.Context, r *ProjectInitRequest) (Response, error)
 	ProjectInitInteractive func(ctx context.Context, r *ProjectInitRequest, stream *ReceiverStream) error
 	Start                  func(ctx context.Context, r *StartRequest) (Response, error)
 	StartInteractive       func(ctx context.Context, r *StartRequest, stream *ReceiverStream) error
-	Plan                   func(ctx context.Context, r *PlanRequest) (Response, error)
-	PlanInteractive        func(ctx context.Context, r *PlanRequest, stream *ReceiverStream) error
-	Apply                  func(ctx context.Context, r *ApplyRequest) (Response, error)
-	ApplyInteractive       func(ctx context.Context, r *ApplyRequest, stream *ReceiverStream) error
+	Plan                   func(ctx context.Context, r *PlanRequest, reg *registry.Registry) (Response, error)
+	PlanInteractive        func(ctx context.Context, r *PlanRequest, reg *registry.Registry, stream *ReceiverStream) error
+	Apply                  func(ctx context.Context, r *ApplyRequest, reg *registry.Registry) (Response, error)
+	ApplyInteractive       func(ctx context.Context, r *ApplyRequest, reg *registry.Registry, stream *ReceiverStream) error
 	Run                    func(ctx context.Context, r *RunRequest) (Response, error)
 	RunInteractive         func(ctx context.Context, r *RunRequest, stream *ReceiverStream) error
 	Command                func(ctx context.Context, r *CommandRequest) (Response, error)
@@ -28,6 +33,8 @@ type ReqHandler struct {
 	GetState    func(ctx context.Context, r *GetStateRequest) (Response, error)
 	SaveState   func(ctx context.Context, r *SaveStateRequest) (Response, error)
 	ReleaseLock func(ctx context.Context, r *ReleaseLockRequest) (Response, error)
+
+	Options ReqHandlerOptions
 }
 
 func (h *ReqHandler) handleSync(ctx context.Context, req Request) (res Response, err error) {
@@ -54,11 +61,11 @@ func (h *ReqHandler) handleSync(ctx context.Context, req Request) (res Response,
 		}
 	case *PlanRequest:
 		if h.Plan != nil {
-			res, err = h.Plan(ctx, v)
+			res, err = h.Plan(ctx, v, h.CreateRegistry(&v.DeployBaseRequest, v.Verify))
 		}
 	case *ApplyRequest:
 		if h.Apply != nil {
-			res, err = h.Apply(ctx, v)
+			res, err = h.Apply(ctx, v, h.CreateRegistry(&v.DeployBaseRequest, false))
 		}
 	case *RunRequest:
 		if h.Run != nil {
@@ -85,11 +92,13 @@ func (h *ReqHandler) interactiveHandler(ctx context.Context, req Request, stream
 		}
 	case *PlanRequest:
 		if h.PlanInteractive != nil {
-			return func() error { return h.PlanInteractive(ctx, v, stream) }
+			return func() error {
+				return h.PlanInteractive(ctx, v, h.CreateRegistry(&v.DeployBaseRequest, v.Verify), stream)
+			}
 		}
 	case *ApplyRequest:
 		if h.ApplyInteractive != nil {
-			return func() error { return h.ApplyInteractive(ctx, v, stream) }
+			return func() error { return h.ApplyInteractive(ctx, v, h.CreateRegistry(&v.DeployBaseRequest, false), stream) }
 		}
 	case *RunRequest:
 		if h.RunInteractive != nil {
@@ -128,6 +137,22 @@ func handleError(c net.Conn, err error) {
 	_ = writeResponse(c, &ErrorResponse{
 		Error: err.Error(),
 	})
+}
+
+func (h *ReqHandler) CreateRegistry(v *DeployBaseRequest, read bool) *registry.Registry {
+	reg := registry.NewRegistry(&registry.Options{
+		Destroy:         v.Destroy,
+		Read:            read,
+		AllowDuplicates: h.Options.RegistryAllowDuplicates,
+	})
+
+	for _, app := range v.Apps {
+		if app.Skip {
+			reg.SkipAppResources(&app.App.App)
+		}
+	}
+
+	return reg
 }
 
 func (h *ReqHandler) Handle(ctx context.Context, logger log.Logger, c net.Conn) error {

@@ -34,6 +34,11 @@ func TestExpand(t *testing.T) {
 			vars:     map[string]interface{}{"var": map[string]interface{}{"nested": map[string]interface{}{"val": map[string]interface{}{"y": 1}}}},
 			expected: `abc: 1`,
 		},
+		{
+			content:  "val: ${var.base_url}/func1",
+			vars:     map[string]interface{}{"var": map[string]interface{}{"base_url": "test"}},
+			expected: `val: test/func1`,
+		},
 	}
 
 	for _, test := range tests {
@@ -58,12 +63,12 @@ func TestExpand_Invalid(t *testing.T) {
 		{
 			content:  "\nabc ${}",
 			vars:     nil,
-			expected: "[2:4] empty expansion found",
+			expected: "[2:5] empty expansion found",
 		},
 		{
 			content:  "abc ${var.abc}",
 			vars:     nil,
-			expected: "[1:4] expansion value 'var.abc' could not be evaluated",
+			expected: "[1:5] expansion value 'var.abc' could not be evaluated",
 		},
 	}
 

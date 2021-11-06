@@ -116,29 +116,29 @@ func (e *BaseVarEvaluator) ExpandRaw(input []byte) (output []byte, params []inte
 				}
 
 				if token == "" {
-					return nil, nil, fmt.Errorf("[%d:%d] empty expansion found", l+1, start)
+					return nil, nil, fmt.Errorf("[%d:%d] empty expansion found", l+1, start+1)
 				}
 
-				return nil, nil, fmt.Errorf("[%d:%d] invalid expansion found: %s", l+1, start, token)
+				return nil, nil, fmt.Errorf("[%d:%d] invalid expansion found: %s", l+1, start+1, token)
 			}
 
 			out[l] = append(out[l], line[done:start]...)
 
 			val, ok := e.keyGetter(e.vars, token)
 			if !ok {
-				return nil, nil, fmt.Errorf("[%d:%d] expansion value '%s' could not be evaluated", l+1, start, token)
+				return nil, nil, fmt.Errorf("[%d:%d] expansion value '%s' could not be evaluated", l+1, start+1, token)
 			}
 
 			valOut, err := e.encoder(val)
 			if err != nil {
 				return nil, nil, fmt.Errorf("[%d:%d] expansion value '%s' could not be encoded, unknown field\nerror: %w",
-					l+1, start, token, err)
+					l+1, start+1, token, err)
 			}
 
 			out[l] = append(out[l], valOut...)
 			params = append(params, val)
 
-			done = start + 2 + idx
+			done = start + 3 + idx
 		}
 
 		if done < ll-1 {

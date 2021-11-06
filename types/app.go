@@ -107,7 +107,7 @@ func (p *ServiceAppProperties) Encode() (map[string]interface{}, error) {
 // Static app properties.
 
 type StaticAppBuild struct {
-	Env     map[string]string `json:"env"`
+	Env     map[string]string `json:"env,omitempty"`
 	Command string            `json:"command"`
 	Dir     string            `json:"dir"`
 }

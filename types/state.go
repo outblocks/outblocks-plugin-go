@@ -26,8 +26,8 @@ type DNSState struct {
 	Manual         bool                   `json:"manual"`
 	SSLStatus      SSLStatus              `json:"ssl_status"`
 	SSLStatusInfo  string                 `json:"ssl_status_info"`
-	ConnectionInfo string                 `json:"connection_info"`
-	Properties     map[string]interface{} `json:"properties"`
+	ConnectionInfo string                 `json:"connection_info,omitempty"`
+	Properties     map[string]interface{} `json:"properties,omitempty"`
 }
 
 type DeploymentState struct {
@@ -36,7 +36,7 @@ type DeploymentState struct {
 }
 
 type AppState struct {
-	App *App `json:"app"`
+	App
 
 	Deployment *DeploymentState `json:"deploy_state"`
 	DNS        *DNSState        `json:"dns_state"`
@@ -44,25 +44,26 @@ type AppState struct {
 
 func NewAppState(app *App) *AppState {
 	return &AppState{
-		App: app,
+		App: *app,
 	}
 }
 
 type DependencyState struct {
-	Dependency *Dependency `json:"dependency"`
-	DNS        *DNSState   `json:"dns"`
+	Dependency
+
+	DNS *DNSState `json:"dns"`
 }
 
 func NewDependencyState(dep *Dependency) *DependencyState {
 	return &DependencyState{
-		Dependency: dep,
+		Dependency: *dep,
 	}
 }
 
 type PluginStateMap map[string]json.RawMessage
 
 type StateData struct {
-	Apps         map[string]*App           `json:"apps"`
-	Dependencies map[string]*Dependency    `json:"dependencies"`
-	PluginsMap   map[string]PluginStateMap `json:"plugins_state"` // plugin name -> object -> state
+	Apps         map[string]*AppState        `json:"apps"`
+	Dependencies map[string]*DependencyState `json:"dependencies"`
+	PluginsMap   map[string]PluginStateMap   `json:"plugins_state"` // plugin name -> object -> state
 }

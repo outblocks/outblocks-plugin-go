@@ -15,9 +15,9 @@ const (
 )
 
 type AppPlan struct {
-	IsDeploy bool `json:"is_deploy"`
-	IsDNS    bool `json:"is_dns"`
-	App      *App `json:"app"`
+	App      *AppState `json:"app"`
+	IsDeploy bool      `json:"is_deploy"`
+	IsDNS    bool      `json:"is_dns"`
 }
 
 func (a *AppPlan) String() string {
@@ -25,7 +25,7 @@ func (a *AppPlan) String() string {
 }
 
 type DependencyPlan struct {
-	Dependency *Dependency `json:"dependency"`
+	Dependency *DependencyState `json:"dependency"`
 }
 
 func (d *DependencyPlan) String() string {

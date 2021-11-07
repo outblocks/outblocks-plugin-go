@@ -299,19 +299,6 @@ func (f *RandomStringField) newValue() interface{} {
 	return f.prefix + util.RandomStringCustom(f.lower, f.upper, f.numeric, f.special, f.length) + f.suffix
 }
 
-func (f *RandomStringField) IsChanged() bool {
-	if f.StringField.IsChanged() {
-		return true
-	}
-
-	cur := f.Current()
-	if !strings.HasSuffix(cur, f.suffix) || !strings.HasPrefix(cur, f.prefix) {
-		return true
-	}
-
-	return false
-}
-
 func randomString(prefix, suffix string, lower, upper, numeric, special bool, length int) StringInputField {
 	f := &RandomStringField{
 		prefix:  prefix,

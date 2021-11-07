@@ -299,6 +299,14 @@ func (f *RandomStringField) newValue() interface{} {
 	return f.prefix + util.RandomStringCustom(f.lower, f.upper, f.numeric, f.special, f.length) + f.suffix
 }
 
+func (f *RandomStringField) Verbose() string {
+	if cur, ok := f.LookupCurrent(); ok {
+		return cur
+	}
+
+	return fmt.Sprintf("%s*%s", f.prefix, f.suffix)
+}
+
 func randomString(prefix, suffix string, lower, upper, numeric, special bool, length int) StringInputField {
 	f := &RandomStringField{
 		prefix:  prefix,
@@ -324,4 +332,16 @@ func RandomStringWithPrefix(prefix string, lower, upper, numeric, special bool, 
 
 func RandomStringWithSuffix(suffix string, lower, upper, numeric, special bool, length int) StringInputField {
 	return randomString("", suffix, lower, upper, numeric, special, length)
+}
+
+func VerboseString(f stringBaseField) string {
+	if vf, ok := f.(VerboseField); ok {
+		return vf.Verbose()
+	}
+
+	if sif, ok := f.(StringInputField); ok {
+		return sif.Any()
+	}
+
+	return f.Current()
 }

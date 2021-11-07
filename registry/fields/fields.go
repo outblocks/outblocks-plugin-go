@@ -36,6 +36,10 @@ type OutputField interface {
 	Field
 }
 
+type VerboseField interface {
+	Verbose() string
+}
+
 type FieldBase struct {
 	isOutput                      bool
 	currentDefined, wantedDefined bool

@@ -21,6 +21,7 @@ type FieldProperties struct {
 	Ignored  bool
 	ForceNew bool
 	Computed bool
+	Static   bool
 }
 
 func parseFieldPropertiesTag(tag string) *FieldProperties {
@@ -37,6 +38,9 @@ func parseFieldPropertiesTag(tag string) *FieldProperties {
 
 		case "force_new":
 			ret.ForceNew = true
+
+		case "static":
+			ret.Static = true
 		}
 	}
 

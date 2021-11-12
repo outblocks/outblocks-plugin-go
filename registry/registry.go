@@ -938,14 +938,14 @@ func (r *Registry) calculateDiff(rw *ResourceWrapper) *Diff {
 	var fieldsList []string
 
 	for name, f := range rw.Fields {
-		changed := r.calculateFieldDiff(f)
-		if !changed {
+		fieldChanged, fieldForceNew := r.calculateFieldDiff(f)
+		if !fieldChanged {
 			continue
 		}
 
 		fieldsList = append(fieldsList, name)
 
-		if f.Type.Properties.ForceNew {
+		if fieldForceNew {
 			forceNew = true
 		}
 	}
@@ -962,9 +962,9 @@ func (r *Registry) calculateDiff(rw *ResourceWrapper) *Diff {
 	return NewDiff(rw, typ, fieldsList)
 }
 
-func (r *Registry) calculateFieldDiff(field *FieldInfo) (changed bool) {
+func (r *Registry) calculateFieldDiff(field *FieldInfo) (changed, forceNew bool) {
 	if field.Type.Properties.Ignored {
-		return false
+		return false, false
 	}
 
 	v := field.Value.Interface().(fields.ValueTracker)
@@ -973,12 +973,12 @@ func (r *Registry) calculateFieldDiff(field *FieldInfo) (changed bool) {
 	if fdh, ok := field.Value.Interface().(fields.FieldDependencyHolder); ok {
 		for _, fd := range fdh.FieldDependencies() {
 			if dep, ok := r.fieldMap[fd]; ok && dep.Resource.Diff() != nil {
-				if dep.Resource.Diff().Type != DiffTypeUpdate || field.Value.Interface().(fields.Field).IsOutput() {
-					return true
+				if dep.Resource.Diff().Type == DiffTypeRecreate || (dep.Resource.IsExisting() && field.Value.Interface().(fields.Field).IsOutput() && !field.Type.Properties.Static) {
+					return true, true
 				}
 			}
 		}
 	}
 
-	return v.IsChanged()
+	return v.IsChanged(), field.Type.Properties.ForceNew
 }

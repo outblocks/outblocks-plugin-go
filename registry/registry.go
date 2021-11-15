@@ -250,7 +250,7 @@ func (r *Registry) register(source, namespace, id string, o Resource) error {
 	return nil
 }
 
-func (r *Registry) Load(ctx context.Context, state []byte, meta interface{}) error {
+func (r *Registry) Load(ctx context.Context, state []byte, meta interface{}) error { // nolint:gocyclo
 	if len(state) == 0 {
 		return nil
 	}
@@ -329,6 +329,16 @@ func (r *Registry) Load(ctx context.Context, state []byte, meta interface{}) err
 	// Fill dependencies now that resourceMap is filled.
 	for _, v := range existingMap {
 		rw := resourceMap[v.ResourceID]
+
+		for _, d := range v.DependedBy {
+			dep, ok := resourceMap[d]
+			if !ok {
+				return fmt.Errorf("dependency missing: %s", d)
+			}
+
+			rw.DependedBy[dep] = struct{}{}
+			dep.Dependencies[rw] = struct{}{}
+		}
 
 		for _, d := range v.Dependencies {
 			dep, ok := resourceMap[d]
@@ -421,7 +431,13 @@ func (r *Registry) read(ctx context.Context, meta interface{}) error {
 
 	resourceUniqueIDMap := make(map[string]*ResourceWrapper)
 
+	r.checkResources(r.resources)
+
 	err := r.processInOrder(ctx, defaultConcurrency, func(res *ResourceWrapper) error {
+		if res.IsSkipped {
+			return nil
+		}
+
 		rr, ok := res.Resource.(ResourceReader)
 		if !ok {
 			return nil

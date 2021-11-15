@@ -11,14 +11,17 @@ import (
 
 type App struct {
 	ID           string                 `json:"id"`
-	DeployPlugin string                 `json:"deploy_plugin"`
-	DNSPlugin    string                 `json:"dns_plugin,omitempty"`
-	Dir          string                 `json:"dir"`
 	Name         string                 `json:"name"`
 	Type         string                 `json:"type"`
+	Dir          string                 `json:"dir"`
 	URL          string                 `json:"url"`
 	PathRedirect string                 `json:"path_redirect"`
 	Env          map[string]string      `json:"env"`
+	DeployPlugin string                 `json:"deploy_plugin"`
+	DNSPlugin    string                 `json:"dns_plugin,omitempty"`
+	RunPlugin    string                 `json:"run_plugin,omitempty"`
+	Run          *AppRunInfo            `json:"run,omitempty"`
+	Deploy       *AppDeployInfo         `json:"deploy,omitempty"`
 	Needs        map[string]*AppNeed    `json:"needs"`
 	Properties   map[string]interface{} `json:"properties"`
 }
@@ -29,6 +32,20 @@ func (a *App) EnvPrefix() string {
 
 func (a *App) String() string {
 	return fmt.Sprintf("App<Name=%s,Type=%s>", a.Name, a.Type)
+}
+
+type AppRunInfo struct {
+	Plugin  string                 `json:"plugin,omitempty"`
+	Command string                 `json:"command,omitempty"`
+	Port    int                    `json:"port,omitempty"`
+	Env     map[string]string      `json:"env,omitempty"`
+	Other   map[string]interface{} `yaml:"-,remain"`
+}
+
+type AppDeployInfo struct {
+	Plugin string                 `json:"plugin,omitempty"`
+	Env    map[string]string      `json:"env,omitempty"`
+	Other  map[string]interface{} `yaml:"-,remain"`
 }
 
 type AppNeed struct {
@@ -137,4 +154,66 @@ func (p *StaticAppProperties) Encode() (map[string]interface{}, error) {
 	err := mapstructureJSONDecode(p, &out)
 
 	return out, err
+}
+
+type AppVars map[string]map[string]map[string]interface{}
+
+func VarsFromAppType(app *App) map[string]interface{} {
+	return map[string]interface{}{
+		"url": app.URL,
+	}
+}
+
+func VarsFromAppRunType(app *AppRun) map[string]interface{} {
+	return map[string]interface{}{
+		"url": app.URL,
+	}
+}
+
+func AppVarsFromApps(apps []*App) AppVars {
+	appVars := make(map[string]map[string]map[string]interface{}) // type->name->value
+
+	for _, app := range apps {
+		vars := VarsFromAppType(app)
+
+		if _, ok := appVars[app.Type]; !ok {
+			appVars[app.Type] = map[string]map[string]interface{}{
+				app.Name: vars,
+			}
+		} else {
+			appVars[app.Type][app.Name] = vars
+		}
+	}
+
+	return appVars
+}
+
+func AppVarsFromAppRun(apps []*AppRun) AppVars {
+	appVars := make(map[string]map[string]map[string]interface{}) // type->name->value
+
+	for _, app := range apps {
+		vars := VarsFromAppRunType(app)
+
+		if _, ok := appVars[app.App.Type]; !ok {
+			appVars[app.App.Type] = map[string]map[string]interface{}{
+				app.App.Name: vars,
+			}
+		} else {
+			appVars[app.App.Type][app.App.Name] = vars
+		}
+	}
+
+	return appVars
+}
+
+func (v AppVars) ForApp(a *App) map[string]interface{} {
+	return v[a.Type][a.Name]
+}
+
+func VarsForApp(av AppVars, a *App, depVars interface{}) map[string]interface{} {
+	return map[string]interface{}{
+		"app":  av,
+		"self": av.ForApp(a),
+		"dep":  depVars,
+	}
 }

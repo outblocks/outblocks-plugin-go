@@ -13,7 +13,9 @@ func (r *RunRequest) Type() RequestType {
 	return RequestTypeRun
 }
 
-type RunningResponse struct{}
+type RunningResponse struct {
+	Vars map[string]map[string]string // ID -> key->val
+}
 
 func (r *RunningResponse) Type() ResponseType {
 	return ResponseTypeRunning

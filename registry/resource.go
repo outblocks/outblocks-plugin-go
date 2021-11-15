@@ -70,6 +70,10 @@ type ResourceTypeVerbose interface {
 	GetType() string
 }
 
+type ResourceCriticalChecker interface {
+	IsCritical(t DiffType, fieldList []string) bool
+}
+
 type ResourceBase struct {
 	state ResourceState
 	diff  *Diff
@@ -138,6 +142,7 @@ type ResourceSerialized struct {
 	ResourceID
 	Properties   map[string]interface{} `json:"properties,omitempty"`
 	Dependencies []ResourceID           `json:"dependencies,omitempty"`
+	DependedBy   []ResourceID           `json:"depended_by,omitempty"`
 }
 
 type ResourceWrapper struct {
@@ -197,7 +202,16 @@ func (w *ResourceWrapper) MarshalJSON() ([]byte, error) {
 		}
 	}
 
-	var deps []ResourceID
+	var (
+		dependedBy []ResourceID
+		deps       []ResourceID
+	)
+
+	for d := range w.DependedBy {
+		if d.Resource.State() == ResourceStateExisting {
+			dependedBy = append(dependedBy, d.ResourceID)
+		}
+	}
 
 	for d := range w.Dependencies {
 		if d.Resource.State() == ResourceStateExisting {
@@ -209,6 +223,7 @@ func (w *ResourceWrapper) MarshalJSON() ([]byte, error) {
 		ResourceID:   w.ResourceID,
 		Properties:   props,
 		Dependencies: deps,
+		DependedBy:   dependedBy,
 	})
 }
 

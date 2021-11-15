@@ -18,9 +18,10 @@ const (
 )
 
 type Diff struct {
-	Object *ResourceWrapper
-	Type   DiffType
-	Fields []string
+	Object   *ResourceWrapper
+	Type     DiffType
+	Fields   []string
+	Critical bool
 
 	applied []chan struct{}
 }
@@ -34,10 +35,17 @@ func NewDiff(o *ResourceWrapper, t DiffType, fieldList []string) *Diff {
 		applied = append(applied, make(chan struct{}))
 	}
 
+	var critical bool
+
+	if rcc, ok := o.Resource.(ResourceCriticalChecker); ok {
+		critical = rcc.IsCritical(t, fieldList)
+	}
+
 	return &Diff{
-		Object: o,
-		Type:   t,
-		Fields: fieldList,
+		Object:   o,
+		Type:     t,
+		Fields:   fieldList,
+		Critical: critical,
 
 		applied: applied,
 	}
@@ -116,15 +124,15 @@ func (d *Diff) ObjectType() string {
 func (d *Diff) ToPlanAction() *types.PlanAction {
 	switch d.Type {
 	case DiffTypeCreate:
-		return types.NewPlanActionCreate(d.Object.Source, d.Object.Namespace, d.Object.ID, d.ObjectType(), d.Object.Resource.GetName())
+		return types.NewPlanActionCreate(d.Object.Source, d.Object.Namespace, d.Object.ID, d.ObjectType(), d.Object.Resource.GetName(), d.Critical)
 	case DiffTypeUpdate:
-		return types.NewPlanActionUpdate(d.Object.Source, d.Object.Namespace, d.Object.ID, d.ObjectType(), d.Object.Resource.GetName())
+		return types.NewPlanActionUpdate(d.Object.Source, d.Object.Namespace, d.Object.ID, d.ObjectType(), d.Object.Resource.GetName(), d.Critical)
 	case DiffTypeRecreate:
-		return types.NewPlanActionRecreate(d.Object.Source, d.Object.Namespace, d.Object.ID, d.ObjectType(), d.Object.Resource.GetName())
+		return types.NewPlanActionRecreate(d.Object.Source, d.Object.Namespace, d.Object.ID, d.ObjectType(), d.Object.Resource.GetName(), d.Critical)
 	case DiffTypeDelete:
-		return types.NewPlanActionDelete(d.Object.Source, d.Object.Namespace, d.Object.ID, d.ObjectType(), d.Object.Resource.GetName())
+		return types.NewPlanActionDelete(d.Object.Source, d.Object.Namespace, d.Object.ID, d.ObjectType(), d.Object.Resource.GetName(), d.Critical)
 	case DiffTypeProcess:
-		return types.NewPlanActionProcess(d.Object.Source, d.Object.Namespace, d.Object.ID, d.ObjectType(), d.Object.Resource.GetName())
+		return types.NewPlanActionProcess(d.Object.Source, d.Object.Namespace, d.Object.ID, d.ObjectType(), d.Object.Resource.GetName(), d.Critical)
 	case DiffTypeNone:
 		panic("unexpected diff type")
 	default:

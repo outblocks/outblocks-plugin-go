@@ -17,10 +17,9 @@ func (a *AppRun) String() string {
 }
 
 type DependencyRun struct {
-	Dependency *Dependency       `json:"dependency"`
-	Env        map[string]string `json:"env"`
-	IP         string            `json:"ip"`
-	Port       int               `json:"port"`
+	Dependency *Dependency `json:"dependency"`
+	IP         string      `json:"ip"`
+	Port       int         `json:"port"`
 }
 
 func (d *DependencyRun) String() string {

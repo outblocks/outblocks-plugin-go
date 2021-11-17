@@ -22,7 +22,7 @@ func (r *GetStateRequest) Type() RequestType {
 
 type GetStateResponse struct {
 	State    json.RawMessage    `json:"state"`
-	LockInfo string             `json:"lockinfo"`
+	LockInfo string             `json:"lock_info"`
 	Source   *types.StateSource `json:"source"`
 }
 
@@ -30,21 +30,42 @@ func (r *GetStateResponse) Type() ResponseType {
 	return ResponseTypeGetState
 }
 
-// Force Unlock.
-type ReleaseLockRequest struct {
-	LockID     string                 `json:"lock_id"`
+// Release state lock.
+type ReleaseStateLockRequest struct {
+	LockInfo   string                 `json:"lock_info"`
 	StateType  string                 `json:"type"`
 	Properties map[string]interface{} `json:"properties"`
 }
 
-func (r *ReleaseLockRequest) Type() RequestType {
-	return RequestTypeReleaseLock
+func (r *ReleaseStateLockRequest) Type() RequestType {
+	return RequestTypeReleaseStateLock
+}
+
+// Locking.
+type AcquireLocksRequest struct {
+	LockNames  []string               `json:"lock_names,omitempty"`
+	LockWait   time.Duration          `json:"lock_wait"`
+	Properties map[string]interface{} `json:"properties"`
+}
+
+func (r *AcquireLocksRequest) Type() RequestType {
+	return RequestTypeAcquireLocks
+}
+
+type ReleaseLocksRequest struct {
+	Locks      map[string]string      `json:"locks"`
+	Properties map[string]interface{} `json:"properties"`
+}
+
+func (r *ReleaseLocksRequest) Type() RequestType {
+	return RequestTypeReleaseLocks
 }
 
 // Lock Error.
 type LockErrorResponse struct {
-	Owner    string `json:"owner"`
-	LockInfo string `json:"lockinfo"`
+	Owner     string    `json:"owner"`
+	CreatedAt time.Time `json:"created_at"`
+	LockInfo  string    `json:"lock_info"`
 }
 
 func (r *LockErrorResponse) Type() ResponseType {
@@ -53,6 +74,15 @@ func (r *LockErrorResponse) Type() ResponseType {
 
 func (r *LockErrorResponse) Error() string {
 	return fmt.Sprintf("state lock already acquired by %s", r.Owner)
+}
+
+// Locks Acquired.
+type LocksAcquiredResponse struct {
+	LockInfo []string `json:"lock_info"`
+}
+
+func (r *LocksAcquiredResponse) Type() ResponseType {
+	return ResponseTypeLocksAcquired
 }
 
 // Save State.

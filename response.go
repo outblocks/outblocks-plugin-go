@@ -21,6 +21,7 @@ const (
 	ResponseTypePromptInput
 	ResponseTypeRunning
 	ResponseTypeRunOutput
+	ResponseTypeLocksAcquired
 )
 
 type Response interface {

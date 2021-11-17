@@ -10,10 +10,12 @@ const (
 	RequestTypeRun
 	RequestTypeGetState
 	RequestTypeSaveState
-	RequestTypeReleaseLock
+	RequestTypeReleaseStateLock
 	RequestTypeCommand
 	RequestTypePromptConfirmation
 	RequestTypePromptAnswer
+	RequestTypeAcquireLocks
+	RequestTypeReleaseLocks
 )
 
 type Request interface {

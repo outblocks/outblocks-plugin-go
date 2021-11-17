@@ -91,9 +91,9 @@ type ServiceAppCDN struct {
 type ServiceAppProperties struct {
 	Public bool `json:"public" default:"true"`
 
-	Build     *ServiceAppBuild     `json:"build"`
-	Container *ServiceAppContainer `json:"container"`
-	CDN       *ServiceAppCDN       `json:"cdn"`
+	Build     *ServiceAppBuild     `json:"build,omitempty"`
+	Container *ServiceAppContainer `json:"container,omitempty"`
+	CDN       *ServiceAppCDN       `json:"cdn,omitempty"`
 
 	LocalDockerImage string `json:"local_docker_image"`
 	LocalDockerHash  string `json:"local_docker_hash"`
@@ -134,8 +134,8 @@ type StaticAppCDN struct {
 }
 
 type StaticAppProperties struct {
-	Build *StaticAppBuild `json:"build"`
-	CDN   *StaticAppCDN   `json:"cdn"`
+	Build *StaticAppBuild `json:"build,omitempty"`
+	CDN   *StaticAppCDN   `json:"cdn,omitempty"`
 
 	Routing string `json:"routing"`
 }

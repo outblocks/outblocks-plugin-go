@@ -30,14 +30,18 @@ type ReqHandler struct {
 	Cleanup func() error
 
 	// State handlers.
-	GetState    func(ctx context.Context, r *GetStateRequest) (Response, error)
-	SaveState   func(ctx context.Context, r *SaveStateRequest) (Response, error)
-	ReleaseLock func(ctx context.Context, r *ReleaseLockRequest) (Response, error)
+	GetState         func(ctx context.Context, r *GetStateRequest) (Response, error)
+	SaveState        func(ctx context.Context, r *SaveStateRequest) (Response, error)
+	ReleaseStateLock func(ctx context.Context, r *ReleaseStateLockRequest) (Response, error)
+
+	// Locking.
+	AcquireLocks func(ctx context.Context, r *AcquireLocksRequest) (Response, error)
+	ReleaseLocks func(ctx context.Context, r *ReleaseLocksRequest) (Response, error)
 
 	Options ReqHandlerOptions
 }
 
-func (h *ReqHandler) handleSync(ctx context.Context, req Request) (res Response, err error) {
+func (h *ReqHandler) handleSync(ctx context.Context, req Request) (res Response, err error) { // nolint: gocyclo
 	switch v := req.(type) {
 	case *ProjectInitRequest:
 		if h.ProjectInit != nil {
@@ -55,9 +59,17 @@ func (h *ReqHandler) handleSync(ctx context.Context, req Request) (res Response,
 		if h.SaveState != nil {
 			res, err = h.SaveState(ctx, v)
 		}
-	case *ReleaseLockRequest:
-		if h.ReleaseLock != nil {
-			res, err = h.ReleaseLock(ctx, v)
+	case *ReleaseStateLockRequest:
+		if h.ReleaseStateLock != nil {
+			res, err = h.ReleaseStateLock(ctx, v)
+		}
+	case *AcquireLocksRequest:
+		if h.AcquireLocks != nil {
+			res, err = h.AcquireLocks(ctx, v)
+		}
+	case *ReleaseLocksRequest:
+		if h.ReleaseLocks != nil {
+			res, err = h.ReleaseLocks(ctx, v)
 		}
 	case *PlanRequest:
 		if h.Plan != nil {

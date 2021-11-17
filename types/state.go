@@ -60,10 +60,21 @@ func NewDependencyState(dep *Dependency) *DependencyState {
 	}
 }
 
-type PluginStateMap map[string]json.RawMessage
+type PluginState struct {
+	Registry json.RawMessage            `json:"registry"`
+	Other    map[string]json.RawMessage `json:"other,omitempty"`
+	Volatile map[string]json.RawMessage `json:"volatile,omitempty"`
+}
+
+func NewPluginState() *PluginState {
+	return &PluginState{
+		Other:    make(map[string]json.RawMessage),
+		Volatile: make(map[string]json.RawMessage),
+	}
+}
 
 type StateData struct {
 	Apps         map[string]*AppState        `json:"apps"`
 	Dependencies map[string]*DependencyState `json:"dependencies"`
-	PluginsMap   map[string]PluginStateMap   `json:"plugins_state"` // plugin name -> object -> state
+	Plugins      map[string]*PluginState     `json:"plugins_state"` // plugin name -> object -> state
 }

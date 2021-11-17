@@ -19,7 +19,7 @@ func (r *ApplyResponse) Type() ResponseType {
 }
 
 type ApplyDoneResponse struct {
-	PluginMap        types.PluginStateMap              `json:"plugin_state"`
+	PluginState      *types.PluginState                `json:"plugin_state"`
 	AppStates        map[string]*types.AppState        `json:"app_states"`
 	DependencyStates map[string]*types.DependencyState `json:"dep_states"`
 }

@@ -8,8 +8,8 @@ type DeployBaseRequest struct {
 
 	Destroy bool `json:"destroy"`
 
-	StateMap types.PluginStateMap   `json:"state_map"`
-	Args     map[string]interface{} `json:"args"`
+	PluginState *types.PluginState     `json:"plugin_state"`
+	Args        map[string]interface{} `json:"args"`
 }
 
 type PlanRequest struct {
@@ -25,7 +25,7 @@ type PlanResponse struct {
 	DeployPlan *types.Plan `json:"deploy,omitempty"`
 	DNSPlan    *types.Plan `json:"dns,omitempty"`
 
-	PluginMap        types.PluginStateMap              `json:"plugin_state"`
+	PluginState      *types.PluginState                `json:"plugin_state"`
 	AppStates        map[string]*types.AppState        `json:"app_states"`
 	DependencyStates map[string]*types.DependencyState `json:"dep_states"`
 }

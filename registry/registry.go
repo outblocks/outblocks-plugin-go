@@ -32,7 +32,8 @@ type Registry struct {
 	fieldMap      map[interface{}]*ResourceWrapper
 	skippedAppIDs map[string]bool
 
-	resources map[ResourceID]*ResourceWrapper
+	resources       map[ResourceID]*ResourceWrapper
+	loadedResources map[ResourceID]*ResourceSerialized
 }
 
 func NewRegistry(opts *Options) *Registry {
@@ -148,24 +149,36 @@ func (r *Registry) SkipAppResources(app *types.App) {
 }
 
 func (r *Registry) RegisterAppResource(app *types.App, id string, o Resource) error {
-	return r.register(types.SourceApp, app.ID, id, o)
+	resID := r.createResourceID(types.SourceApp, app.ID, id, o)
+	return r.register(resID, o)
 }
 
 func (r *Registry) RegisterDependencyResource(dep *types.Dependency, id string, o Resource) error {
-	return r.register(types.SourceDependency, dep.ID, id, o)
+	resID := r.createResourceID(types.SourceDependency, dep.ID, id, o)
+	return r.register(resID, o)
 }
 
 func (r *Registry) RegisterPluginResource(scope, id string, o Resource) error {
-	return r.register(types.SourcePlugin, scope, id, o)
+	resID := r.createResourceID(types.SourcePlugin, scope, id, o)
+	return r.register(resID, o)
 }
 
-func (r *Registry) register(source, namespace, id string, o Resource) error {
+func (r *Registry) createResourceID(source, namespace, id string, o Resource) ResourceID {
 	t := reflect.TypeOf(o)
 	if t.Kind() == reflect.Ptr {
 		t = t.Elem()
 	}
 
-	tinfo, ok := r.types[t.Name()]
+	return ResourceID{
+		ID:        id,
+		Namespace: namespace,
+		Type:      t.Name(),
+		Source:    source,
+	}
+}
+
+func (r *Registry) register(resourceID ResourceID, o Resource) error {
+	tinfo, ok := r.types[resourceID.Type]
 
 	if !ok {
 		err := r.RegisterType(o)
@@ -173,19 +186,13 @@ func (r *Registry) register(source, namespace, id string, o Resource) error {
 			return err
 		}
 
-		tinfo = r.types[t.Name()]
+		tinfo = r.types[resourceID.Type]
 	}
 
-	resourceID := ResourceID{
-		ID:        id,
-		Namespace: namespace,
-		Type:      t.Name(),
-		Source:    source,
-	}
-
-	if erw, ok := r.resources[resourceID]; ok {
+	erw := r.resources[resourceID]
+	if erw != nil && erw.IsRegistered {
 		if !r.opts.AllowDuplicates {
-			return fmt.Errorf("resource already registered: %s", id)
+			return fmt.Errorf("resource already registered: %s", resourceID.ID)
 		}
 
 		reflect.ValueOf(o).Elem().Set(reflect.ValueOf(erw.Resource).Elem())
@@ -214,9 +221,9 @@ func (r *Registry) register(source, namespace, id string, o Resource) error {
 			continue
 		}
 
-		if erw, ok := r.fieldMap[f.Value.Interface()]; ok {
-			rw.Dependencies[erw] = struct{}{}
-			erw.DependedBy[rw] = struct{}{}
+		if depRes, ok := r.fieldMap[f.Value.Interface()]; ok {
+			rw.Dependencies[depRes] = struct{}{}
+			depRes.DependedBy[rw] = struct{}{}
 
 			f.Value.Set(reflect.ValueOf(fields.MakeProxyField(f.Value.Interface())))
 
@@ -225,9 +232,9 @@ func (r *Registry) register(source, namespace, id string, o Resource) error {
 
 		if fh, ok := f.Value.Interface().(fields.FieldDependencyHolder); ok {
 			for _, dep := range fh.FieldDependencies() {
-				if erw, ok := r.fieldMap[dep]; ok {
-					rw.Dependencies[erw] = struct{}{}
-					erw.DependedBy[rw] = struct{}{}
+				if depRes, ok := r.fieldMap[dep]; ok {
+					rw.Dependencies[depRes] = struct{}{}
+					depRes.DependedBy[rw] = struct{}{}
 				}
 			}
 		}
@@ -238,11 +245,20 @@ func (r *Registry) register(source, namespace, id string, o Resource) error {
 	// Check if object has additional FieldDependencies.
 	if fh, ok := o.(fields.FieldDependencyHolder); ok {
 		for _, dep := range fh.FieldDependencies() {
-			if erw, ok := r.fieldMap[dep]; ok {
-				rw.Dependencies[erw] = struct{}{}
-				erw.DependedBy[rw] = struct{}{}
+			if depRes, ok := r.fieldMap[dep]; ok {
+				rw.Dependencies[depRes] = struct{}{}
+				depRes.DependedBy[rw] = struct{}{}
 			}
 		}
+	}
+
+	if erw != nil {
+		err = rw.SetFieldValues(r.loadedResources[resourceID].Properties)
+		if err != nil {
+			return err
+		}
+
+		rw.Resource.SetState(ResourceStateExisting)
 	}
 
 	r.resources[resourceID] = rw
@@ -250,35 +266,66 @@ func (r *Registry) register(source, namespace, id string, o Resource) error {
 	return nil
 }
 
-func (r *Registry) Load(ctx context.Context, state []byte, meta interface{}) error { // nolint:gocyclo
+func (r *Registry) DeregisterAppResource(app *types.App, id string, o Resource) error {
+	resID := r.createResourceID(types.SourceApp, app.ID, id, o)
+	return r.deregister(resID, o)
+}
+
+func (r *Registry) DeregisterDependencyResource(dep *types.Dependency, id string, o Resource) error {
+	resID := r.createResourceID(types.SourceDependency, dep.ID, id, o)
+	return r.deregister(resID, o)
+}
+
+func (r *Registry) DeregisterPluginResource(scope, id string, o Resource) error {
+	resID := r.createResourceID(types.SourcePlugin, scope, id, o)
+	return r.deregister(resID, o)
+}
+
+func (r *Registry) deregister(resourceID ResourceID, o Resource) error {
+	erw := r.resources[resourceID]
+	if erw == nil || !erw.IsRegistered {
+		return fmt.Errorf("resource not registered: %s", resourceID.ID)
+	}
+
+	erw.IsRegistered = false
+
+	if !erw.Resource.IsExisting() {
+		delete(r.resources, resourceID)
+	}
+
+	reflect.ValueOf(o).Elem().Set(reflect.ValueOf(erw.Resource).Elem())
+
+	return nil
+}
+
+func (r *Registry) Load(ctx context.Context, state []byte) error {
 	if len(state) == 0 {
 		return nil
 	}
 
-	var existing []*ResourceSerialized
+	var loaded []*ResourceSerialized
 
-	err := json.Unmarshal(state, &existing)
+	err := json.Unmarshal(state, &loaded)
 	if err != nil {
 		return err
 	}
 
-	existingMap := make(map[ResourceID]*ResourceSerialized)
+	loadedMap := make(map[ResourceID]*ResourceSerialized)
 	resourceMap := make(map[ResourceID]*ResourceWrapper)
-	resourceUniqueIDMap := make(map[string]*ResourceWrapper)
 
-	for _, e := range existing {
-		existingMap[e.ResourceID] = e
+	for _, e := range loaded {
+		loadedMap[e.ResourceID] = e
 	}
 
 	for _, res := range r.resources {
 		resourceMap[res.ResourceID] = res
 
-		e, ok := existingMap[res.ResourceID]
+		e, ok := loadedMap[res.ResourceID]
 		if !ok {
 			continue
 		}
 
-		delete(existingMap, res.ResourceID)
+		delete(loadedMap, res.ResourceID)
 
 		err := res.SetFieldValues(e.Properties)
 		if err != nil {
@@ -291,7 +338,7 @@ func (r *Registry) Load(ctx context.Context, state []byte, meta interface{}) err
 	// Process missing resources.
 	missing := make(map[ResourceID]*ResourceWrapper)
 
-	for _, v := range existingMap {
+	for _, v := range loadedMap {
 		rti, ok := r.types[v.Type]
 		if !ok {
 			return fmt.Errorf("unknown resource type found: %s", v.Type)
@@ -327,7 +374,7 @@ func (r *Registry) Load(ctx context.Context, state []byte, meta interface{}) err
 	}
 
 	// Fill dependencies now that resourceMap is filled.
-	for _, v := range existingMap {
+	for _, v := range loadedMap {
 		rw := resourceMap[v.ResourceID]
 
 		for _, d := range v.DependedBy {
@@ -351,20 +398,37 @@ func (r *Registry) Load(ctx context.Context, state []byte, meta interface{}) err
 		}
 	}
 
-	// Merge registered and unregistered where applicable.
-	for k, v := range missing {
-		obsoleteID, err := mergeUniqueResource(v, resourceUniqueIDMap)
+	r.loadedResources = loadedMap
+
+	for id, rw := range missing {
+		r.resources[id] = rw
+	}
+
+	return nil
+}
+
+func (r *Registry) Process(ctx context.Context, meta interface{}) error {
+	// Remove unregistered that are already defined with unique id.
+	resourceUniqueIDMap := make(map[string]*ResourceWrapper)
+
+	for id, rw := range r.resources {
+		if rw.IsRegistered {
+			continue
+		}
+
+		// obsoleteID always == id when processing unregistered resource
+		obsoleteID, err := mergeUniqueResource(rw, resourceUniqueIDMap)
 		if err != nil {
 			return err
 		}
 
-		if obsoleteID == nil {
-			r.resources[k] = v
+		if obsoleteID != nil {
+			delete(r.resources, id)
 		}
 	}
 
 	// Init where needed.
-	err = r.init(ctx, meta)
+	err := r.init(ctx, meta)
 	if err != nil {
 		return err
 	}

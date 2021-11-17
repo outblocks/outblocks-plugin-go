@@ -88,8 +88,12 @@ func readRequest(r *bufio.Reader) (Request, error) {
 		req = &SaveStateRequest{}
 	case RequestTypeCommand:
 		req = &CommandRequest{}
-	case RequestTypeReleaseLock:
-		req = &ReleaseLockRequest{}
+	case RequestTypeReleaseStateLock:
+		req = &ReleaseStateLockRequest{}
+	case RequestTypeAcquireLocks:
+		req = &AcquireLocksRequest{}
+	case RequestTypeReleaseLocks:
+		req = &ReleaseLocksRequest{}
 	case RequestTypePromptAnswer:
 		req = &PromptInputAnswer{}
 	case RequestTypePromptConfirmation:

@@ -1,0 +1,353 @@
+syntax = "proto3";
+package api.v1;
+option go_package = "github.com/outblocks/outblocks-plugin-go/gen/api/v1;apiv1";
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/struct.proto";
+
+// Basic Plugin.
+
+message InitRequest {
+  string host_addr = 1;
+}
+
+message InitResponse {}
+
+message StartRequest {
+  google.protobuf.Struct properties = 1;
+}
+
+message StartResponse {}
+
+message ProjectInitRequest {
+  string name = 1;
+  repeated string deploy_plugins = 2;
+  repeated string run_plugins = 3;
+  google.protobuf.Struct args = 4;
+}
+
+message ProjectInitResponse { google.protobuf.Struct properties = 1; }
+
+service BasicPluginService {
+  rpc Init(InitRequest) returns (InitResponse);
+  rpc Start(StartRequest) returns (StartResponse);
+  rpc ProjectInit(ProjectInitRequest) returns (ProjectInitResponse);
+}
+
+// State Plugin.
+
+message GetStateRequest {
+  string state_type = 1;
+  google.protobuf.Struct properties = 2;
+  bool lock = 3;
+  google.protobuf.Duration lock_wait = 4;
+}
+
+message GetStateResponse {
+  message State {
+    bytes state = 1;
+    string lock_info = 2;
+    bool state_created = 3;
+    string state_name = 4;
+  }
+
+  oneof response {
+    bool waiting = 1;
+    State state = 2;
+  }
+}
+
+message SaveStateRequest {
+  bytes state = 1;
+  string state_type = 2;
+  google.protobuf.Struct properties = 3;
+}
+
+message SaveStateResponse {}
+
+message ReleaseStateLockRequest {
+  string lock_info = 1;
+  string state_type = 2;
+  google.protobuf.Struct properties = 3;
+}
+
+message ReleaseStateLockResponse {}
+
+service StatePluginService {
+  rpc GetState(GetStateRequest) returns (stream GetStateResponse);
+  rpc SaveState(SaveStateRequest) returns (SaveStateResponse);
+  rpc ReleaseStateLock(ReleaseStateLockRequest)
+      returns (ReleaseStateLockResponse);
+}
+
+// Locking Plugin.
+
+message AcquireLocksRequest {
+  repeated string lock_names = 1;
+  google.protobuf.Duration lock_wait = 2;
+  google.protobuf.Struct properties = 3;
+}
+
+message AcquireLocksResponse {
+  bool waiting = 1;
+  repeated string lock_info = 2;
+}
+
+message ReleaseLocksRequest {
+  map<string, string> locks = 1;
+  google.protobuf.Struct properties = 2;
+}
+
+message ReleaseLocksResponse {}
+
+service LockingPluginService {
+  rpc AcquireLocks(AcquireLocksRequest) returns (AcquireLocksResponse);
+  rpc ReleaseLocks(ReleaseLocksRequest) returns (ReleaseLocksResponse);
+}
+
+// Deploy Plugin.
+
+message AppRunInfo {
+  string plugin = 1;
+  string command = 2;
+  int32 port = 3;
+  map<string, string> env = 4;
+  google.protobuf.Struct other = 5;
+}
+
+message AppDeployInfo {
+  string plugin = 1;
+  map<string, string> env = 2;
+  google.protobuf.Struct other = 3;
+}
+
+message AppNeed {
+  string dependency = 1;
+  google.protobuf.Struct properties = 2;
+}
+
+message App {
+  string id = 1;
+  string name = 2;
+  string type = 3;
+  string dir = 4;
+  string url = 5;
+  string path_redirect = 6;
+  map<string, string> env = 7;
+  string deploy_plugin = 8;
+  string dns_plugin = 9;
+  string run_plugin = 10;
+  AppRunInfo run = 11;
+  AppDeployInfo deploy = 12;
+  map<string, AppNeed> needs = 13;
+  google.protobuf.Struct properties = 14;
+}
+
+message DNSState {
+  enum SSLStatus {
+    SSL_STATUS_UNSPECIFIED = 0;
+    SSL_STATUS_OK = 1;
+    SSL_STATUS_PROVISIONING = 2;
+    SSL_STATUS_PROVISIONING_FAILED = 3;
+    SSL_STATUS_RENEWAL_FAILED = 4;
+  }
+  string internal_ip = 1;
+  string ip = 2;
+  string cname = 3;
+  string internal_url = 4;
+  string url = 5;
+  bool manual = 6;
+  SSLStatus ssl_status = 7;
+  string ssl_status_info = 8;
+  string connection_info = 9;
+  google.protobuf.Struct properties = 10;
+}
+
+message DeploymentState {
+  bool ready = 1;
+  string message = 2;
+}
+
+message AppState {
+  App app = 1;
+  DeploymentState deployment = 2;
+  DNSState dns = 3;
+}
+
+message AppPlan {
+  AppState state = 1;
+  bool skip = 2;
+
+  bool is_deploy = 3;
+  bool is_dns = 4;
+}
+
+message Dependency {
+  string id = 1;
+  string deploy_plugin = 2;
+  string name = 3;
+  string type = 4;
+  google.protobuf.Struct properties = 5;
+}
+
+message DependencyState {
+  Dependency dependency = 1;
+  DNSState dns = 2;
+}
+
+message DependencyPlan {
+  DependencyState state = 1;
+  bool skip = 2;
+}
+
+message PluginState {
+  bytes registry = 1;
+  map<string, bytes> other = 2;
+  map<string, bytes> volatile = 3;
+}
+
+message PlanRequest {
+  repeated AppPlan apps = 1;
+  repeated DependencyPlan dependencies = 2;
+
+  bool destroy = 3;
+  PluginState state = 4;
+  google.protobuf.Struct args = 5;
+  bool verify = 6;
+}
+
+enum PlanType {
+  PLAN_TYPE_UNSPECIFIED = 0;
+  PLAN_TYPE_CREATE = 1;
+  PLAN_TYPE_RECREATE = 2;
+  PLAN_TYPE_UPDATE = 3;
+  PLAN_TYPE_DELETE = 4;
+  PLAN_TYPE_PROCESS = 5;
+}
+
+message PlanAction {
+  PlanType type = 1;
+  string source = 2;
+  string namespace = 3;
+  string object_id = 4;
+  string object_type = 5;
+  string object_name = 6;
+  bool critical = 7;
+}
+
+message Plan { repeated PlanAction actions = 1; }
+
+message PlanResponse {
+  Plan deploy = 1;
+  Plan dns = 2;
+
+  PluginState state = 3;
+  map<string, AppState> app_states = 4;
+  map<string, DependencyState> dependency_states = 5;
+}
+
+message ApplyRequest {
+  repeated AppPlan apps = 1;
+  repeated DependencyPlan dependencies = 2;
+
+  bool destroy = 3;
+  PluginState state = 4;
+  google.protobuf.Struct args = 5;
+}
+
+message ApplyAction {
+  string source = 1;
+  PlanType type = 2;
+  string namespace = 3;
+  string object_id = 4;
+  string object_type = 5;
+  string object_name = 6;
+  int32 progress = 7;
+  int32 total = 8;
+}
+
+message ApplyActionResponse { repeated ApplyAction actions = 1; }
+
+message ApplyDoneResponse {
+  PluginState state = 1;
+  map<string, AppState> app_states = 2;
+  map<string, DependencyState> dependency_states = 3;
+}
+
+message ApplyResponse {
+  oneof response {
+    ApplyActionResponse action = 1;
+    ApplyDoneResponse done = 2;
+  }
+}
+
+service DeployPluginService {
+  rpc Plan(PlanRequest) returns (PlanResponse);
+  rpc Apply(ApplyRequest) returns (stream ApplyResponse);
+}
+
+// Run Plugin.
+
+message AppRun {
+  App app = 1;
+  string url = 2;
+  string ip = 3;
+  int32 port = 4;
+}
+
+message DependencyRun {
+  Dependency dependency = 1;
+  string ip = 2;
+  int32 port = 3;
+}
+
+message RunRequest {
+  repeated AppRun apps = 1;
+  repeated DependencyRun dependencies = 2;
+  map<string, string> hosts = 3;
+  google.protobuf.Struct args = 4;
+}
+
+message RunVars { map<string, string> vars = 1; }
+
+message RunStartResponse { map<string, RunVars> vars = 1; }
+
+message RunOutputResponse {
+  enum Source {
+    SOURCE_UNSPECIFIED = 0;
+    SOURCE_APP = 1;
+    SOURCE_DEPENDENCY = 2;
+  }
+  enum Stream {
+    STREAM_UNSPECIFIED = 0;
+    STREAM_STDOUT = 1;
+    STREAM_STDERR = 2;
+  }
+
+  Source source = 1;
+  string id = 2;
+  string name = 3;
+  Stream stream = 4;
+  string message = 5;
+}
+
+message RunResponse {
+  oneof response {
+    RunStartResponse start = 1;
+    RunOutputResponse output = 2;
+  }
+}
+
+service RunPluginService { rpc Run(RunRequest) returns (stream RunResponse); }
+
+// Command Plugin.
+message CommandRequest {
+  string command = 1;
+  google.protobuf.Struct args = 2;
+}
+
+message CommandResponse {}
+
+service CommandPluginService {
+  rpc Command(CommandRequest) returns (stream CommandResponse);
+}

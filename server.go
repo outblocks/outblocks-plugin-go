@@ -1,65 +1,66 @@
 package plugin
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"math/rand"
 	"net"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 	"time"
 
 	"github.com/outblocks/outblocks-plugin-go/env"
-	"github.com/outblocks/outblocks-plugin-go/log"
+	apiv1 "github.com/outblocks/outblocks-plugin-go/gen/api/v1"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/grpclog"
 )
 
 const ProtocolV1 = "v1"
 
-type Server struct {
-	quit chan struct{}
-	log  log.Logger
-	env  env.Enver
-	wg   sync.WaitGroup
+type RegistryOptions struct {
+	AllowDuplicates bool
 }
 
-func NewServer() *Server {
+type Server struct {
+	env env.Enver
+
+	registryOptions RegistryOptions
+}
+
+func newServer() *Server {
 	rand.Seed(time.Now().UnixNano())
 
 	return &Server{
-		quit: make(chan struct{}),
-		log:  log.NewLogger(),
-		env:  env.NewEnv(),
+		env: env.NewEnv(),
 	}
 }
 
-func (s *Server) handleConnection(ctx context.Context, handler *ReqHandler, c net.Conn) {
-	err := handler.Handle(ctx, s.log, c)
-	_ = c.Close()
+type ServerOptions func(s *Server)
 
-	if err != nil {
-		s.log.Fatalln(err)
+func WithRegistryAllowDuplicates(b bool) ServerOptions {
+	return func(s *Server) {
+		s.registryOptions.AllowDuplicates = b
 	}
-
-	s.wg.Done()
 }
 
-func (s *Server) Start(handler *ReqHandler) error {
+func (s *Server) serve(handler BasicPluginHandler, opts ...ServerOptions) error {
+	for _, opt := range opts {
+		opt(s)
+	}
+
+	// Disable grpc client logging.
+	grpclog.SetLoggerV2(grpclog.NewLoggerV2(io.Discard, io.Discard, io.Discard))
+
 	handshake := Handshake{
 		Protocol: ProtocolV1,
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
 	l, err := net.Listen("tcp4", "")
 	if err != nil {
-		s.log.Fatalln(err)
+		panic(err)
 	}
-
-	defer l.Close()
 
 	handshake.Addr = l.Addr().String()
 
@@ -69,6 +70,29 @@ func (s *Server) Start(handler *ReqHandler) error {
 	}
 
 	fmt.Println(string(out))
+
+	grpcServer := grpc.NewServer()
+	apiv1.RegisterBasicPluginServiceServer(grpcServer, &basicPluginHandlerWrapper{BasicPluginHandler: handler, env: s.env})
+
+	if srv, ok := handler.(DeployPluginHandler); ok {
+		apiv1.RegisterDeployPluginServiceServer(grpcServer, &deployPluginHandlerWrapper{DeployPluginHandler: srv, RegistryOptions: s.registryOptions})
+	}
+
+	if srv, ok := handler.(CommandPluginHandler); ok {
+		apiv1.RegisterCommandPluginServiceServer(grpcServer, srv)
+	}
+
+	if srv, ok := handler.(RunPluginHandler); ok {
+		apiv1.RegisterRunPluginServiceServer(grpcServer, srv)
+	}
+
+	if srv, ok := handler.(StatePluginHandler); ok {
+		apiv1.RegisterStatePluginServiceServer(grpcServer, srv)
+	}
+
+	if srv, ok := handler.(LockingPluginHandler); ok {
+		apiv1.RegisterLockingPluginServiceServer(grpcServer, srv)
+	}
 
 	// Handle SIGINT and SIGTERM.
 	ch := make(chan os.Signal, 1)
@@ -83,40 +107,21 @@ func (s *Server) Start(handler *ReqHandler) error {
 			}
 		}
 
-		close(s.quit)
-		l.Close()
+		grpcServer.GracefulStop()
 	}()
 
-	for {
-		c, err := l.Accept()
+	err = grpcServer.Serve(l)
 
-		if err != nil {
-			select {
-			case <-s.quit:
-				cancel()
-
-				s.wg.Wait()
-
-				if handler.Cleanup != nil {
-					return handler.Cleanup()
-				}
-
-				return nil
-			default:
-				s.log.Fatalln(err)
-			}
+	if pc, ok := handler.(Cleanup); ok {
+		errCleanup := pc.Cleanup()
+		if errCleanup != nil {
+			return errCleanup
 		}
-
-		s.wg.Add(1)
-
-		go s.handleConnection(ctx, handler, c)
 	}
+
+	return err
 }
 
-func (s *Server) Log() log.Logger {
-	return s.log
-}
-
-func (s *Server) Env() env.Enver {
-	return s.env
+func Serve(handler BasicPluginHandler, opts ...ServerOptions) error {
+	return newServer().serve(handler, opts...)
 }

@@ -1,5 +1,7 @@
 package util
 
+import "google.golang.org/protobuf/types/known/structpb"
+
 func MergeMaps(a ...map[string]interface{}) map[string]interface{} {
 	if len(a) == 0 {
 		return nil
@@ -42,4 +44,13 @@ func MergeStringMaps(a ...map[string]string) map[string]string {
 	}
 
 	return out
+}
+
+func MustNewStruct(m map[string]interface{}) *structpb.Struct {
+	s, err := structpb.NewStruct(m)
+	if err != nil {
+		panic(err)
+	}
+
+	return s
 }

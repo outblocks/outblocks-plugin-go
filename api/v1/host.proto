@@ -1,0 +1,54 @@
+syntax = "proto3";
+package api.v1;
+option go_package = "github.com/outblocks/outblocks-plugin-go/gen/api/v1;apiv1";
+
+message PromptConfirmationRequest {
+  string message = 1;
+  bool default = 2;
+}
+
+message PromptConfirmationResponse {
+  bool confirmed = 1;
+}
+
+message PromptInputRequest {
+  string message = 1;
+  string default = 2;
+}
+
+message PromptInputResponse {
+  string answer = 1;
+}
+
+message PromptSelectRequest {
+  string message = 1;
+  repeated string options = 2;
+  string default = 3;
+}
+
+message PromptSelectResponse {
+  string answer = 1;
+}
+
+message LogRequest {
+  enum Level {
+    LEVEL_UNSPECIFIED = 0;
+    LEVEL_ERROR = 1;
+    LEVEL_WARN = 2;
+    LEVEL_INFO = 3;
+    LEVEL_DEBUG = 4;
+    LEVEL_SUCCESS = 5;
+  }
+
+  string message = 1;
+  Level level = 2;
+}
+
+message LogResponse {}
+
+service HostService {
+  rpc PromptConfirmation(PromptConfirmationRequest) returns (PromptConfirmationResponse);
+  rpc PromptInput(PromptInputRequest) returns (PromptInputResponse);
+  rpc PromptSelect(PromptSelectRequest) returns (PromptSelectResponse);
+  rpc Log(LogRequest) returns (LogResponse);
+}

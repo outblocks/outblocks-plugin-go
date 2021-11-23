@@ -3,6 +3,7 @@ package registry
 import (
 	"context"
 
+	apiv1 "github.com/outblocks/outblocks-plugin-go/gen/api/v1"
 	"github.com/outblocks/outblocks-plugin-go/types"
 )
 
@@ -121,7 +122,7 @@ func (d *Diff) ObjectType() string {
 	return typ
 }
 
-func (d *Diff) ToPlanAction() *types.PlanAction {
+func (d *Diff) ToPlanAction() *apiv1.PlanAction {
 	switch d.Type {
 	case DiffTypeCreate:
 		return types.NewPlanActionCreate(d.Object.Source, d.Object.Namespace, d.Object.ID, d.ObjectType(), d.Object.Resource.GetName(), d.Critical)
@@ -140,35 +141,35 @@ func (d *Diff) ToPlanAction() *types.PlanAction {
 	}
 }
 
-func (d *Diff) ToApplyAction(step, total int) *types.ApplyAction {
-	var typ types.PlanType
+func (d *Diff) ToApplyAction(step, total int) *apiv1.ApplyAction {
+	var typ apiv1.PlanType
 
 	switch d.Type {
 	case DiffTypeCreate:
-		typ = types.PlanCreate
+		typ = apiv1.PlanType_PLAN_TYPE_CREATE
 	case DiffTypeUpdate:
-		typ = types.PlanUpdate
+		typ = apiv1.PlanType_PLAN_TYPE_UPDATE
 	case DiffTypeDelete:
-		typ = types.PlanDelete
+		typ = apiv1.PlanType_PLAN_TYPE_DELETE
 	case DiffTypeRecreate:
-		typ = types.PlanRecreate
+		typ = apiv1.PlanType_PLAN_TYPE_RECREATE
 	case DiffTypeProcess:
-		typ = types.PlanProcess
+		typ = apiv1.PlanType_PLAN_TYPE_PROCESS
 	case DiffTypeNone:
 		panic("unexpected diff type")
 	default:
 		panic("unknown diff type")
 	}
 
-	return &types.ApplyAction{
+	return &apiv1.ApplyAction{
 		Type:       typ,
 		Source:     d.Object.Source,
 		Namespace:  d.Object.Namespace,
-		ObjectID:   d.Object.ID,
+		ObjectId:   d.Object.ID,
 		ObjectType: d.ObjectType(),
 		ObjectName: d.Object.Resource.GetName(),
-		Progress:   step,
-		Total:      total,
+		Progress:   int32(step),
+		Total:      int32(total),
 	}
 }
 

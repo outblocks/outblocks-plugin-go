@@ -1,80 +1,68 @@
 package types
 
-import "encoding/json"
+import (
+	"encoding/json"
 
-type StateSource struct {
-	Name    string `json:"name"`
-	Created bool   `json:"created"`
-}
-
-type SSLStatus string
-
-const (
-	SSLStatusUnknown            SSLStatus = "UNKNOWN"
-	SSLStatusOK                 SSLStatus = "OK"
-	SSLStatusProvisioning       SSLStatus = "PROVISIONING"
-	SSLStatusProvisioningFailed SSLStatus = "PROVISIONING FAILED"
-	SSLStatusRenewalFailed      SSLStatus = "RENEWAL FAILED"
+	apiv1 "github.com/outblocks/outblocks-plugin-go/gen/api/v1"
 )
 
-type DNSState struct {
-	InternalIP     string                 `json:"internal_ip,omitempty"`
-	IP             string                 `json:"ip"`
-	CNAME          string                 `json:"cname,omitempty"`
-	InternalURL    string                 `json:"internal_url,omitempty"`
-	URL            string                 `json:"url"`
-	Manual         bool                   `json:"manual"`
-	SSLStatus      SSLStatus              `json:"ssl_status"`
-	SSLStatusInfo  string                 `json:"ssl_status_info"`
-	ConnectionInfo string                 `json:"connection_info,omitempty"`
-	Properties     map[string]interface{} `json:"properties,omitempty"`
-}
+const (
+	SourceApp        = "app"
+	SourceDependency = "dependency"
+	SourcePlugin     = "plugin"
+)
 
-type DeploymentState struct {
-	Ready   bool   `json:"ready"`
-	Message string `json:"message"`
-}
-
-type AppState struct {
-	App
-
-	Deployment *DeploymentState `json:"deploy_state"`
-	DNS        *DNSState        `json:"dns_state"`
-}
-
-func NewAppState(app *App) *AppState {
-	return &AppState{
-		App: *app,
+func NewPluginState() *apiv1.PluginState {
+	return &apiv1.PluginState{
+		Other:    make(map[string][]byte),
+		Volatile: make(map[string][]byte),
 	}
 }
 
-type DependencyState struct {
-	Dependency
+func PluginStateFromProto(in *apiv1.PluginState) *PluginState {
+	other := make(map[string]json.RawMessage, len(in.Other))
+	for k, v := range in.Other {
+		other[k] = v
+	}
 
-	DNS *DNSState `json:"dns"`
-}
+	volatile := make(map[string]json.RawMessage, len(in.Volatile))
+	for k, v := range in.Volatile {
+		volatile[k] = v
+	}
 
-func NewDependencyState(dep *Dependency) *DependencyState {
-	return &DependencyState{
-		Dependency: *dep,
+	return &PluginState{
+		Registry: in.Registry,
+		Other:    other,
+		Volatile: volatile,
 	}
 }
 
 type PluginState struct {
-	Registry json.RawMessage            `json:"registry"`
+	Registry json.RawMessage            `json:"registry,omitempty"`
 	Other    map[string]json.RawMessage `json:"other,omitempty"`
 	Volatile map[string]json.RawMessage `json:"volatile,omitempty"`
 }
 
-func NewPluginState() *PluginState {
-	return &PluginState{
-		Other:    make(map[string]json.RawMessage),
-		Volatile: make(map[string]json.RawMessage),
+func (p *PluginState) Proto() *apiv1.PluginState {
+	other := make(map[string][]byte, len(p.Other))
+	for k, v := range p.Other {
+		other[k] = v
+	}
+
+	volatile := make(map[string][]byte, len(p.Volatile))
+	for k, v := range p.Volatile {
+		volatile[k] = v
+	}
+
+	return &apiv1.PluginState{
+		Registry: p.Registry,
+		Other:    other,
+		Volatile: volatile,
 	}
 }
 
 type StateData struct {
-	Apps         map[string]*AppState        `json:"apps"`
-	Dependencies map[string]*DependencyState `json:"dependencies"`
-	Plugins      map[string]*PluginState     `json:"plugins_state"` // plugin name -> object -> state
+	Apps         map[string]*apiv1.AppState        `json:"apps"`
+	Dependencies map[string]*apiv1.DependencyState `json:"dependencies"`
+	Plugins      map[string]*PluginState           `json:"plugins_state"` // plugin name -> object -> state
 }

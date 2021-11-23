@@ -1,82 +1,84 @@
 package log
 
 import (
+	"context"
 	"fmt"
 	"os"
+
+	apiv1 "github.com/outblocks/outblocks-plugin-go/gen/api/v1"
 )
 
-type Level byte
-
-const (
-	LevelError Level = iota
-	LevelWarn
-	LevelInfo
-	LevelDebug
-	LevelSuccess
-)
-
-type Log struct{}
-
-func NewLogger() Logger {
-	return &Log{}
+type Log struct {
+	cli apiv1.HostServiceClient
 }
 
-func (l *Log) writeln(lvl Level, a ...interface{}) {
-	os.Stderr.Write([]byte{byte(lvl)})
-	fmt.Fprintln(os.Stderr, a...)
+func NewLogger(cli apiv1.HostServiceClient) Logger {
+	return &Log{
+		cli: cli,
+	}
 }
 
-func (l *Log) writef(lvl Level, format string, a ...interface{}) {
-	os.Stderr.Write([]byte{byte(lvl)})
-	fmt.Fprintf(os.Stderr, format, a...)
+func (l *Log) write(lvl apiv1.LogRequest_Level, msg string) {
+	_, _ = l.cli.Log(context.Background(), &apiv1.LogRequest{
+		Message: msg,
+		Level:   lvl,
+	})
+}
+
+func (l *Log) writeln(lvl apiv1.LogRequest_Level, a ...interface{}) {
+	l.write(lvl, fmt.Sprintln(a...))
+}
+
+func (l *Log) writef(lvl apiv1.LogRequest_Level, format string, a ...interface{}) {
+	l.write(lvl, fmt.Sprintf(format, a...))
 }
 
 func (l *Log) Fatalln(a ...interface{}) {
-	l.writeln(LevelError, a...)
+	l.writeln(apiv1.LogRequest_LEVEL_ERROR, a...)
 	os.Exit(1)
 }
 
 func (l *Log) Fatalf(format string, a ...interface{}) {
-	l.writef(LevelError, format, a...)
+	l.writef(apiv1.LogRequest_LEVEL_ERROR, format, a...)
 	os.Exit(1)
 }
 
 func (l *Log) Errorln(a ...interface{}) {
-	l.writeln(LevelError, a...)
+	l.writeln(apiv1.LogRequest_LEVEL_ERROR, a...)
 }
 
 func (l *Log) Errorf(format string, a ...interface{}) {
-	l.writef(LevelError, format, a...)
+	l.writef(apiv1.LogRequest_LEVEL_ERROR, format, a...)
 }
 
 func (l *Log) Warnln(a ...interface{}) {
-	l.writeln(LevelWarn, a...)
+	l.writeln(apiv1.LogRequest_LEVEL_WARN, a...)
 }
 
 func (l *Log) Warnf(format string, a ...interface{}) {
-	l.writef(LevelWarn, format, a...)
+	l.writef(apiv1.LogRequest_LEVEL_WARN, format, a...)
 }
 
 func (l *Log) Infoln(a ...interface{}) {
-	l.writeln(LevelInfo, a...)
+	l.writeln(apiv1.LogRequest_LEVEL_INFO, a...)
 }
 
 func (l *Log) Infof(format string, a ...interface{}) {
-	l.writef(LevelInfo, format, a...)
+	l.writef(apiv1.LogRequest_LEVEL_INFO, format, a...)
 }
 
 func (l *Log) Debugln(a ...interface{}) {
-	l.writeln(LevelDebug, a...)
+	l.writeln(apiv1.LogRequest_LEVEL_DEBUG, a...)
 }
 
 func (l *Log) Debugf(format string, a ...interface{}) {
-	l.writef(LevelDebug, format, a...)
+	l.writef(apiv1.LogRequest_LEVEL_DEBUG, format, a...)
 }
 
 func (l *Log) Successln(a ...interface{}) {
-	l.writeln(LevelSuccess, a...)
+	l.writeln(apiv1.LogRequest_LEVEL_SUCCESS, a...)
 }
 
 func (l *Log) Successf(format string, a ...interface{}) {
-	l.writef(LevelSuccess, format, a...)
+	l.writef(apiv1.LogRequest_LEVEL_SUCCESS, format, a...)
 }

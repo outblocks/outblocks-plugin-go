@@ -1,60 +1,18 @@
 package types
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
 	"github.com/creasty/defaults"
 	"github.com/mitchellh/mapstructure"
+	apiv1 "github.com/outblocks/outblocks-plugin-go/gen/api/v1"
 	"github.com/outblocks/outblocks-plugin-go/util"
 )
 
-type App struct {
-	ID           string                 `json:"id"`
-	Name         string                 `json:"name"`
-	Type         string                 `json:"type"`
-	Dir          string                 `json:"dir"`
-	URL          string                 `json:"url"`
-	PathRedirect string                 `json:"path_redirect"`
-	Env          map[string]string      `json:"env"`
-	DeployPlugin string                 `json:"deploy_plugin"`
-	DNSPlugin    string                 `json:"dns_plugin,omitempty"`
-	RunPlugin    string                 `json:"run_plugin,omitempty"`
-	Run          *AppRunInfo            `json:"run,omitempty"`
-	Deploy       *AppDeployInfo         `json:"deploy,omitempty"`
-	Needs        map[string]*AppNeed    `json:"needs"`
-	Properties   map[string]interface{} `json:"properties"`
-}
-
-func (a *App) EnvPrefix() string {
+func AppEnvPrefix(a *apiv1.App) string {
 	return fmt.Sprintf("APP_%s_%s_", strings.ToUpper(a.Type), util.SanitizeEnvVar(strings.ToUpper(a.Name)))
-}
-
-func (a *App) String() string {
-	return fmt.Sprintf("App<Name=%s,Type=%s>", a.Name, a.Type)
-}
-
-type AppRunInfo struct {
-	Plugin  string                 `json:"plugin,omitempty"`
-	Command string                 `json:"command,omitempty"`
-	Port    int                    `json:"port,omitempty"`
-	Env     map[string]string      `json:"env,omitempty"`
-	Other   map[string]interface{} `yaml:"-,remain"`
-}
-
-type AppDeployInfo struct {
-	Plugin string                 `json:"plugin,omitempty"`
-	Env    map[string]string      `json:"env,omitempty"`
-	Other  map[string]interface{} `yaml:"-,remain"`
-}
-
-type AppNeed struct {
-	Dependency string                 `json:"dependency"`
-	Properties map[string]interface{} `json:"properties"`
-}
-
-func (a *AppNeed) String() string {
-	return fmt.Sprintf("AppNeed<Dep=%s>", a.Dependency)
 }
 
 func mapstructureJSONDecode(in, out interface{}) error {
@@ -70,6 +28,19 @@ func mapstructureJSONDecode(in, out interface{}) error {
 	}
 
 	return decoder.Decode(in)
+}
+
+func encodeToMap(in interface{}) (map[string]interface{}, error) {
+	out := make(map[string]interface{})
+
+	b, err := json.Marshal(in)
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal(b, &out)
+
+	return out, err
 }
 
 // Service app properties.
@@ -99,7 +70,7 @@ type ServiceAppProperties struct {
 	LocalDockerHash  string `json:"local_docker_hash"`
 }
 
-func NewServiceAppProperties(in interface{}) (*ServiceAppProperties, error) {
+func NewServiceAppProperties(in map[string]interface{}) (*ServiceAppProperties, error) {
 	o := &ServiceAppProperties{
 		Build:     &ServiceAppBuild{},
 		Container: &ServiceAppContainer{},
@@ -115,10 +86,7 @@ func NewServiceAppProperties(in interface{}) (*ServiceAppProperties, error) {
 }
 
 func (p *ServiceAppProperties) Encode() (map[string]interface{}, error) {
-	out := make(map[string]interface{})
-	err := mapstructureJSONDecode(p, &out)
-
-	return out, err
+	return encodeToMap(p)
 }
 
 // Static app properties.
@@ -140,7 +108,7 @@ type StaticAppProperties struct {
 	Routing string `json:"routing"`
 }
 
-func NewStaticAppProperties(in interface{}) (*StaticAppProperties, error) {
+func NewStaticAppProperties(in map[string]interface{}) (*StaticAppProperties, error) {
 	o := &StaticAppProperties{
 		Build: &StaticAppBuild{},
 		CDN:   &StaticAppCDN{},
@@ -150,27 +118,24 @@ func NewStaticAppProperties(in interface{}) (*StaticAppProperties, error) {
 }
 
 func (p *StaticAppProperties) Encode() (map[string]interface{}, error) {
-	out := make(map[string]interface{})
-	err := mapstructureJSONDecode(p, &out)
-
-	return out, err
+	return encodeToMap(p)
 }
 
 type AppVars map[string]map[string]map[string]interface{}
 
-func VarsFromAppType(app *App) map[string]interface{} {
+func VarsFromAppType(app *apiv1.App) map[string]interface{} {
 	return map[string]interface{}{
-		"url": app.URL,
+		"url": app.Url,
 	}
 }
 
-func VarsFromAppRunType(app *AppRun) map[string]interface{} {
+func VarsFromAppRunType(app *apiv1.AppRun) map[string]interface{} {
 	return map[string]interface{}{
-		"url": app.URL,
+		"url": app.Url,
 	}
 }
 
-func AppVarsFromApps(apps []*App) AppVars {
+func AppVarsFromApps(apps []*apiv1.App) AppVars {
 	appVars := make(map[string]map[string]map[string]interface{}) // type->name->value
 
 	for _, app := range apps {
@@ -188,7 +153,7 @@ func AppVarsFromApps(apps []*App) AppVars {
 	return appVars
 }
 
-func AppVarsFromAppRun(apps []*AppRun) AppVars {
+func AppVarsFromAppRun(apps []*apiv1.AppRun) AppVars {
 	appVars := make(map[string]map[string]map[string]interface{}) // type->name->value
 
 	for _, app := range apps {
@@ -206,11 +171,11 @@ func AppVarsFromAppRun(apps []*AppRun) AppVars {
 	return appVars
 }
 
-func (v AppVars) ForApp(a *App) map[string]interface{} {
+func (v AppVars) ForApp(a *apiv1.App) map[string]interface{} {
 	return v[a.Type][a.Name]
 }
 
-func VarsForApp(av AppVars, a *App, depVars interface{}) map[string]interface{} {
+func VarsForApp(av AppVars, a *apiv1.App, depVars interface{}) map[string]interface{} {
 	return map[string]interface{}{
 		"app":  av,
 		"self": av.ForApp(a),

@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"sync"
 
+	apiv1 "github.com/outblocks/outblocks-plugin-go/gen/api/v1"
 	"github.com/outblocks/outblocks-plugin-go/registry/fields"
 	"github.com/outblocks/outblocks-plugin-go/types"
 	"github.com/outblocks/outblocks-plugin-go/util/errgroup"
@@ -144,17 +145,17 @@ func generateResourceFields(o Resource, rti *ResourceTypeInfo) map[string]*Field
 	return fieldsMap
 }
 
-func (r *Registry) SkipAppResources(app *types.App) {
-	r.skippedAppIDs[app.ID] = true
+func (r *Registry) SkipAppResources(app *apiv1.App) {
+	r.skippedAppIDs[app.Id] = true
 }
 
-func (r *Registry) RegisterAppResource(app *types.App, id string, o Resource) error {
-	resID := r.createResourceID(types.SourceApp, app.ID, id, o)
+func (r *Registry) RegisterAppResource(app *apiv1.App, id string, o Resource) error {
+	resID := r.createResourceID(types.SourceApp, app.Id, id, o)
 	return r.register(resID, o)
 }
 
-func (r *Registry) RegisterDependencyResource(dep *types.Dependency, id string, o Resource) error {
-	resID := r.createResourceID(types.SourceDependency, dep.ID, id, o)
+func (r *Registry) RegisterDependencyResource(dep *apiv1.Dependency, id string, o Resource) error {
+	resID := r.createResourceID(types.SourceDependency, dep.Id, id, o)
 	return r.register(resID, o)
 }
 
@@ -177,7 +178,7 @@ func (r *Registry) createResourceID(source, namespace, id string, o Resource) Re
 	}
 }
 
-func (r *Registry) register(resourceID ResourceID, o Resource) error {
+func (r *Registry) register(resourceID ResourceID, o Resource) error { // nolint:gocyclo
 	tinfo, ok := r.types[resourceID.Type]
 
 	if !ok {
@@ -198,6 +199,17 @@ func (r *Registry) register(resourceID ResourceID, o Resource) error {
 		reflect.ValueOf(o).Elem().Set(reflect.ValueOf(erw.Resource).Elem())
 
 		return nil
+	}
+
+	// Remove existing dependencies<->depended by mapping.
+	if erw != nil {
+		for k := range erw.Dependencies {
+			delete(k.DependedBy, erw)
+		}
+
+		for k := range erw.DependedBy {
+			delete(k.Dependencies, erw)
+		}
 	}
 
 	o.SetState(ResourceStateNew)
@@ -266,13 +278,13 @@ func (r *Registry) register(resourceID ResourceID, o Resource) error {
 	return nil
 }
 
-func (r *Registry) DeregisterAppResource(app *types.App, id string, o Resource) error {
-	resID := r.createResourceID(types.SourceApp, app.ID, id, o)
+func (r *Registry) DeregisterAppResource(app *apiv1.App, id string, o Resource) error {
+	resID := r.createResourceID(types.SourceApp, app.Id, id, o)
 	return r.deregister(resID, o)
 }
 
-func (r *Registry) DeregisterDependencyResource(dep *types.Dependency, id string, o Resource) error {
-	resID := r.createResourceID(types.SourceDependency, dep.ID, id, o)
+func (r *Registry) DeregisterDependencyResource(dep *apiv1.Dependency, id string, o Resource) error {
+	resID := r.createResourceID(types.SourceDependency, dep.Id, id, o)
 	return r.deregister(resID, o)
 }
 
@@ -818,9 +830,9 @@ func waitContext(ctx context.Context, wg *sync.WaitGroup) error {
 	}
 }
 
-func handleDiffAction(ctx context.Context, meta interface{}, d *Diff, callback func(*types.ApplyAction)) error {
+func handleDiffAction(ctx context.Context, meta interface{}, d *Diff, callback func(*apiv1.ApplyAction)) error {
 	if callback == nil {
-		callback = func(*types.ApplyAction) {}
+		callback = func(*apiv1.ApplyAction) {}
 	}
 
 	switch d.Type {
@@ -935,7 +947,7 @@ func waitForDiffDeps(ctx context.Context, d *Diff, step int) error {
 	return nil
 }
 
-func (r *Registry) Apply(ctx context.Context, meta interface{}, diff []*Diff, callback func(*types.ApplyAction)) error {
+func (r *Registry) Apply(ctx context.Context, meta interface{}, diff []*Diff, callback func(*apiv1.ApplyAction)) error {
 	pool, ctx := errgroup.WithConcurrency(ctx, defaultConcurrency)
 
 	for _, d := range diff {

@@ -12,6 +12,10 @@ func (e *Env) PluginDir() string {
 	return os.Getenv("OUTBLOCKS_PLUGIN_DIR")
 }
 
+func (e *Env) PluginCacheDir() string {
+	return os.Getenv("OUTBLOCKS_PLUGIN_CACHE_DIR")
+}
+
 func (e *Env) ProjectDir() string {
 	return os.Getenv("OUTBLOCKS_PROJECT_DIR")
 }

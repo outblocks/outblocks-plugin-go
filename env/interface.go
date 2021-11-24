@@ -2,7 +2,7 @@ package env
 
 type Enver interface {
 	PluginDir() string
-	PluginCacheDir() string
+	PluginProjectCacheDir() string
 	ProjectID() string
 	ProjectName() string
 	ProjectDir() string

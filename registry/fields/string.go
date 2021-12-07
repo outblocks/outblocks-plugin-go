@@ -275,28 +275,43 @@ func (f *SprintfField) EmptyValue() interface{} {
 	return ""
 }
 
-// Random string field with lazy initialization. If current value is defined in state, it is used instead.
+// String field with lazy initialization. If current value is defined in state, it is used instead.
 
-type RandomStringField struct {
+type LazyStringField struct {
 	StringField
 
-	prefix, suffix                 string
-	lower, upper, numeric, special bool
-	length                         int
+	newValue func() interface{}
 }
 
-func (f *RandomStringField) SetCurrent(i string) {
+func (f *LazyStringField) SetCurrent(i string) {
 	f.StringField.SetCurrent(i)
 	f.SetWanted(i)
 }
 
-func (f *RandomStringField) UnsetCurrent() {
+func (f *LazyStringField) UnsetCurrent() {
 	f.StringField.UnsetCurrent()
 	f.SetWantedLazy(f.newValue)
 }
 
-func (f *RandomStringField) newValue() interface{} {
-	return f.prefix + util.RandomStringCustom(f.lower, f.upper, f.numeric, f.special, f.length) + f.suffix
+func LazyString(newValue func() string) StringInputField {
+	f := &LazyStringField{
+		newValue: func() interface{} {
+			return newValue()
+		},
+	}
+	f.SetWantedLazy(f.newValue)
+
+	return f
+}
+
+// Random string field with lazy initialization. If current value is defined in state, it is used instead.
+
+type RandomStringField struct {
+	LazyStringField
+
+	prefix, suffix                 string
+	lower, upper, numeric, special bool
+	length                         int
 }
 
 func (f *RandomStringField) Verbose() string {
@@ -317,6 +332,10 @@ func randomString(prefix, suffix string, lower, upper, numeric, special bool, le
 		special: special,
 		length:  length,
 	}
+	f.newValue = func() interface{} {
+		return f.prefix + util.RandomStringCustom(f.lower, f.upper, f.numeric, f.special, f.length) + f.suffix
+	}
+
 	f.SetWantedLazy(f.newValue)
 
 	return f

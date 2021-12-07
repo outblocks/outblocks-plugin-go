@@ -40,8 +40,8 @@ type ResourceReader interface {
 	Read(ctx context.Context, meta interface{}) error
 }
 
-type ResourceUnique interface {
-	UniqueID() string
+type ResourceReference interface {
+	ReferenceID() string
 }
 
 type ResourceIniter interface {
@@ -140,6 +140,7 @@ type ResourceID struct {
 
 type ResourceSerialized struct {
 	ResourceID
+	ReferenceID  string                 `json:"ref_id,omitempty"`
 	Properties   map[string]interface{} `json:"properties,omitempty"`
 	Dependencies []ResourceID           `json:"dependencies,omitempty"`
 	DependedBy   []ResourceID           `json:"depended_by,omitempty"`
@@ -219,8 +220,15 @@ func (w *ResourceWrapper) MarshalJSON() ([]byte, error) {
 		}
 	}
 
+	var refID string
+
+	if rr, ok := w.Resource.(ResourceReference); ok {
+		refID = rr.ReferenceID()
+	}
+
 	return json.Marshal(ResourceSerialized{
 		ResourceID:   w.ResourceID,
+		ReferenceID:  refID,
 		Properties:   props,
 		Dependencies: deps,
 		DependedBy:   dependedBy,

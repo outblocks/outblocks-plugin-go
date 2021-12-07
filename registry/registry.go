@@ -178,7 +178,7 @@ func (r *Registry) createResourceID(source, namespace, id string, o Resource) Re
 	}
 }
 
-func (r *Registry) register(resourceID ResourceID, o Resource) error { // nolint:gocyclo
+func (r *Registry) register(resourceID ResourceID, o Resource) error {
 	tinfo, ok := r.types[resourceID.Type]
 
 	if !ok {
@@ -199,17 +199,6 @@ func (r *Registry) register(resourceID ResourceID, o Resource) error { // nolint
 		reflect.ValueOf(o).Elem().Set(reflect.ValueOf(erw.Resource).Elem())
 
 		return nil
-	}
-
-	// Remove existing dependencies<->depended by mapping.
-	if erw != nil {
-		for k := range erw.Dependencies {
-			delete(k.DependedBy, erw)
-		}
-
-		for k := range erw.DependedBy {
-			delete(k.Dependencies, erw)
-		}
 	}
 
 	o.SetState(ResourceStateNew)
@@ -271,6 +260,21 @@ func (r *Registry) register(resourceID ResourceID, o Resource) error { // nolint
 		}
 
 		rw.Resource.SetState(ResourceStateExisting)
+
+		// Remove/fix existing dependencies<->depended by mapping.
+		for k := range erw.Dependencies {
+			delete(k.DependedBy, erw)
+
+			rw.Dependencies[k] = struct{}{}
+			k.DependedBy[rw] = struct{}{}
+		}
+
+		for k := range erw.DependedBy {
+			delete(k.Dependencies, erw)
+
+			rw.DependedBy[k] = struct{}{}
+			k.Dependencies[rw] = struct{}{}
+		}
 	}
 
 	r.resources[resourceID] = rw
@@ -303,6 +307,14 @@ func (r *Registry) deregister(resourceID ResourceID, o Resource) error {
 
 	if !erw.Resource.IsExisting() {
 		delete(r.resources, resourceID)
+
+		for k := range erw.Dependencies {
+			delete(k.DependedBy, erw)
+		}
+
+		for k := range erw.DependedBy {
+			delete(k.Dependencies, erw)
+		}
 	}
 
 	reflect.ValueOf(o).Elem().Set(reflect.ValueOf(erw.Resource).Elem())
@@ -425,6 +437,10 @@ func (r *Registry) Process(ctx context.Context, meta interface{}) error {
 
 	for id, rw := range r.resources {
 		if rw.IsRegistered {
+			if rr, ok := rw.Resource.(ResourceReference); ok && rr.ReferenceID() != "" {
+				resourceUniqueIDMap[rr.ReferenceID()] = rw
+			}
+
 			continue
 		}
 
@@ -436,6 +452,14 @@ func (r *Registry) Process(ctx context.Context, meta interface{}) error {
 
 		if obsoleteID != nil {
 			delete(r.resources, id)
+
+			for k := range rw.Dependencies {
+				delete(k.DependedBy, rw)
+			}
+
+			for k := range rw.DependedBy {
+				delete(k.Dependencies, rw)
+			}
 		}
 	}
 
@@ -458,12 +482,12 @@ func (r *Registry) Process(ctx context.Context, meta interface{}) error {
 
 func mergeUniqueResource(res *ResourceWrapper, resourceUniqueIDMap map[string]*ResourceWrapper) (obsoleteID *ResourceID, err error) {
 	// Merge potentially obsolete resources with newly registered.
-	rm, ok := res.Resource.(ResourceUnique)
+	rr, ok := res.Resource.(ResourceReference)
 	if !ok {
 		return nil, nil
 	}
 
-	uniqID := rm.UniqueID()
+	uniqID := rr.ReferenceID()
 	if uniqID == "" {
 		return nil, nil
 	}
@@ -524,7 +548,7 @@ func (r *Registry) read(ctx context.Context, meta interface{}) error {
 		defer mu.Unlock()
 
 		// Skip reading objects that do not have unique id defined.
-		if rm, ok := res.Resource.(ResourceUnique); ok && rm.UniqueID() == "" {
+		if rr, ok := res.Resource.(ResourceReference); ok && rr.ReferenceID() == "" {
 			return nil
 		}
 

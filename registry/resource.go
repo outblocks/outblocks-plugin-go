@@ -26,6 +26,9 @@ type Resource interface {
 	SetState(ResourceState)
 	State() ResourceState
 
+	IsRegistered() bool
+	setRegistered(bool)
+
 	IsNew() bool
 	MarkAsNew()
 	IsExisting() bool
@@ -75,8 +78,9 @@ type ResourceCriticalChecker interface {
 }
 
 type ResourceBase struct {
-	state ResourceState
-	diff  *Diff
+	state      ResourceState
+	diff       *Diff
+	registered bool
 }
 
 func (b *ResourceBase) SetDiff(v *Diff) {
@@ -93,6 +97,14 @@ func (b *ResourceBase) SetState(v ResourceState) {
 
 func (b *ResourceBase) State() ResourceState {
 	return b.state
+}
+
+func (b *ResourceBase) IsRegistered() bool {
+	return b.registered
+}
+
+func (b *ResourceBase) setRegistered(v bool) { // nolint:unused
+	b.registered = v
 }
 
 func (b *ResourceBase) IsNew() bool {
@@ -140,6 +152,7 @@ type ResourceID struct {
 
 type ResourceSerialized struct {
 	ResourceID
+	IsNew        bool                   `json:"is_new,omitempty"`
 	ReferenceID  string                 `json:"ref_id,omitempty"`
 	Properties   map[string]interface{} `json:"properties,omitempty"`
 	Dependencies []ResourceID           `json:"dependencies,omitempty"`
@@ -153,7 +166,6 @@ type ResourceWrapper struct {
 	DependedBy   map[*ResourceWrapper]struct{}
 	Dependencies map[*ResourceWrapper]struct{}
 	Resource     Resource
-	IsRegistered bool
 	IsSkipped    bool
 }
 
@@ -227,6 +239,7 @@ func (w *ResourceWrapper) MarshalJSON() ([]byte, error) {
 	}
 
 	return json.Marshal(ResourceSerialized{
+		IsNew:        w.Resource.IsNew(),
 		ResourceID:   w.ResourceID,
 		ReferenceID:  refID,
 		Properties:   props,

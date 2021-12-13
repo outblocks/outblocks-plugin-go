@@ -178,7 +178,7 @@ func deleteObjectTree(r *ResourceWrapper, diffMap map[*ResourceWrapper]*Diff, on
 		deleteObjectTree(d, diffMap, onlyUnregistered)
 	}
 
-	if !r.Resource.IsExisting() || r.Resource.SkipState() || (onlyUnregistered && r.IsRegistered) {
+	if !r.Resource.IsExisting() || r.Resource.SkipState() || (onlyUnregistered && r.Resource.IsRegistered()) {
 		return
 	}
 

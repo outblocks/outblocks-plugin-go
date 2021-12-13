@@ -622,6 +622,190 @@ var DeployPluginService_ServiceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/plugin.proto",
 }
 
+// DNSPluginServiceClient is the client API for DNSPluginService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type DNSPluginServiceClient interface {
+	DomainInfo(ctx context.Context, in *DomainInfoRequest, opts ...grpc.CallOption) (*DomainInfoResponse, error)
+	PlanDNS(ctx context.Context, in *PlanDNSRequest, opts ...grpc.CallOption) (*PlanDNSResponse, error)
+	ApplyDNS(ctx context.Context, in *ApplyDNSRequest, opts ...grpc.CallOption) (DNSPluginService_ApplyDNSClient, error)
+}
+
+type dNSPluginServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewDNSPluginServiceClient(cc grpc.ClientConnInterface) DNSPluginServiceClient {
+	return &dNSPluginServiceClient{cc}
+}
+
+func (c *dNSPluginServiceClient) DomainInfo(ctx context.Context, in *DomainInfoRequest, opts ...grpc.CallOption) (*DomainInfoResponse, error) {
+	out := new(DomainInfoResponse)
+	err := c.cc.Invoke(ctx, "/api.v1.DNSPluginService/DomainInfo", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *dNSPluginServiceClient) PlanDNS(ctx context.Context, in *PlanDNSRequest, opts ...grpc.CallOption) (*PlanDNSResponse, error) {
+	out := new(PlanDNSResponse)
+	err := c.cc.Invoke(ctx, "/api.v1.DNSPluginService/PlanDNS", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *dNSPluginServiceClient) ApplyDNS(ctx context.Context, in *ApplyDNSRequest, opts ...grpc.CallOption) (DNSPluginService_ApplyDNSClient, error) {
+	stream, err := c.cc.NewStream(ctx, &DNSPluginService_ServiceDesc.Streams[0], "/api.v1.DNSPluginService/ApplyDNS", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &dNSPluginServiceApplyDNSClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type DNSPluginService_ApplyDNSClient interface {
+	Recv() (*ApplyDNSResponse, error)
+	grpc.ClientStream
+}
+
+type dNSPluginServiceApplyDNSClient struct {
+	grpc.ClientStream
+}
+
+func (x *dNSPluginServiceApplyDNSClient) Recv() (*ApplyDNSResponse, error) {
+	m := new(ApplyDNSResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+// DNSPluginServiceServer is the server API for DNSPluginService service.
+// All implementations should embed UnimplementedDNSPluginServiceServer
+// for forward compatibility
+type DNSPluginServiceServer interface {
+	DomainInfo(context.Context, *DomainInfoRequest) (*DomainInfoResponse, error)
+	PlanDNS(context.Context, *PlanDNSRequest) (*PlanDNSResponse, error)
+	ApplyDNS(*ApplyDNSRequest, DNSPluginService_ApplyDNSServer) error
+}
+
+// UnimplementedDNSPluginServiceServer should be embedded to have forward compatible implementations.
+type UnimplementedDNSPluginServiceServer struct {
+}
+
+func (UnimplementedDNSPluginServiceServer) DomainInfo(context.Context, *DomainInfoRequest) (*DomainInfoResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DomainInfo not implemented")
+}
+func (UnimplementedDNSPluginServiceServer) PlanDNS(context.Context, *PlanDNSRequest) (*PlanDNSResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PlanDNS not implemented")
+}
+func (UnimplementedDNSPluginServiceServer) ApplyDNS(*ApplyDNSRequest, DNSPluginService_ApplyDNSServer) error {
+	return status.Errorf(codes.Unimplemented, "method ApplyDNS not implemented")
+}
+
+// UnsafeDNSPluginServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to DNSPluginServiceServer will
+// result in compilation errors.
+type UnsafeDNSPluginServiceServer interface {
+	mustEmbedUnimplementedDNSPluginServiceServer()
+}
+
+func RegisterDNSPluginServiceServer(s grpc.ServiceRegistrar, srv DNSPluginServiceServer) {
+	s.RegisterService(&DNSPluginService_ServiceDesc, srv)
+}
+
+func _DNSPluginService_DomainInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DomainInfoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DNSPluginServiceServer).DomainInfo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.v1.DNSPluginService/DomainInfo",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DNSPluginServiceServer).DomainInfo(ctx, req.(*DomainInfoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DNSPluginService_PlanDNS_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PlanDNSRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DNSPluginServiceServer).PlanDNS(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.v1.DNSPluginService/PlanDNS",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DNSPluginServiceServer).PlanDNS(ctx, req.(*PlanDNSRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DNSPluginService_ApplyDNS_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(ApplyDNSRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(DNSPluginServiceServer).ApplyDNS(m, &dNSPluginServiceApplyDNSServer{stream})
+}
+
+type DNSPluginService_ApplyDNSServer interface {
+	Send(*ApplyDNSResponse) error
+	grpc.ServerStream
+}
+
+type dNSPluginServiceApplyDNSServer struct {
+	grpc.ServerStream
+}
+
+func (x *dNSPluginServiceApplyDNSServer) Send(m *ApplyDNSResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+// DNSPluginService_ServiceDesc is the grpc.ServiceDesc for DNSPluginService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var DNSPluginService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "api.v1.DNSPluginService",
+	HandlerType: (*DNSPluginServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "DomainInfo",
+			Handler:    _DNSPluginService_DomainInfo_Handler,
+		},
+		{
+			MethodName: "PlanDNS",
+			Handler:    _DNSPluginService_PlanDNS_Handler,
+		},
+	},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "ApplyDNS",
+			Handler:       _DNSPluginService_ApplyDNS_Handler,
+			ServerStreams: true,
+		},
+	},
+	Metadata: "api/v1/plugin.proto",
+}
+
 // RunPluginServiceClient is the client API for RunPluginService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.

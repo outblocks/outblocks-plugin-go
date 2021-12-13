@@ -149,17 +149,17 @@ func (r *Registry) SkipAppResources(app *apiv1.App) {
 	r.skippedAppIDs[app.Id] = true
 }
 
-func (r *Registry) RegisterAppResource(app *apiv1.App, id string, o Resource) error {
+func (r *Registry) RegisterAppResource(app *apiv1.App, id string, o Resource) (added bool, err error) {
 	resID := r.createResourceID(types.SourceApp, app.Id, id, o)
 	return r.register(resID, o)
 }
 
-func (r *Registry) RegisterDependencyResource(dep *apiv1.Dependency, id string, o Resource) error {
+func (r *Registry) RegisterDependencyResource(dep *apiv1.Dependency, id string, o Resource) (added bool, err error) {
 	resID := r.createResourceID(types.SourceDependency, dep.Id, id, o)
 	return r.register(resID, o)
 }
 
-func (r *Registry) RegisterPluginResource(scope, id string, o Resource) error {
+func (r *Registry) RegisterPluginResource(scope, id string, o Resource) (added bool, err error) {
 	resID := r.createResourceID(types.SourcePlugin, scope, id, o)
 	return r.register(resID, o)
 }
@@ -178,27 +178,27 @@ func (r *Registry) createResourceID(source, namespace, id string, o Resource) Re
 	}
 }
 
-func (r *Registry) register(resourceID ResourceID, o Resource) error {
+func (r *Registry) register(resourceID ResourceID, o Resource) (added bool, err error) {
 	tinfo, ok := r.types[resourceID.Type]
 
 	if !ok {
 		err := r.RegisterType(o)
 		if err != nil {
-			return err
+			return false, err
 		}
 
 		tinfo = r.types[resourceID.Type]
 	}
 
 	erw := r.resources[resourceID]
-	if erw != nil && erw.IsRegistered {
+	if erw != nil && erw.Resource.IsRegistered() {
 		if !r.opts.AllowDuplicates {
-			return fmt.Errorf("resource already registered: %s", resourceID.ID)
+			return false, fmt.Errorf("resource already registered: %s", resourceID.ID)
 		}
 
 		reflect.ValueOf(o).Elem().Set(reflect.ValueOf(erw.Resource).Elem())
 
-		return nil
+		return false, nil
 	}
 
 	o.SetState(ResourceStateNew)
@@ -209,12 +209,13 @@ func (r *Registry) register(resourceID ResourceID, o Resource) error {
 		Resource:     o,
 		DependedBy:   make(map[*ResourceWrapper]struct{}),
 		Dependencies: make(map[*ResourceWrapper]struct{}),
-		IsRegistered: true,
 	}
 
-	err := setFieldDefaults(rw)
+	o.setRegistered(true)
+
+	err = setFieldDefaults(rw)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	for _, f := range rw.Fields {
@@ -256,10 +257,10 @@ func (r *Registry) register(resourceID ResourceID, o Resource) error {
 	if erw != nil {
 		err = rw.SetFieldValues(r.loadedResources[resourceID].Properties)
 		if err != nil {
-			return err
+			return false, err
 		}
 
-		rw.Resource.SetState(ResourceStateExisting)
+		rw.Resource.SetState(erw.Resource.State())
 
 		// Remove/fix existing dependencies<->depended by mapping.
 		for k := range erw.Dependencies {
@@ -279,7 +280,7 @@ func (r *Registry) register(resourceID ResourceID, o Resource) error {
 
 	r.resources[resourceID] = rw
 
-	return nil
+	return true, nil
 }
 
 func (r *Registry) DeregisterAppResource(app *apiv1.App, id string, o Resource) error {
@@ -299,11 +300,11 @@ func (r *Registry) DeregisterPluginResource(scope, id string, o Resource) error 
 
 func (r *Registry) deregister(resourceID ResourceID, o Resource) error {
 	erw := r.resources[resourceID]
-	if erw == nil || !erw.IsRegistered {
+	if erw == nil || !erw.Resource.IsRegistered() {
 		return fmt.Errorf("resource not registered: %s", resourceID.ID)
 	}
 
-	erw.IsRegistered = false
+	erw.Resource.setRegistered(false)
 
 	if !erw.Resource.IsExisting() {
 		delete(r.resources, resourceID)
@@ -356,7 +357,11 @@ func (r *Registry) Load(ctx context.Context, state []byte) error {
 			return err
 		}
 
-		res.Resource.SetState(ResourceStateExisting)
+		if e.IsNew {
+			res.Resource.SetState(ResourceStateNew)
+		} else {
+			res.Resource.SetState(ResourceStateExisting)
+		}
 	}
 
 	// Process missing resources.
@@ -374,11 +379,12 @@ func (r *Registry) Load(ctx context.Context, state []byte) error {
 		rw := &ResourceWrapper{
 			ResourceID:   v.ResourceID,
 			Fields:       generateResourceFields(res, rti),
-			Resource:     obj.Interface().(Resource),
+			Resource:     res,
 			DependedBy:   make(map[*ResourceWrapper]struct{}),
 			Dependencies: make(map[*ResourceWrapper]struct{}),
-			IsRegistered: false,
 		}
+
+		res.setRegistered(false)
 
 		err := setFieldDefaults(rw)
 		if err != nil {
@@ -392,7 +398,11 @@ func (r *Registry) Load(ctx context.Context, state []byte) error {
 
 		resourceMap[v.ResourceID] = rw
 
-		rw.Resource.SetState(ResourceStateExisting)
+		if v.IsNew {
+			rw.Resource.SetState(ResourceStateNew)
+		} else {
+			rw.Resource.SetState(ResourceStateExisting)
+		}
 
 		missing[rw.ResourceID] = rw
 	}
@@ -436,7 +446,7 @@ func (r *Registry) Process(ctx context.Context, meta interface{}) error {
 	resourceUniqueIDMap := make(map[string]*ResourceWrapper)
 
 	for id, rw := range r.resources {
-		if rw.IsRegistered {
+		if rw.Resource.IsRegistered() {
 			if rr, ok := rw.Resource.(ResourceReference); ok && rr.ReferenceID() != "" {
 				resourceUniqueIDMap[rr.ReferenceID()] = rw
 			}
@@ -495,12 +505,12 @@ func mergeUniqueResource(res *ResourceWrapper, resourceUniqueIDMap map[string]*R
 	existing, ok := resourceUniqueIDMap[uniqID]
 
 	if ok {
-		if existing.IsRegistered == res.IsRegistered {
+		if existing.Resource.IsRegistered() == res.Resource.IsRegistered() {
 			return nil, fmt.Errorf("multiple resources registered with same unique ID! one is: %s, another: %s",
 				res.ResourceID, existing.ResourceID)
 		}
 
-		if res.IsRegistered {
+		if res.Resource.IsRegistered() {
 			resourceUniqueIDMap[uniqID] = res
 			return &existing.ResourceID, nil
 		}
@@ -769,7 +779,7 @@ func (r *Registry) Diff(ctx context.Context) ([]*Diff, error) {
 		}
 
 		// Add all missing resources as deletions.
-		if !res.IsRegistered {
+		if !res.Resource.IsRegistered() {
 			mu.Lock()
 			deleteObjectTree(res, diffMap, true)
 			mu.Unlock()
@@ -828,7 +838,7 @@ func (r *Registry) Dump() ([]byte, error) {
 	var resources []*ResourceWrapper
 
 	for _, res := range r.resources {
-		if !res.Resource.IsExisting() || res.Resource.SkipState() {
+		if res.Resource.IsDeleted() || res.Resource.SkipState() {
 			continue
 		}
 

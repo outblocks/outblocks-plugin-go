@@ -156,7 +156,6 @@ message DNSState {
   string cname = 3;
   string internal_url = 4;
   string url = 5;
-  bool manual = 6;
   SSLStatus ssl_status = 7;
   string ssl_status_info = 8;
   string connection_info = 9;
@@ -177,9 +176,6 @@ message AppState {
 message AppPlan {
   AppState state = 1;
   bool skip = 2;
-
-  bool is_deploy = 3;
-  bool is_dns = 4;
 }
 
 message Dependency {
@@ -209,11 +205,12 @@ message PluginState {
 message PlanRequest {
   repeated AppPlan apps = 1;
   repeated DependencyPlan dependencies = 2;
+  repeated DomainInfo domains = 3;
 
-  bool destroy = 3;
-  PluginState state = 4;
-  google.protobuf.Struct args = 5;
-  bool verify = 6;
+  bool destroy = 4;
+  bool verify = 5;
+  PluginState state = 6;
+  google.protobuf.Struct args = 7;
 }
 
 enum PlanType {
@@ -239,20 +236,21 @@ message Plan { repeated PlanAction actions = 1; }
 
 message PlanResponse {
   Plan deploy = 1;
-  Plan dns = 2;
 
   PluginState state = 3;
   map<string, AppState> app_states = 4;
   map<string, DependencyState> dependency_states = 5;
+  repeated DNSRecord dns_records = 6;
 }
 
 message ApplyRequest {
   repeated AppPlan apps = 1;
   repeated DependencyPlan dependencies = 2;
+  repeated DomainInfo domains = 3;
 
-  bool destroy = 3;
-  PluginState state = 4;
-  google.protobuf.Struct args = 5;
+  bool destroy = 4;
+  PluginState state = 5;
+  google.protobuf.Struct args = 6;
 }
 
 message ApplyAction {
@@ -272,6 +270,7 @@ message ApplyDoneResponse {
   PluginState state = 1;
   map<string, AppState> app_states = 2;
   map<string, DependencyState> dependency_states = 3;
+  repeated DNSRecord dns_records = 4;
 }
 
 message ApplyResponse {
@@ -284,6 +283,72 @@ message ApplyResponse {
 service DeployPluginService {
   rpc Plan(PlanRequest) returns (PlanResponse);
   rpc Apply(ApplyRequest) returns (stream ApplyResponse);
+}
+
+// DNS Plugin.
+
+message DomainInfoRequest {
+  repeated string domains = 1;
+}
+
+message DomainInfoResponse {
+  repeated DomainInfo domains = 1;
+}
+
+message DomainInfo {
+  repeated string domains = 1;
+  string cert = 2;
+  string key = 3;
+}
+
+message DNSRecord {
+  enum Type {
+    TYPE_UNSPECIFIED = 0;
+    TYPE_A = 1;
+    TYPE_AAAA = 2;
+    TYPE_CNAME = 3;
+  }
+
+  string record = 1;
+  string value = 2;
+  Type type = 3;
+  bool created = 4;
+}
+
+message PlanDNSRequest {
+  repeated DNSRecord dns_records = 1;
+
+  bool verify = 2;
+  PluginState state = 3;
+  google.protobuf.Struct args = 4;
+}
+
+message PlanDNSResponse {
+  Plan dns = 1;
+
+  PluginState state = 2;
+}
+
+message ApplyDNSRequest {
+  repeated DNSRecord dns_records = 1;
+
+  PluginState state = 2;
+  google.protobuf.Struct args = 3;
+}
+
+message ApplyDNSResponse {
+  oneof response {
+    ApplyActionResponse action = 1;
+    ApplyDoneResponse done = 2;
+  }
+}
+
+
+service DNSPluginService {
+  rpc DomainInfo(DomainInfoRequest) returns (DomainInfoResponse);
+
+  rpc PlanDNS(PlanDNSRequest) returns (PlanDNSResponse);
+  rpc ApplyDNS(ApplyDNSRequest) returns (stream ApplyDNSResponse);
 }
 
 // Run Plugin.

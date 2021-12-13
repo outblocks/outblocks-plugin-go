@@ -78,6 +78,10 @@ func (s *Server) serve(handler BasicPluginHandler, opts ...ServerOptions) error 
 		apiv1.RegisterDeployPluginServiceServer(grpcServer, &deployPluginHandlerWrapper{DeployPluginHandler: srv, RegistryOptions: s.registryOptions})
 	}
 
+	if srv, ok := handler.(DNSPluginHandler); ok {
+		apiv1.RegisterDNSPluginServiceServer(grpcServer, &dnsPluginHandlerWrapper{DNSPluginHandler: srv, RegistryOptions: s.registryOptions})
+	}
+
 	if srv, ok := handler.(CommandPluginHandler); ok {
 		apiv1.RegisterCommandPluginServiceServer(grpcServer, srv)
 	}

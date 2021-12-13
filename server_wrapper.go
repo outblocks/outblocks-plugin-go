@@ -21,6 +21,12 @@ type DeployPluginHandler interface {
 	Apply(*apiv1.ApplyRequest, *registry.Registry, apiv1.DeployPluginService_ApplyServer) error
 }
 
+type DNSPluginHandler interface {
+	DomainInfo(ctx context.Context, in *apiv1.DomainInfoRequest) (*apiv1.DomainInfoResponse, error)
+	PlanDNS(context.Context, *registry.Registry, *apiv1.PlanDNSRequest) (*apiv1.PlanDNSResponse, error)
+	ApplyDNS(*apiv1.ApplyDNSRequest, *registry.Registry, apiv1.DNSPluginService_ApplyDNSServer) error
+}
+
 type CommandPluginHandler interface {
 	apiv1.CommandPluginServiceServer
 }
@@ -87,4 +93,28 @@ func (s *deployPluginHandlerWrapper) Plan(ctx context.Context, r *apiv1.PlanRequ
 func (s *deployPluginHandlerWrapper) Apply(r *apiv1.ApplyRequest, stream apiv1.DeployPluginService_ApplyServer) error {
 	reg := s.createRegistry(r.Apps, r.Destroy, false)
 	return s.DeployPluginHandler.Apply(r, reg, stream)
+}
+
+type dnsPluginHandlerWrapper struct {
+	DNSPluginHandler
+
+	RegistryOptions RegistryOptions
+}
+
+func (s *dnsPluginHandlerWrapper) createRegistry(read bool) *registry.Registry {
+	reg := registry.NewRegistry(&registry.Options{
+		Read:            read,
+		AllowDuplicates: s.RegistryOptions.AllowDuplicates,
+	})
+
+	return reg
+}
+func (s *dnsPluginHandlerWrapper) PlanDNS(ctx context.Context, r *apiv1.PlanDNSRequest) (*apiv1.PlanDNSResponse, error) {
+	reg := s.createRegistry(r.Verify)
+	return s.DNSPluginHandler.PlanDNS(ctx, reg, r)
+}
+
+func (s *dnsPluginHandlerWrapper) ApplyDNS(r *apiv1.ApplyDNSRequest, stream apiv1.DNSPluginService_ApplyDNSServer) error {
+	reg := s.createRegistry(false)
+	return s.DNSPluginHandler.ApplyDNS(r, reg, stream)
 }

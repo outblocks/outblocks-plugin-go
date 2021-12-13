@@ -141,7 +141,7 @@ func (e *BaseVarEvaluator) ExpandRaw(input []byte) (output []byte, params []inte
 			done = start + 3 + idx
 		}
 
-		if done < ll-1 {
+		if done < ll {
 			out[l] = append(out[l], line[done:]...)
 		}
 	}

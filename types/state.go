@@ -61,8 +61,76 @@ func (p *PluginState) Proto() *apiv1.PluginState {
 	}
 }
 
+type DNSRecordKey struct {
+	Record string
+	Type   apiv1.DNSRecord_Type
+}
+
+type DNSRecordValue struct {
+	Value   string
+	Created bool
+}
+
+type DNSRecordMap map[DNSRecordKey]DNSRecordValue
+
+func (m DNSRecordMap) MarshalJSON() ([]byte, error) {
+	out := make([]*apiv1.DNSRecord, 0, len(m))
+
+	for k, v := range m {
+		out = append(out, &apiv1.DNSRecord{
+			Record:  k.Record,
+			Type:    k.Type,
+			Value:   v.Value,
+			Created: v.Created,
+		})
+	}
+
+	return json.Marshal(out)
+}
+
+func (m DNSRecordMap) UnmarshalJSON(b []byte) error {
+	var out []*apiv1.DNSRecord
+
+	err := json.Unmarshal(b, &out)
+	if err != nil {
+		return err
+	}
+
+	m = make(DNSRecordMap)
+
+	for _, v := range out {
+		m[DNSRecordKey{
+			Record: v.Record,
+			Type:   v.Type,
+		}] = DNSRecordValue{
+			Value:   v.Value,
+			Created: v.Created,
+		}
+	}
+
+	return nil
+}
+
 type StateData struct {
 	Apps         map[string]*apiv1.AppState        `json:"apps"`
 	Dependencies map[string]*apiv1.DependencyState `json:"dependencies"`
 	Plugins      map[string]*PluginState           `json:"plugins_state"` // plugin name -> object -> state
+
+	DNSRecords DNSRecordMap `json:"dns_records"`
+}
+
+func (d *StateData) Reset() {
+	d.Apps = make(map[string]*apiv1.AppState)
+	d.Dependencies = make(map[string]*apiv1.DependencyState)
+	d.DNSRecords = make(DNSRecordMap)
+}
+
+func (d *StateData) AddDNSRecord(v *apiv1.DNSRecord) {
+	d.DNSRecords[DNSRecordKey{
+		Record: v.Record,
+		Type:   v.Type,
+	}] = DNSRecordValue{
+		Value:   v.Value,
+		Created: v.Created,
+	}
 }

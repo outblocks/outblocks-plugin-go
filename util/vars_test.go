@@ -37,7 +37,12 @@ func TestExpand(t *testing.T) {
 		{
 			content:  "val: ${var.base_url}/func1",
 			vars:     map[string]interface{}{"var": map[string]interface{}{"base_url": "test"}},
-			expected: `val: test/func1`,
+			expected: "val: test/func1",
+		},
+		{
+			content:  `val: "*.${var.base_url}"`,
+			vars:     map[string]interface{}{"var": map[string]interface{}{"base_url": "test"}},
+			expected: `val: "*.test"`,
 		},
 	}
 

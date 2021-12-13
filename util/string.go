@@ -140,3 +140,10 @@ func randomChars(bytes []byte, chars string) {
 		bytes[i] = chars[rand.Intn(setLen)]
 	}
 }
+
+func DomainRegex(v string) *regexp.Regexp {
+	v = strings.ReplaceAll(v, ".", "\\.")
+	v = strings.ReplaceAll(v, "*", "[^.]+")
+
+	return regexp.MustCompile(v)
+}

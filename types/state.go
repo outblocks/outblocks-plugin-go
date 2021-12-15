@@ -119,6 +119,15 @@ type StateData struct {
 	DNSRecords DNSRecordMap `json:"dns_records"`
 }
 
+func NewStateData() *StateData {
+	return &StateData{
+		Apps:         make(map[string]*apiv1.AppState),
+		Plugins:      make(map[string]*PluginState),
+		Dependencies: make(map[string]*apiv1.DependencyState),
+		DNSRecords:   make(DNSRecordMap),
+	}
+}
+
 func (d *StateData) Reset() {
 	d.Apps = make(map[string]*apiv1.AppState)
 	d.Dependencies = make(map[string]*apiv1.DependencyState)

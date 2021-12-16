@@ -29,23 +29,9 @@ func NewCmdAsUser(command string) *exec.Cmd {
 		}
 	}
 
-	cmd.SysProcAttr = &syscall.SysProcAttr{
-		Setpgid: true,
-	}
+	cmd.SysProcAttr = defaultSysProcAttr()
 
 	return cmd
-}
-
-func CmdSignal(cmd *exec.Cmd, signal os.Signal) error {
-	pgid, err := syscall.Getpgid(cmd.Process.Pid)
-	if err == nil {
-		err = syscall.Kill(-pgid, signal.(syscall.Signal))
-		_ = cmd.Process.Release()
-
-		return err
-	}
-
-	return cmd.Process.Signal(signal)
 }
 
 type Cmd struct {

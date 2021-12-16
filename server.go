@@ -37,15 +37,15 @@ func newServer() *Server {
 	}
 }
 
-type ServerOptions func(s *Server)
+type ServerOption func(*Server)
 
-func WithRegistryAllowDuplicates(b bool) ServerOptions {
+func WithRegistryAllowDuplicates(b bool) ServerOption {
 	return func(s *Server) {
 		s.registryOptions.AllowDuplicates = b
 	}
 }
 
-func (s *Server) serve(handler BasicPluginHandler, opts ...ServerOptions) error {
+func (s *Server) serve(handler BasicPluginHandler, opts ...ServerOption) error {
 	for _, opt := range opts {
 		opt(s)
 	}
@@ -126,6 +126,6 @@ func (s *Server) serve(handler BasicPluginHandler, opts ...ServerOptions) error 
 	return err
 }
 
-func Serve(handler BasicPluginHandler, opts ...ServerOptions) error {
+func Serve(handler BasicPluginHandler, opts ...ServerOption) error {
 	return newServer().serve(handler, opts...)
 }

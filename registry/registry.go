@@ -211,6 +211,7 @@ func (r *Registry) register(resourceID ResourceID, o Resource) (added bool, err 
 		Dependencies: make(map[*ResourceWrapper]struct{}),
 	}
 
+	o.setWrapper(rw)
 	o.setRegistered(true)
 
 	err = setFieldDefaults(rw)
@@ -384,6 +385,7 @@ func (r *Registry) Load(ctx context.Context, state []byte) error {
 			Dependencies: make(map[*ResourceWrapper]struct{}),
 		}
 
+		res.setWrapper(rw)
 		res.setRegistered(false)
 
 		err := setFieldDefaults(rw)
@@ -805,7 +807,7 @@ func (r *Registry) Diff(ctx context.Context) ([]*Diff, error) {
 
 		d := r.calculateDiff(res)
 		if d != nil {
-			res.Resource.SetDiff(d)
+			res.Resource.setDiff(d)
 
 			mu.Lock()
 			diffMap[res] = d
@@ -828,7 +830,7 @@ func (r *Registry) Diff(ctx context.Context) ([]*Diff, error) {
 
 	for res, d := range diffMap {
 		diff = append(diff, d)
-		res.Resource.SetDiff(d)
+		res.Resource.setDiff(d)
 	}
 
 	return diff, nil
@@ -985,7 +987,7 @@ func (r *Registry) Apply(ctx context.Context, meta interface{}, diff []*Diff, ca
 	pool, ctx := errgroup.WithConcurrency(ctx, defaultConcurrency)
 
 	for _, d := range diff {
-		d.Object.Resource.SetDiff(d)
+		d.Object.Resource.setDiff(d)
 	}
 
 	// Add another cancel for errgroup context so that we can handle error from pool at all times.

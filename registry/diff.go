@@ -185,5 +185,5 @@ func deleteObjectTree(r *ResourceWrapper, diffMap map[*ResourceWrapper]*Diff, on
 	diff := NewDiff(r, DiffTypeDelete, r.FieldList())
 	diffMap[r] = diff
 
-	r.Resource.SetDiff(diff)
+	r.Resource.setDiff(diff)
 }

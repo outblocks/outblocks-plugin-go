@@ -52,7 +52,7 @@ type ServiceAppBuild struct {
 }
 
 type ServiceAppContainer struct {
-	Port int `json:"port" default:"80"`
+	Port int `json:"port" default:"8080"`
 }
 
 type ServiceAppCDN struct {
@@ -60,7 +60,7 @@ type ServiceAppCDN struct {
 }
 
 type ServiceAppProperties struct {
-	Public bool `json:"public" default:"true"`
+	Private bool `json:"private"`
 
 	Build     *ServiceAppBuild     `json:"build,omitempty"`
 	Container *ServiceAppContainer `json:"container,omitempty"`
@@ -121,7 +121,7 @@ func (p *StaticAppProperties) Encode() (map[string]interface{}, error) {
 	return encodeToMap(p)
 }
 
-type AppVars map[string]map[string]map[string]interface{}
+type AppVars map[string]interface{}
 
 func VarsFromAppType(app *apiv1.App) map[string]interface{} {
 	return map[string]interface{}{
@@ -136,17 +136,17 @@ func VarsFromAppRunType(app *apiv1.AppRun) map[string]interface{} {
 }
 
 func AppVarsFromApps(apps []*apiv1.App) AppVars {
-	appVars := make(map[string]map[string]map[string]interface{}) // type->name->value
+	appVars := make(map[string]interface{}) // type->name->value
 
 	for _, app := range apps {
 		vars := VarsFromAppType(app)
 
 		if _, ok := appVars[app.Type]; !ok {
-			appVars[app.Type] = map[string]map[string]interface{}{
+			appVars[app.Type] = map[string]interface{}{
 				app.Name: vars,
 			}
 		} else {
-			appVars[app.Type][app.Name] = vars
+			appVars[app.Type].(map[string]interface{})[app.Name] = vars
 		}
 	}
 
@@ -154,17 +154,17 @@ func AppVarsFromApps(apps []*apiv1.App) AppVars {
 }
 
 func AppVarsFromAppRun(apps []*apiv1.AppRun) AppVars {
-	appVars := make(map[string]map[string]map[string]interface{}) // type->name->value
+	appVars := make(map[string]interface{}) // type->name->value
 
 	for _, app := range apps {
 		vars := VarsFromAppRunType(app)
 
 		if _, ok := appVars[app.App.Type]; !ok {
-			appVars[app.App.Type] = map[string]map[string]interface{}{
+			appVars[app.App.Type] = map[string]interface{}{
 				app.App.Name: vars,
 			}
 		} else {
-			appVars[app.App.Type][app.App.Name] = vars
+			appVars[app.App.Type].(map[string]interface{})[app.App.Name] = vars
 		}
 	}
 
@@ -172,12 +172,12 @@ func AppVarsFromAppRun(apps []*apiv1.AppRun) AppVars {
 }
 
 func (v AppVars) ForApp(a *apiv1.App) map[string]interface{} {
-	return v[a.Type][a.Name]
+	return v[a.Type].(map[string]interface{})[a.Name].(map[string]interface{})
 }
 
 func VarsForApp(av AppVars, a *apiv1.App, depVars interface{}) map[string]interface{} {
 	return map[string]interface{}{
-		"app":  av,
+		"app":  map[string]interface{}(av),
 		"self": av.ForApp(a),
 		"dep":  depVars,
 	}

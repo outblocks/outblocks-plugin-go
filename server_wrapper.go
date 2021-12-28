@@ -8,6 +8,7 @@ import (
 	"github.com/outblocks/outblocks-plugin-go/log"
 	"github.com/outblocks/outblocks-plugin-go/registry"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 type BasicPluginHandler interface {
@@ -53,7 +54,7 @@ type basicPluginHandlerWrapper struct {
 }
 
 func (s *basicPluginHandlerWrapper) Init(ctx context.Context, req *apiv1.InitRequest) (*apiv1.InitResponse, error) {
-	conn, err := grpc.DialContext(ctx, req.HostAddr, grpc.WithInsecure())
+	conn, err := grpc.DialContext(ctx, req.HostAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, err
 	}

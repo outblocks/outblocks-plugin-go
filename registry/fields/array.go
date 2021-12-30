@@ -4,14 +4,14 @@ import (
 	"reflect"
 )
 
-type arrayBaseField interface {
+type arrayField interface {
 	SetCurrent([]interface{})
 	LookupCurrent() ([]interface{}, bool)
 	Current() []interface{}
 }
 
 type ArrayInputField interface {
-	arrayBaseField
+	arrayField
 	InputField
 
 	LookupWanted() ([]interface{}, bool)
@@ -21,37 +21,37 @@ type ArrayInputField interface {
 }
 
 type ArrayOutputField interface {
-	arrayBaseField
+	arrayField
 	OutputField
 
 	Input() ArrayInputField
 }
 
-type ArrayField struct {
+type ArrayBaseField struct {
 	FieldBase
 }
 
 func Array(val []Field) ArrayInputField {
-	return &ArrayField{FieldBase: BasicValue(val, false)}
+	return &ArrayBaseField{FieldBase: BasicValue(val, false)}
 }
 
 func ArrayUnset() ArrayInputField {
-	return &ArrayField{FieldBase: BasicValueUnset(false)}
+	return &ArrayBaseField{FieldBase: BasicValueUnset(false)}
 }
 
 func ArrayUnsetOutput() ArrayOutputField {
-	return &ArrayField{FieldBase: BasicValueUnset(true)}
+	return &ArrayBaseField{FieldBase: BasicValueUnset(true)}
 }
 
 func ArrayOutput(val []Field) ArrayOutputField {
-	return &ArrayField{FieldBase: BasicValue(val, true)}
+	return &ArrayBaseField{FieldBase: BasicValue(val, true)}
 }
 
-func (f *ArrayField) SetCurrent(i []interface{}) {
+func (f *ArrayBaseField) SetCurrent(i []interface{}) {
 	f.setCurrent(interfaceArrayToFieldArray(i))
 }
 
-func (f *ArrayField) LookupCurrent() (v []interface{}, ok bool) {
+func (f *ArrayBaseField) LookupCurrent() (v []interface{}, ok bool) {
 	if !f.currentDefined {
 		return nil, f.currentDefined
 	}
@@ -59,11 +59,11 @@ func (f *ArrayField) LookupCurrent() (v []interface{}, ok bool) {
 	return f.Serialize(f.currentVal).([]interface{}), true
 }
 
-func (f *ArrayField) SetWanted(i []interface{}) {
+func (f *ArrayBaseField) SetWanted(i []interface{}) {
 	f.setWanted(interfaceArrayToFieldArray(i))
 }
 
-func (f *ArrayField) LookupWanted() (v []interface{}, ok bool) {
+func (f *ArrayBaseField) LookupWanted() (v []interface{}, ok bool) {
 	if !f.wantedDefined {
 		return nil, false
 	}
@@ -71,17 +71,17 @@ func (f *ArrayField) LookupWanted() (v []interface{}, ok bool) {
 	return f.Serialize(f.wanted()).([]interface{}), true
 }
 
-func (f *ArrayField) Wanted() []interface{} {
+func (f *ArrayBaseField) Wanted() []interface{} {
 	v, _ := f.LookupWanted()
 	return v
 }
 
-func (f *ArrayField) Current() []interface{} {
+func (f *ArrayBaseField) Current() []interface{} {
 	v, _ := f.LookupCurrent()
 	return v
 }
 
-func (f *ArrayField) Any() []interface{} {
+func (f *ArrayBaseField) Any() []interface{} {
 	cur, ok := f.LookupCurrent()
 	if ok {
 		return cur
@@ -90,7 +90,7 @@ func (f *ArrayField) Any() []interface{} {
 	return f.Wanted()
 }
 
-func (f *ArrayField) Serialize(i interface{}) interface{} {
+func (f *ArrayBaseField) Serialize(i interface{}) interface{} {
 	if i == nil {
 		return make([]interface{}, 0)
 	}
@@ -120,7 +120,7 @@ func (f *ArrayField) Serialize(i interface{}) interface{} {
 	return m
 }
 
-func (f *ArrayField) FieldDependencies() []interface{} {
+func (f *ArrayBaseField) FieldDependencies() []interface{} {
 	if f.wanted() == nil {
 		return nil
 	}
@@ -144,7 +144,7 @@ func (f *ArrayField) FieldDependencies() []interface{} {
 	return deps
 }
 
-func (f *ArrayField) IsChanged() bool {
+func (f *ArrayBaseField) IsChanged() bool {
 	if f.currentVal == nil || f.wanted() == nil || f.invalidated {
 		return f.FieldBase.IsChanged()
 	}
@@ -155,11 +155,11 @@ func (f *ArrayField) IsChanged() bool {
 	return !reflect.DeepEqual(cur, wanted)
 }
 
-func (f *ArrayField) Input() ArrayInputField {
+func (f *ArrayBaseField) Input() ArrayInputField {
 	return f
 }
 
-func (f *ArrayField) EmptyValue() interface{} {
+func (f *ArrayBaseField) EmptyValue() interface{} {
 	var ret []interface{}
 	return ret
 }

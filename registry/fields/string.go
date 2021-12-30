@@ -7,14 +7,14 @@ import (
 	"github.com/outblocks/outblocks-plugin-go/util"
 )
 
-type stringBaseField interface {
+type stringField interface {
 	SetCurrent(string)
 	LookupCurrent() (string, bool)
 	Current() string
 }
 
 type StringInputField interface {
-	stringBaseField
+	stringField
 	InputField
 
 	LookupWanted() (string, bool)
@@ -24,37 +24,37 @@ type StringInputField interface {
 }
 
 type StringOutputField interface {
-	stringBaseField
+	stringField
 	OutputField
 
 	Input() StringInputField
 }
 
-type StringField struct {
+type StringBaseField struct {
 	FieldBase
 }
 
 func String(val string) StringInputField {
-	return &StringField{FieldBase: BasicValue(val, false)}
+	return &StringBaseField{FieldBase: BasicValue(val, false)}
 }
 
 func StringUnset() StringInputField {
-	return &StringField{FieldBase: BasicValueUnset(false)}
+	return &StringBaseField{FieldBase: BasicValueUnset(false)}
 }
 
 func StringUnsetOutput() StringOutputField {
-	return &StringField{FieldBase: BasicValueUnset(true)}
+	return &StringBaseField{FieldBase: BasicValueUnset(true)}
 }
 
 func StringOutput(val string) StringOutputField {
-	return &StringField{FieldBase: BasicValue(val, true)}
+	return &StringBaseField{FieldBase: BasicValue(val, true)}
 }
 
-func (f *StringField) SetCurrent(i string) {
+func (f *StringBaseField) SetCurrent(i string) {
 	f.setCurrent(i)
 }
 
-func (f *StringField) LookupCurrent() (v string, ok bool) {
+func (f *StringBaseField) LookupCurrent() (v string, ok bool) {
 	if !f.currentDefined {
 		return "", false
 	}
@@ -62,11 +62,11 @@ func (f *StringField) LookupCurrent() (v string, ok bool) {
 	return f.currentVal.(string), true
 }
 
-func (f *StringField) SetWanted(i string) {
+func (f *StringBaseField) SetWanted(i string) {
 	f.setWanted(i)
 }
 
-func (f *StringField) LookupWanted() (v string, ok bool) {
+func (f *StringBaseField) LookupWanted() (v string, ok bool) {
 	if !f.wantedDefined {
 		return "", false
 	}
@@ -74,17 +74,17 @@ func (f *StringField) LookupWanted() (v string, ok bool) {
 	return f.wanted().(string), true
 }
 
-func (f *StringField) Wanted() string {
+func (f *StringBaseField) Wanted() string {
 	v, _ := f.LookupWanted()
 	return v
 }
 
-func (f *StringField) Current() string {
+func (f *StringBaseField) Current() string {
 	v, _ := f.LookupCurrent()
 	return v
 }
 
-func (f *StringField) Any() string {
+func (f *StringBaseField) Any() string {
 	any, defined := f.lookupAny()
 	if !defined {
 		return ""
@@ -93,45 +93,45 @@ func (f *StringField) Any() string {
 	return any.(string)
 }
 
-func (f *StringField) Input() StringInputField {
+func (f *StringBaseField) Input() StringInputField {
 	return f
 }
 
-func (f *StringField) EmptyValue() interface{} {
+func (f *StringBaseField) EmptyValue() interface{} {
 	return ""
 }
 
-type IStringField struct {
-	StringField
+type IStringBaseField struct {
+	StringBaseField
 }
 
-func (f *IStringField) IsChanged() bool {
+func (f *IStringBaseField) IsChanged() bool {
 	if f.currentVal == nil || f.wanted() == nil || f.invalidated {
-		return f.StringField.IsChanged()
+		return f.StringBaseField.IsChanged()
 	}
 
 	return strings.EqualFold(f.currentVal.(string), f.wanted().(string))
 }
 
 func IString(val string) StringInputField {
-	return &IStringField{StringField: StringField{BasicValue(val, false)}}
+	return &IStringBaseField{StringBaseField: StringBaseField{BasicValue(val, false)}}
 }
 
-type SprintfField struct {
+type SprintfBaseField struct {
 	FieldBase
 	args []interface{}
 	fmt  string
 }
 
 func Sprintf(format string, args ...interface{}) StringInputField {
-	return &SprintfField{
+	return &SprintfBaseField{
 		FieldBase: BasicValue(nil, false),
 		fmt:       format,
 		args:      args,
 	}
 }
 
-func (f *SprintfField) Any() string {
+func (f *SprintfBaseField) Any() string {
 	if f.currentDefined {
 		return f.currentVal.(string)
 	}
@@ -164,7 +164,7 @@ func (f *SprintfField) Any() string {
 	return fmt.Sprintf(f.fmt, args...)
 }
 
-func (f *SprintfField) LookupWanted() (string, bool) {
+func (f *SprintfBaseField) LookupWanted() (string, bool) {
 	if !f.wantedDefined {
 		return "", false
 	}
@@ -197,25 +197,25 @@ func (f *SprintfField) LookupWanted() (string, bool) {
 	return fmt.Sprintf(f.fmt, args...), true
 }
 
-func (f *SprintfField) SetWanted(i string) {
+func (f *SprintfBaseField) SetWanted(i string) {
 	f.setWanted(i)
 }
 
-func (f *SprintfField) LookupWantedRaw() (interface{}, bool) {
+func (f *SprintfBaseField) LookupWantedRaw() (interface{}, bool) {
 	return f.LookupWanted()
 }
 
-func (f *SprintfField) Wanted() string {
+func (f *SprintfBaseField) Wanted() string {
 	v, _ := f.LookupWanted()
 	return v
 }
 
-func (f *SprintfField) Current() string {
+func (f *SprintfBaseField) Current() string {
 	v, _ := f.LookupCurrent()
 	return v
 }
 
-func (f *SprintfField) FieldDependencies() []interface{} {
+func (f *SprintfBaseField) FieldDependencies() []interface{} {
 	var deps []interface{}
 
 	for _, a := range f.args {
@@ -234,7 +234,7 @@ func (f *SprintfField) FieldDependencies() []interface{} {
 	return deps
 }
 
-func (f *SprintfField) LookupCurrent() (v string, ok bool) {
+func (f *SprintfBaseField) LookupCurrent() (v string, ok bool) {
 	if f.currentDefined {
 		return f.currentVal.(string), true
 	}
@@ -259,42 +259,42 @@ func (f *SprintfField) LookupCurrent() (v string, ok bool) {
 	return fmt.Sprintf(f.fmt, args...), true
 }
 
-func (f *SprintfField) LookupCurrentRaw() (v interface{}, ok bool) {
+func (f *SprintfBaseField) LookupCurrentRaw() (v interface{}, ok bool) {
 	return f.LookupCurrent()
 }
 
-func (f *SprintfField) SetCurrent(i string) {
+func (f *SprintfBaseField) SetCurrent(i string) {
 	f.setCurrent(i)
 }
 
-func (f *SprintfField) IsChanged() bool {
+func (f *SprintfBaseField) IsChanged() bool {
 	return f.Current() != f.Wanted()
 }
 
-func (f *SprintfField) EmptyValue() interface{} {
+func (f *SprintfBaseField) EmptyValue() interface{} {
 	return ""
 }
 
 // String field with lazy initialization. If current value is defined in state, it is used instead.
 
-type LazyStringField struct {
-	StringField
+type LazyStringBaseField struct {
+	StringBaseField
 
 	newValue func() interface{}
 }
 
-func (f *LazyStringField) SetCurrent(i string) {
-	f.StringField.SetCurrent(i)
+func (f *LazyStringBaseField) SetCurrent(i string) {
+	f.StringBaseField.SetCurrent(i)
 	f.SetWanted(i)
 }
 
-func (f *LazyStringField) UnsetCurrent() {
-	f.StringField.UnsetCurrent()
+func (f *LazyStringBaseField) UnsetCurrent() {
+	f.StringBaseField.UnsetCurrent()
 	f.SetWantedLazy(f.newValue)
 }
 
 func LazyString(newValue func() string) StringInputField {
-	f := &LazyStringField{
+	f := &LazyStringBaseField{
 		newValue: func() interface{} {
 			return newValue()
 		},
@@ -307,7 +307,7 @@ func LazyString(newValue func() string) StringInputField {
 // Random string field with lazy initialization. If current value is defined in state, it is used instead.
 
 type RandomStringField struct {
-	LazyStringField
+	LazyStringBaseField
 
 	prefix, suffix                 string
 	lower, upper, numeric, special bool
@@ -353,7 +353,7 @@ func RandomStringWithSuffix(suffix string, lower, upper, numeric, special bool, 
 	return randomString("", suffix, lower, upper, numeric, special, length)
 }
 
-func VerboseString(f stringBaseField) string {
+func VerboseString(f stringField) string {
 	if vf, ok := f.(VerboseField); ok {
 		return vf.Verbose()
 	}

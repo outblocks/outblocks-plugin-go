@@ -1,13 +1,13 @@
 package fields
 
-type boolBaseField interface {
+type boolField interface {
 	SetCurrent(bool)
 	LookupCurrent() (bool, bool)
 	Current() bool
 }
 
 type BoolInputField interface {
-	boolBaseField
+	boolField
 	InputField
 
 	LookupWanted() (bool, bool)
@@ -17,37 +17,37 @@ type BoolInputField interface {
 }
 
 type BoolOutputField interface {
-	boolBaseField
+	boolField
 	OutputField
 
 	Input() BoolInputField
 }
 
-type BoolField struct {
+type BoolBaseField struct {
 	FieldBase
 }
 
 func Bool(val bool) BoolInputField {
-	return &BoolField{FieldBase: BasicValue(val, false)}
+	return &BoolBaseField{FieldBase: BasicValue(val, false)}
 }
 
 func BoolUnset() BoolInputField {
-	return &BoolField{FieldBase: BasicValueUnset(false)}
+	return &BoolBaseField{FieldBase: BasicValueUnset(false)}
 }
 
 func BoolUnsetOutput() BoolOutputField {
-	return &BoolField{FieldBase: BasicValueUnset(true)}
+	return &BoolBaseField{FieldBase: BasicValueUnset(true)}
 }
 
 func BoolOutput(val bool) BoolOutputField {
-	return &BoolField{FieldBase: BasicValue(val, true)}
+	return &BoolBaseField{FieldBase: BasicValue(val, true)}
 }
 
-func (f *BoolField) SetCurrent(i bool) {
+func (f *BoolBaseField) SetCurrent(i bool) {
 	f.setCurrent(i)
 }
 
-func (f *BoolField) LookupCurrent() (v, ok bool) {
+func (f *BoolBaseField) LookupCurrent() (v, ok bool) {
 	if !f.currentDefined {
 		return false, f.currentDefined
 	}
@@ -55,11 +55,11 @@ func (f *BoolField) LookupCurrent() (v, ok bool) {
 	return f.currentVal.(bool), true
 }
 
-func (f *BoolField) SetWanted(i bool) {
+func (f *BoolBaseField) SetWanted(i bool) {
 	f.setWanted(i)
 }
 
-func (f *BoolField) LookupWanted() (v, ok bool) {
+func (f *BoolBaseField) LookupWanted() (v, ok bool) {
 	if !f.wantedDefined {
 		return false, false
 	}
@@ -67,17 +67,17 @@ func (f *BoolField) LookupWanted() (v, ok bool) {
 	return f.wanted().(bool), true
 }
 
-func (f *BoolField) Wanted() bool {
+func (f *BoolBaseField) Wanted() bool {
 	v, _ := f.LookupWanted()
 	return v
 }
 
-func (f *BoolField) Current() bool {
+func (f *BoolBaseField) Current() bool {
 	v, _ := f.LookupCurrent()
 	return v
 }
 
-func (f *BoolField) Any() bool {
+func (f *BoolBaseField) Any() bool {
 	any, defined := f.lookupAny()
 	if !defined {
 		return false
@@ -86,10 +86,10 @@ func (f *BoolField) Any() bool {
 	return any.(bool)
 }
 
-func (f *BoolField) Input() BoolInputField {
+func (f *BoolBaseField) Input() BoolInputField {
 	return f
 }
 
-func (f *BoolField) EmptyValue() interface{} {
+func (f *BoolBaseField) EmptyValue() interface{} {
 	return false
 }

@@ -1,13 +1,13 @@
 package fields
 
-type intBaseField interface {
+type intField interface {
 	SetCurrent(int)
 	LookupCurrent() (int, bool)
 	Current() int
 }
 
 type IntInputField interface {
-	intBaseField
+	intField
 	InputField
 
 	LookupWanted() (int, bool)
@@ -17,37 +17,37 @@ type IntInputField interface {
 }
 
 type IntOutputField interface {
-	intBaseField
+	intField
 	OutputField
 
 	Input() IntInputField
 }
 
-type IntField struct {
+type IntBaseField struct {
 	FieldBase
 }
 
 func Int(val int) IntInputField {
-	return &IntField{FieldBase: BasicValue(val, false)}
+	return &IntBaseField{FieldBase: BasicValue(val, false)}
 }
 
 func IntUnset() IntInputField {
-	return &IntField{FieldBase: BasicValueUnset(false)}
+	return &IntBaseField{FieldBase: BasicValueUnset(false)}
 }
 
 func IntUnsetOutput() IntOutputField {
-	return &IntField{FieldBase: BasicValueUnset(true)}
+	return &IntBaseField{FieldBase: BasicValueUnset(true)}
 }
 
 func IntOutput(val int) IntOutputField {
-	return &IntField{FieldBase: BasicValue(val, true)}
+	return &IntBaseField{FieldBase: BasicValue(val, true)}
 }
 
-func (f *IntField) SetCurrent(i int) {
+func (f *IntBaseField) SetCurrent(i int) {
 	f.setCurrent(i)
 }
 
-func (f *IntField) LookupCurrent() (v int, ok bool) {
+func (f *IntBaseField) LookupCurrent() (v int, ok bool) {
 	if !f.currentDefined {
 		return 0, f.currentDefined
 	}
@@ -55,11 +55,11 @@ func (f *IntField) LookupCurrent() (v int, ok bool) {
 	return f.currentVal.(int), true
 }
 
-func (f *IntField) SetWanted(i int) {
+func (f *IntBaseField) SetWanted(i int) {
 	f.setWanted(i)
 }
 
-func (f *IntField) LookupWanted() (v int, ok bool) {
+func (f *IntBaseField) LookupWanted() (v int, ok bool) {
 	if !f.wantedDefined {
 		return 0, false
 	}
@@ -67,17 +67,17 @@ func (f *IntField) LookupWanted() (v int, ok bool) {
 	return f.wanted().(int), true
 }
 
-func (f *IntField) Wanted() int {
+func (f *IntBaseField) Wanted() int {
 	v, _ := f.LookupWanted()
 	return v
 }
 
-func (f *IntField) Current() int {
+func (f *IntBaseField) Current() int {
 	v, _ := f.LookupCurrent()
 	return v
 }
 
-func (f *IntField) Any() int {
+func (f *IntBaseField) Any() int {
 	any, defined := f.lookupAny()
 	if !defined {
 		return 0
@@ -86,10 +86,10 @@ func (f *IntField) Any() int {
 	return any.(int)
 }
 
-func (f *IntField) Input() IntInputField {
+func (f *IntBaseField) Input() IntInputField {
 	return f
 }
 
-func (f *IntField) EmptyValue() interface{} {
+func (f *IntBaseField) EmptyValue() interface{} {
 	return 0
 }

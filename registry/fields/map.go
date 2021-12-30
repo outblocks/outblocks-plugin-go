@@ -5,14 +5,14 @@ import (
 	"reflect"
 )
 
-type mapBaseField interface {
+type mapField interface {
 	SetCurrent(map[string]interface{})
 	LookupCurrent() (map[string]interface{}, bool)
 	Current() map[string]interface{}
 }
 
 type MapInputField interface {
-	mapBaseField
+	mapField
 	InputField
 
 	LookupWanted() (map[string]interface{}, bool)
@@ -22,41 +22,41 @@ type MapInputField interface {
 }
 
 type MapOutputField interface {
-	mapBaseField
+	mapField
 	OutputField
 
 	Input() MapInputField
 }
 
-type MapField struct {
+type MapBaseField struct {
 	FieldBase
 }
 
 func Map(val map[string]Field) MapInputField {
-	return &MapField{FieldBase: BasicValue(val, false)}
+	return &MapBaseField{FieldBase: BasicValue(val, false)}
 }
 
 func MapLazy(f func() map[string]Field) MapInputField {
-	return &MapField{FieldBase: BasicValueLazy(func() interface{} { return f() })}
+	return &MapBaseField{FieldBase: BasicValueLazy(func() interface{} { return f() })}
 }
 
 func MapUnset() MapInputField {
-	return &MapField{FieldBase: BasicValueUnset(false)}
+	return &MapBaseField{FieldBase: BasicValueUnset(false)}
 }
 
 func MapUnsetOutput() MapOutputField {
-	return &MapField{FieldBase: BasicValueUnset(true)}
+	return &MapBaseField{FieldBase: BasicValueUnset(true)}
 }
 
 func MapOutput(val map[string]Field) MapOutputField {
-	return &MapField{FieldBase: BasicValue(val, true)}
+	return &MapBaseField{FieldBase: BasicValue(val, true)}
 }
 
-func (f *MapField) SetCurrent(i map[string]interface{}) {
+func (f *MapBaseField) SetCurrent(i map[string]interface{}) {
 	f.setCurrent(interfaceMapToFieldMap(i))
 }
 
-func (f *MapField) LookupCurrent() (v map[string]interface{}, ok bool) {
+func (f *MapBaseField) LookupCurrent() (v map[string]interface{}, ok bool) {
 	if !f.currentDefined {
 		return nil, f.currentDefined
 	}
@@ -64,11 +64,11 @@ func (f *MapField) LookupCurrent() (v map[string]interface{}, ok bool) {
 	return f.Serialize(f.currentVal).(map[string]interface{}), true
 }
 
-func (f *MapField) SetWanted(i map[string]interface{}) {
+func (f *MapBaseField) SetWanted(i map[string]interface{}) {
 	f.setWanted(interfaceMapToFieldMap(i))
 }
 
-func (f *MapField) LookupWanted() (v map[string]interface{}, ok bool) {
+func (f *MapBaseField) LookupWanted() (v map[string]interface{}, ok bool) {
 	if !f.wantedDefined {
 		return nil, false
 	}
@@ -76,17 +76,17 @@ func (f *MapField) LookupWanted() (v map[string]interface{}, ok bool) {
 	return f.Serialize(f.wanted()).(map[string]interface{}), true
 }
 
-func (f *MapField) Wanted() map[string]interface{} {
+func (f *MapBaseField) Wanted() map[string]interface{} {
 	v, _ := f.LookupWanted()
 	return v
 }
 
-func (f *MapField) Current() map[string]interface{} {
+func (f *MapBaseField) Current() map[string]interface{} {
 	v, _ := f.LookupCurrent()
 	return v
 }
 
-func (f *MapField) Any() map[string]interface{} {
+func (f *MapBaseField) Any() map[string]interface{} {
 	cur, ok := f.LookupCurrent()
 	if ok {
 		return cur
@@ -95,7 +95,7 @@ func (f *MapField) Any() map[string]interface{} {
 	return f.Wanted()
 }
 
-func (f *MapField) Serialize(i interface{}) interface{} {
+func (f *MapBaseField) Serialize(i interface{}) interface{} {
 	m := make(map[string]interface{})
 
 	if i == nil {
@@ -126,7 +126,7 @@ func (f *MapField) Serialize(i interface{}) interface{} {
 	return m
 }
 
-func (f *MapField) FieldDependencies() []interface{} {
+func (f *MapBaseField) FieldDependencies() []interface{} {
 	if f.wanted() == nil {
 		return nil
 	}
@@ -150,7 +150,7 @@ func (f *MapField) FieldDependencies() []interface{} {
 	return deps
 }
 
-func (f *MapField) IsChanged() bool {
+func (f *MapBaseField) IsChanged() bool {
 	if f.currentVal == nil || f.wanted() == nil || f.invalidated {
 		return f.FieldBase.IsChanged()
 	}
@@ -161,7 +161,7 @@ func (f *MapField) IsChanged() bool {
 	return !reflect.DeepEqual(cur, wanted)
 }
 
-func (f *MapField) Input() MapInputField {
+func (f *MapBaseField) Input() MapInputField {
 	return f
 }
 
@@ -205,7 +205,7 @@ func interfaceMapToFieldMap(i map[string]interface{}) map[string]Field {
 	return o
 }
 
-func (f *MapField) EmptyValue() interface{} {
+func (f *MapBaseField) EmptyValue() interface{} {
 	var ret map[string]interface{}
 	return ret
 }

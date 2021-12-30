@@ -201,21 +201,21 @@ func toInt(in interface{}) (v int, ok bool) {
 
 func SetFieldValue(f, v interface{}) error {
 	switch val := f.(type) {
-	case stringBaseField:
+	case stringField:
 		if _, ok := v.(string); !ok {
 			return nil
 		}
 
 		val.SetCurrent(v.(string))
 
-	case boolBaseField:
+	case boolField:
 		if _, ok := v.(bool); !ok {
 			return nil
 		}
 
 		val.SetCurrent(v.(bool))
 
-	case intBaseField:
+	case intField:
 		out, ok := toInt(v)
 		if !ok {
 			return nil
@@ -223,14 +223,14 @@ func SetFieldValue(f, v interface{}) error {
 
 		val.SetCurrent(out)
 
-	case mapBaseField:
+	case mapField:
 		if _, ok := v.(map[string]interface{}); !ok {
 			return nil
 		}
 
 		val.SetCurrent(v.(map[string]interface{}))
 
-	case arrayBaseField:
+	case arrayField:
 		if _, ok := v.([]interface{}); !ok {
 			return nil
 		}

@@ -4,15 +4,15 @@ import "reflect"
 
 func MakeProxyField(i interface{}) interface{} {
 	switch v := i.(type) {
-	case stringBaseField:
+	case stringField:
 		return newProxyStringField(v)
-	case boolBaseField:
+	case boolField:
 		return newProxyBoolField(v)
-	case intBaseField:
+	case intField:
 		return newProxyIntField(v)
-	case mapBaseField:
+	case mapField:
 		return newProxyMapField(v)
-	case arrayBaseField:
+	case arrayField:
 		return newProxyArrayField(v)
 	default:
 		panic("unknown base field for proxy")
@@ -33,11 +33,11 @@ func (f *proxyBaseField) FieldDependencies() []interface{} {
 
 // String.
 type proxyStringField struct {
-	StringField
+	StringBaseField
 	*proxyBaseField
 }
 
-func newProxyStringField(org stringBaseField) *proxyStringField {
+func newProxyStringField(org stringField) *proxyStringField {
 	return &proxyStringField{
 		proxyBaseField: &proxyBaseField{
 			org: org,
@@ -46,11 +46,11 @@ func newProxyStringField(org stringBaseField) *proxyStringField {
 }
 
 func (f *proxyStringField) LookupWanted() (v string, ok bool) {
-	return f.org.(stringBaseField).LookupCurrent()
+	return f.org.(stringField).LookupCurrent()
 }
 
 func (f *proxyStringField) Wanted() string {
-	return f.org.(stringBaseField).Current()
+	return f.org.(stringField).Current()
 }
 
 func (f *proxyStringField) Any() string {
@@ -68,11 +68,11 @@ func (f *proxyStringField) IsChanged() bool {
 
 // Bool.
 type proxyBoolField struct {
-	BoolField
+	BoolBaseField
 	*proxyBaseField
 }
 
-func newProxyBoolField(org boolBaseField) *proxyBoolField {
+func newProxyBoolField(org boolField) *proxyBoolField {
 	return &proxyBoolField{
 		proxyBaseField: &proxyBaseField{
 			org: org,
@@ -81,11 +81,11 @@ func newProxyBoolField(org boolBaseField) *proxyBoolField {
 }
 
 func (f *proxyBoolField) LookupWanted() (v, ok bool) {
-	return f.org.(boolBaseField).LookupCurrent()
+	return f.org.(boolField).LookupCurrent()
 }
 
 func (f *proxyBoolField) Wanted() bool {
-	return f.org.(boolBaseField).Current()
+	return f.org.(boolField).Current()
 }
 
 func (f *proxyBoolField) Any() bool {
@@ -103,11 +103,11 @@ func (f *proxyBoolField) IsChanged() bool {
 
 // Int.
 type proxyIntField struct {
-	IntField
+	IntBaseField
 	*proxyBaseField
 }
 
-func newProxyIntField(org intBaseField) *proxyIntField {
+func newProxyIntField(org intField) *proxyIntField {
 	return &proxyIntField{
 		proxyBaseField: &proxyBaseField{
 			org: org,
@@ -116,11 +116,11 @@ func newProxyIntField(org intBaseField) *proxyIntField {
 }
 
 func (f *proxyIntField) LookupWanted() (v int, ok bool) {
-	return f.org.(intBaseField).LookupCurrent()
+	return f.org.(intField).LookupCurrent()
 }
 
 func (f *proxyIntField) Wanted() int {
-	return f.org.(intBaseField).Current()
+	return f.org.(intField).Current()
 }
 
 func (f *proxyIntField) Any() int {
@@ -138,11 +138,11 @@ func (f *proxyIntField) IsChanged() bool {
 
 // Map.
 type proxyMapField struct {
-	MapField
+	MapBaseField
 	*proxyBaseField
 }
 
-func newProxyMapField(org mapBaseField) *proxyMapField {
+func newProxyMapField(org mapField) *proxyMapField {
 	return &proxyMapField{
 		proxyBaseField: &proxyBaseField{
 			org: org,
@@ -151,11 +151,11 @@ func newProxyMapField(org mapBaseField) *proxyMapField {
 }
 
 func (f *proxyMapField) LookupWanted() (v map[string]interface{}, ok bool) {
-	return f.org.(mapBaseField).LookupCurrent()
+	return f.org.(mapField).LookupCurrent()
 }
 
 func (f *proxyMapField) Wanted() map[string]interface{} {
-	return f.org.(mapBaseField).Current()
+	return f.org.(mapField).Current()
 }
 
 func (f *proxyMapField) Any() map[string]interface{} {
@@ -173,11 +173,11 @@ func (f *proxyMapField) IsChanged() bool {
 
 // Array.
 type proxyArrayField struct {
-	ArrayField
+	ArrayBaseField
 	*proxyBaseField
 }
 
-func newProxyArrayField(org arrayBaseField) *proxyArrayField {
+func newProxyArrayField(org arrayField) *proxyArrayField {
 	return &proxyArrayField{
 		proxyBaseField: &proxyBaseField{
 			org: org,
@@ -186,11 +186,11 @@ func newProxyArrayField(org arrayBaseField) *proxyArrayField {
 }
 
 func (f *proxyArrayField) LookupWanted() (v []interface{}, ok bool) {
-	return f.org.(arrayBaseField).LookupCurrent()
+	return f.org.(arrayField).LookupCurrent()
 }
 
 func (f *proxyArrayField) Wanted() []interface{} {
-	return f.org.(arrayBaseField).Current()
+	return f.org.(arrayField).Current()
 }
 
 func (f *proxyArrayField) Any() []interface{} {

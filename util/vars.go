@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
 )
 
@@ -70,6 +71,8 @@ func pathError(path []string, vars map[string]interface{}) error {
 	for k := range vars {
 		keys = append(keys, k)
 	}
+
+	sort.Strings(keys)
 
 	if len(path) == 0 {
 		return fmt.Errorf("possible keys are: %s", strings.Join(keys, ", "))

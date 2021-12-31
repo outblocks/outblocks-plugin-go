@@ -12,7 +12,7 @@ var validKey = regexp.MustCompile(`^[a-z]+(\.[a-zA-Z0-9_-]+)*$`)
 type BaseVarEvaluator struct {
 	vars                  map[string]interface{}
 	encoder               func(val interface{}) ([]byte, error)
-	keyGetter             func(vars map[string]interface{}, key string) (val interface{}, ok bool)
+	keyGetter             func(vars map[string]interface{}, key string) (val interface{}, err error)
 	ignoreComments        bool
 	ignoreInvalid         bool
 	varChar, commentsChar byte
@@ -35,7 +35,7 @@ func (e *BaseVarEvaluator) WithEncoder(encoder func(val interface{}) ([]byte, er
 	return e
 }
 
-func (e *BaseVarEvaluator) WithKeyGetter(keyGetter func(vars map[string]interface{}, key string) (val interface{}, ok bool)) *BaseVarEvaluator {
+func (e *BaseVarEvaluator) WithKeyGetter(keyGetter func(vars map[string]interface{}, key string) (val interface{}, err error)) *BaseVarEvaluator {
 	e.keyGetter = keyGetter
 	return e
 }
@@ -64,19 +64,43 @@ func defaultVarEncoder(input interface{}) ([]byte, error) {
 	return []byte("%v"), nil
 }
 
-func defaultVarKeyGetter(vars map[string]interface{}, key string) (val interface{}, ok bool) {
+func pathError(path []string, vars map[string]interface{}) error {
+	keys := make([]string, 0, len(vars))
+
+	for k := range vars {
+		keys = append(keys, k)
+	}
+
+	if len(path) == 0 {
+		return fmt.Errorf("possible keys are: %s", strings.Join(keys, ", "))
+	}
+
+	return fmt.Errorf("possible keys for '%s' are: %s", strings.Join(path, "."), strings.Join(keys, ", "))
+}
+
+func defaultVarKeyGetter(vars map[string]interface{}, key string) (val interface{}, err error) {
+	var (
+		path []string
+		ok   bool
+	)
+
 	parts := strings.Split(key, ".")
 
 	for _, part := range parts[:len(parts)-1] {
 		vars, ok = vars[part].(map[string]interface{})
 		if !ok {
-			return nil, false
+			return nil, pathError(path, vars)
 		}
+
+		path = append(path, part)
 	}
 
 	val, ok = vars[parts[len(parts)-1]]
+	if !ok {
+		return nil, pathError(path, vars)
+	}
 
-	return val, ok
+	return val, nil
 }
 
 func (e *BaseVarEvaluator) ExpandRaw(input []byte) (output []byte, params []interface{}, err error) {
@@ -124,9 +148,9 @@ func (e *BaseVarEvaluator) ExpandRaw(input []byte) (output []byte, params []inte
 
 			out[l] = append(out[l], line[done:start]...)
 
-			val, ok := e.keyGetter(e.vars, token)
-			if !ok {
-				return nil, nil, fmt.Errorf("[%d:%d] expansion value '%s' could not be evaluated", l+1, start+1, token)
+			val, err := e.keyGetter(e.vars, token)
+			if err != nil {
+				return nil, nil, fmt.Errorf("[%d:%d] expansion value '%s' could not be evaluated:\n%w", l+1, start+1, token, err)
 			}
 
 			valOut, err := e.encoder(val)

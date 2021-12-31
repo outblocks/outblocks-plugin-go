@@ -49,16 +49,18 @@ type Cleanup interface {
 }
 
 type basicPluginHandlerWrapper struct {
-	env env.Enver
+	env  env.Enver
+	conn *grpc.ClientConn
 	BasicPluginHandler
 }
 
 func (s *basicPluginHandlerWrapper) Init(ctx context.Context, req *apiv1.InitRequest) (*apiv1.InitResponse, error) {
-	conn, err := grpc.DialContext(ctx, req.HostAddr, grpc.WithBlock(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.DialContext(ctx, req.HostAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, err
 	}
 
+	s.conn = conn
 	cli := apiv1.NewHostServiceClient(conn)
 	l := log.NewLogger(cli)
 

@@ -72,7 +72,8 @@ func (s *Server) serve(handler BasicPluginHandler, opts ...ServerOption) error {
 	fmt.Println(string(out))
 
 	grpcServer := grpc.NewServer()
-	apiv1.RegisterBasicPluginServiceServer(grpcServer, &basicPluginHandlerWrapper{BasicPluginHandler: handler, env: s.env})
+	basicWrapper := &basicPluginHandlerWrapper{BasicPluginHandler: handler, env: s.env}
+	apiv1.RegisterBasicPluginServiceServer(grpcServer, basicWrapper)
 
 	if srv, ok := handler.(DeployPluginHandler); ok {
 		apiv1.RegisterDeployPluginServiceServer(grpcServer, &deployPluginHandlerWrapper{DeployPluginHandler: srv, RegistryOptions: s.registryOptions})
@@ -112,6 +113,10 @@ func (s *Server) serve(handler BasicPluginHandler, opts ...ServerOption) error {
 		}
 
 		grpcServer.GracefulStop()
+
+		if basicWrapper.conn != nil {
+			basicWrapper.conn.Close()
+		}
 	}()
 
 	err = grpcServer.Serve(l)

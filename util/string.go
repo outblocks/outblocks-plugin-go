@@ -10,11 +10,16 @@ import (
 	"strings"
 )
 
-var sanitizeRegex = regexp.MustCompile("[^a-zA-Z0-9-]+")
+var sanitizeRegex = regexp.MustCompile(`[^a-zA-Z0-9-_.]+`)
 
-func SanitizeName(n string) string {
-	n = strings.ReplaceAll(n, "_", "-")
-	n = strings.ReplaceAll(n, ".", "-")
+func SanitizeName(n string, allowUnderscore, allowDot bool) string {
+	if !allowUnderscore {
+		n = strings.ReplaceAll(n, "_", "-")
+	}
+
+	if !allowDot {
+		n = strings.ReplaceAll(n, ".", "-")
+	}
 
 	return sanitizeRegex.ReplaceAllString(n, "")
 }

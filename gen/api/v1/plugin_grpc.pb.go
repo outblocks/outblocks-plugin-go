@@ -358,7 +358,7 @@ var StatePluginService_ServiceDesc = grpc.ServiceDesc{
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type LockingPluginServiceClient interface {
-	AcquireLocks(ctx context.Context, in *AcquireLocksRequest, opts ...grpc.CallOption) (*AcquireLocksResponse, error)
+	AcquireLocks(ctx context.Context, in *AcquireLocksRequest, opts ...grpc.CallOption) (LockingPluginService_AcquireLocksClient, error)
 	ReleaseLocks(ctx context.Context, in *ReleaseLocksRequest, opts ...grpc.CallOption) (*ReleaseLocksResponse, error)
 }
 
@@ -370,13 +370,36 @@ func NewLockingPluginServiceClient(cc grpc.ClientConnInterface) LockingPluginSer
 	return &lockingPluginServiceClient{cc}
 }
 
-func (c *lockingPluginServiceClient) AcquireLocks(ctx context.Context, in *AcquireLocksRequest, opts ...grpc.CallOption) (*AcquireLocksResponse, error) {
-	out := new(AcquireLocksResponse)
-	err := c.cc.Invoke(ctx, "/api.v1.LockingPluginService/AcquireLocks", in, out, opts...)
+func (c *lockingPluginServiceClient) AcquireLocks(ctx context.Context, in *AcquireLocksRequest, opts ...grpc.CallOption) (LockingPluginService_AcquireLocksClient, error) {
+	stream, err := c.cc.NewStream(ctx, &LockingPluginService_ServiceDesc.Streams[0], "/api.v1.LockingPluginService/AcquireLocks", opts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &lockingPluginServiceAcquireLocksClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type LockingPluginService_AcquireLocksClient interface {
+	Recv() (*AcquireLocksResponse, error)
+	grpc.ClientStream
+}
+
+type lockingPluginServiceAcquireLocksClient struct {
+	grpc.ClientStream
+}
+
+func (x *lockingPluginServiceAcquireLocksClient) Recv() (*AcquireLocksResponse, error) {
+	m := new(AcquireLocksResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 func (c *lockingPluginServiceClient) ReleaseLocks(ctx context.Context, in *ReleaseLocksRequest, opts ...grpc.CallOption) (*ReleaseLocksResponse, error) {
@@ -392,7 +415,7 @@ func (c *lockingPluginServiceClient) ReleaseLocks(ctx context.Context, in *Relea
 // All implementations should embed UnimplementedLockingPluginServiceServer
 // for forward compatibility
 type LockingPluginServiceServer interface {
-	AcquireLocks(context.Context, *AcquireLocksRequest) (*AcquireLocksResponse, error)
+	AcquireLocks(*AcquireLocksRequest, LockingPluginService_AcquireLocksServer) error
 	ReleaseLocks(context.Context, *ReleaseLocksRequest) (*ReleaseLocksResponse, error)
 }
 
@@ -400,8 +423,8 @@ type LockingPluginServiceServer interface {
 type UnimplementedLockingPluginServiceServer struct {
 }
 
-func (UnimplementedLockingPluginServiceServer) AcquireLocks(context.Context, *AcquireLocksRequest) (*AcquireLocksResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AcquireLocks not implemented")
+func (UnimplementedLockingPluginServiceServer) AcquireLocks(*AcquireLocksRequest, LockingPluginService_AcquireLocksServer) error {
+	return status.Errorf(codes.Unimplemented, "method AcquireLocks not implemented")
 }
 func (UnimplementedLockingPluginServiceServer) ReleaseLocks(context.Context, *ReleaseLocksRequest) (*ReleaseLocksResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReleaseLocks not implemented")
@@ -418,22 +441,25 @@ func RegisterLockingPluginServiceServer(s grpc.ServiceRegistrar, srv LockingPlug
 	s.RegisterService(&LockingPluginService_ServiceDesc, srv)
 }
 
-func _LockingPluginService_AcquireLocks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AcquireLocksRequest)
-	if err := dec(in); err != nil {
-		return nil, err
+func _LockingPluginService_AcquireLocks_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(AcquireLocksRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
 	}
-	if interceptor == nil {
-		return srv.(LockingPluginServiceServer).AcquireLocks(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api.v1.LockingPluginService/AcquireLocks",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(LockingPluginServiceServer).AcquireLocks(ctx, req.(*AcquireLocksRequest))
-	}
-	return interceptor(ctx, in, info, handler)
+	return srv.(LockingPluginServiceServer).AcquireLocks(m, &lockingPluginServiceAcquireLocksServer{stream})
+}
+
+type LockingPluginService_AcquireLocksServer interface {
+	Send(*AcquireLocksResponse) error
+	grpc.ServerStream
+}
+
+type lockingPluginServiceAcquireLocksServer struct {
+	grpc.ServerStream
+}
+
+func (x *lockingPluginServiceAcquireLocksServer) Send(m *AcquireLocksResponse) error {
+	return x.ServerStream.SendMsg(m)
 }
 
 func _LockingPluginService_ReleaseLocks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -462,15 +488,17 @@ var LockingPluginService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*LockingPluginServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "AcquireLocks",
-			Handler:    _LockingPluginService_AcquireLocks_Handler,
-		},
-		{
 			MethodName: "ReleaseLocks",
 			Handler:    _LockingPluginService_ReleaseLocks_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "AcquireLocks",
+			Handler:       _LockingPluginService_AcquireLocks_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "api/v1/plugin.proto",
 }
 

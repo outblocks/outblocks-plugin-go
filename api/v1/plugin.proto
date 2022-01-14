@@ -90,7 +90,7 @@ message AcquireLocksRequest {
 
 message AcquireLocksResponse {
   bool waiting = 1;
-  repeated string lock_info = 2;
+  map<string,string> locks = 2;
 }
 
 message ReleaseLocksRequest {
@@ -101,7 +101,7 @@ message ReleaseLocksRequest {
 message ReleaseLocksResponse {}
 
 service LockingPluginService {
-  rpc AcquireLocks(AcquireLocksRequest) returns (AcquireLocksResponse);
+  rpc AcquireLocks(AcquireLocksRequest) returns (stream AcquireLocksResponse);
   rpc ReleaseLocks(ReleaseLocksRequest) returns (ReleaseLocksResponse);
 }
 
@@ -199,7 +199,6 @@ message DependencyPlan {
 message PluginState {
   bytes registry = 1;
   map<string, bytes> other = 2;
-  map<string, bytes> volatile = 3;
 }
 
 message PlanRequest {

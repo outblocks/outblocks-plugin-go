@@ -9,8 +9,14 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func NewValidationError(path, msg string) error {
-	st := status.New(codes.InvalidArgument, "validation error")
+const (
+	LockErrorMessage       = "lock error"
+	StateLockErrorMessage  = "state lock error"
+	ValidationErrorMessage = "validation error"
+)
+
+func NewStatusValidationError(path, msg string) error {
+	st := status.New(codes.InvalidArgument, ValidationErrorMessage)
 
 	st, _ = st.WithDetails(&apiv1.ValidationError{
 		Path:    path,
@@ -20,21 +26,27 @@ func NewValidationError(path, msg string) error {
 	return st.Err()
 }
 
-func NewLockError(lockname, lockinfo, owner string, createdAt time.Time) error {
-	st := status.New(codes.FailedPrecondition, "lock error")
+func NewStatusLockError(det ...*apiv1.LockError) error {
+	st := status.New(codes.FailedPrecondition, LockErrorMessage)
 
-	st, _ = st.WithDetails(&apiv1.LockError{
-		Owner:     owner,
-		LockName:  lockname,
-		LockInfo:  lockinfo,
-		CreatedAt: timestamppb.New(createdAt),
-	})
+	for _, d := range det {
+		st, _ = st.WithDetails(d)
+	}
 
 	return st.Err()
 }
 
-func NewStateLockError(lockinfo, owner string, createdAt time.Time) error {
-	st := status.New(codes.FailedPrecondition, "state lock error")
+func NewLockError(lockname, lockinfo, owner string, createdAt time.Time) *apiv1.LockError {
+	return &apiv1.LockError{
+		Owner:     owner,
+		LockName:  lockname,
+		LockInfo:  lockinfo,
+		CreatedAt: timestamppb.New(createdAt),
+	}
+}
+
+func NewStatusStateLockError(lockinfo, owner string, createdAt time.Time) error {
+	st := status.New(codes.FailedPrecondition, StateLockErrorMessage)
 
 	st, _ = st.WithDetails(&apiv1.StateLockError{
 		Owner:     owner,

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
 
 	"github.com/outblocks/outblocks-plugin-go/registry/fields"
 	"github.com/outblocks/outblocks-plugin-go/util"
@@ -162,6 +163,22 @@ type ResourceID struct {
 	Source    string `json:"source"`
 }
 
+func (rid *ResourceID) Less(rid2 *ResourceID) bool {
+	if rid.Source != rid2.Source {
+		return rid.Source < rid2.Source
+	}
+
+	if rid.Namespace != rid2.Namespace {
+		return rid.Namespace < rid2.Namespace
+	}
+
+	if rid.ID != rid2.ID {
+		return rid.ID < rid2.ID
+	}
+
+	return rid.Type < rid2.Type
+}
+
 type ResourceSerialized struct {
 	ResourceID
 	IsNew        bool                   `json:"is_new,omitempty"`
@@ -238,11 +255,19 @@ func (w *ResourceWrapper) MarshalJSON() ([]byte, error) {
 		}
 	}
 
+	sort.Slice(dependedBy, func(i, j int) bool {
+		return dependedBy[i].Less(&dependedBy[j])
+	})
+
 	for d := range w.Dependencies {
 		if d.Resource.State() == ResourceStateExisting {
 			deps = append(deps, d.ResourceID)
 		}
 	}
+
+	sort.Slice(deps, func(i, j int) bool {
+		return deps[i].Less(&deps[j])
+	})
 
 	var refID string
 

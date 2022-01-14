@@ -14,8 +14,7 @@ const (
 
 func NewPluginState() *apiv1.PluginState {
 	return &apiv1.PluginState{
-		Other:    make(map[string][]byte),
-		Volatile: make(map[string][]byte),
+		Other: make(map[string][]byte),
 	}
 }
 
@@ -25,22 +24,15 @@ func PluginStateFromProto(in *apiv1.PluginState) *PluginState {
 		other[k] = v
 	}
 
-	volatile := make(map[string]json.RawMessage, len(in.Volatile))
-	for k, v := range in.Volatile {
-		volatile[k] = v
-	}
-
 	return &PluginState{
 		Registry: in.Registry,
 		Other:    other,
-		Volatile: volatile,
 	}
 }
 
 type PluginState struct {
 	Registry json.RawMessage            `json:"registry,omitempty"`
 	Other    map[string]json.RawMessage `json:"other,omitempty"`
-	Volatile map[string]json.RawMessage `json:"volatile,omitempty"`
 }
 
 func (p *PluginState) Proto() *apiv1.PluginState {
@@ -49,15 +41,9 @@ func (p *PluginState) Proto() *apiv1.PluginState {
 		other[k] = v
 	}
 
-	volatile := make(map[string][]byte, len(p.Volatile))
-	for k, v := range p.Volatile {
-		volatile[k] = v
-	}
-
 	return &apiv1.PluginState{
 		Registry: p.Registry,
 		Other:    other,
-		Volatile: volatile,
 	}
 }
 
@@ -95,8 +81,6 @@ func (m DNSRecordMap) UnmarshalJSON(b []byte) error {
 	if err != nil {
 		return err
 	}
-
-	m = make(DNSRecordMap)
 
 	for _, v := range out {
 		m[DNSRecordKey{
@@ -142,4 +126,20 @@ func (d *StateData) AddDNSRecord(v *apiv1.DNSRecord) {
 		Value:   v.Value,
 		Created: v.Created,
 	}
+}
+
+func (d *StateData) DeepCopy() *StateData {
+	b, err := json.Marshal(d)
+	if err != nil {
+		panic(err)
+	}
+
+	d2 := NewStateData()
+
+	err = json.Unmarshal(b, &d2)
+	if err != nil {
+		panic(err)
+	}
+
+	return d2
 }

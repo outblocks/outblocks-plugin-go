@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"sort"
 	"strconv"
 	"sync"
 
@@ -847,6 +848,10 @@ func (r *Registry) Dump() ([]byte, error) {
 		resources = append(resources, res)
 	}
 
+	sort.Slice(resources, func(i, j int) bool {
+		return resources[i].Less(&resources[j].ResourceID)
+	})
+
 	return json.Marshal(resources)
 }
 
@@ -1038,7 +1043,20 @@ func (r *Registry) Apply(ctx context.Context, meta interface{}, diff []*Diff, ca
 		return err
 	}
 
-	return pool.Wait()
+	err = pool.Wait()
+
+	// Cleanup resources.
+	res := make(map[ResourceID]*ResourceWrapper, len(r.resources))
+
+	for k, rw := range r.resources {
+		if !rw.Resource.IsNew() {
+			res[k] = rw
+		}
+	}
+
+	r.resources = res
+
+	return err
 }
 
 func (r *Registry) calculateDiff(rw *ResourceWrapper) *Diff {

@@ -10,7 +10,7 @@ func Any(m map[string]*structpb.Value, key, msg string) (val interface{}, err er
 		return v.AsInterface(), nil
 	}
 
-	return nil, types.NewValidationError(key, msg)
+	return nil, types.NewStatusValidationError(key, msg)
 }
 
 func String(m map[string]*structpb.Value, key, msg string) (val string, err error) {
@@ -23,7 +23,7 @@ func String(m map[string]*structpb.Value, key, msg string) (val string, err erro
 		return v, nil
 	}
 
-	return "", types.NewValidationError(key, msg)
+	return "", types.NewStatusValidationError(key, msg)
 }
 
 func OptionalString(def string, m map[string]*structpb.Value, key, msg string) (val string, err error) {

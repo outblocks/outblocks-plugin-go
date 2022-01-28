@@ -405,13 +405,22 @@ message RunResponse {
 service RunPluginService { rpc Run(RunRequest) returns (stream RunResponse); }
 
 // Command Plugin.
+message CommandArgs {
+  repeated string positional = 1;
+  google.protobuf.Struct flags = 2;
+}
+
 message CommandRequest {
   string command = 1;
-  google.protobuf.Struct args = 2;
+  CommandArgs args = 2;
+
+  // Possible input.
+  map<string, AppState> app_states = 3;
+  map<string, DependencyState> dependency_states = 4;
 }
 
 message CommandResponse {}
 
 service CommandPluginService {
-  rpc Command(CommandRequest) returns (stream CommandResponse);
+  rpc Command(CommandRequest) returns (CommandResponse);
 }

@@ -949,7 +949,7 @@ var RunPluginService_ServiceDesc = grpc.ServiceDesc{
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CommandPluginServiceClient interface {
-	Command(ctx context.Context, in *CommandRequest, opts ...grpc.CallOption) (CommandPluginService_CommandClient, error)
+	Command(ctx context.Context, in *CommandRequest, opts ...grpc.CallOption) (*CommandResponse, error)
 }
 
 type commandPluginServiceClient struct {
@@ -960,51 +960,28 @@ func NewCommandPluginServiceClient(cc grpc.ClientConnInterface) CommandPluginSer
 	return &commandPluginServiceClient{cc}
 }
 
-func (c *commandPluginServiceClient) Command(ctx context.Context, in *CommandRequest, opts ...grpc.CallOption) (CommandPluginService_CommandClient, error) {
-	stream, err := c.cc.NewStream(ctx, &CommandPluginService_ServiceDesc.Streams[0], "/api.v1.CommandPluginService/Command", opts...)
+func (c *commandPluginServiceClient) Command(ctx context.Context, in *CommandRequest, opts ...grpc.CallOption) (*CommandResponse, error) {
+	out := new(CommandResponse)
+	err := c.cc.Invoke(ctx, "/api.v1.CommandPluginService/Command", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &commandPluginServiceCommandClient{stream}
-	if err := x.ClientStream.SendMsg(in); err != nil {
-		return nil, err
-	}
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	return x, nil
-}
-
-type CommandPluginService_CommandClient interface {
-	Recv() (*CommandResponse, error)
-	grpc.ClientStream
-}
-
-type commandPluginServiceCommandClient struct {
-	grpc.ClientStream
-}
-
-func (x *commandPluginServiceCommandClient) Recv() (*CommandResponse, error) {
-	m := new(CommandResponse)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
+	return out, nil
 }
 
 // CommandPluginServiceServer is the server API for CommandPluginService service.
 // All implementations should embed UnimplementedCommandPluginServiceServer
 // for forward compatibility
 type CommandPluginServiceServer interface {
-	Command(*CommandRequest, CommandPluginService_CommandServer) error
+	Command(context.Context, *CommandRequest) (*CommandResponse, error)
 }
 
 // UnimplementedCommandPluginServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedCommandPluginServiceServer struct {
 }
 
-func (UnimplementedCommandPluginServiceServer) Command(*CommandRequest, CommandPluginService_CommandServer) error {
-	return status.Errorf(codes.Unimplemented, "method Command not implemented")
+func (UnimplementedCommandPluginServiceServer) Command(context.Context, *CommandRequest) (*CommandResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Command not implemented")
 }
 
 // UnsafeCommandPluginServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -1018,25 +995,22 @@ func RegisterCommandPluginServiceServer(s grpc.ServiceRegistrar, srv CommandPlug
 	s.RegisterService(&CommandPluginService_ServiceDesc, srv)
 }
 
-func _CommandPluginService_Command_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(CommandRequest)
-	if err := stream.RecvMsg(m); err != nil {
-		return err
+func _CommandPluginService_Command_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CommandRequest)
+	if err := dec(in); err != nil {
+		return nil, err
 	}
-	return srv.(CommandPluginServiceServer).Command(m, &commandPluginServiceCommandServer{stream})
-}
-
-type CommandPluginService_CommandServer interface {
-	Send(*CommandResponse) error
-	grpc.ServerStream
-}
-
-type commandPluginServiceCommandServer struct {
-	grpc.ServerStream
-}
-
-func (x *commandPluginServiceCommandServer) Send(m *CommandResponse) error {
-	return x.ServerStream.SendMsg(m)
+	if interceptor == nil {
+		return srv.(CommandPluginServiceServer).Command(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.v1.CommandPluginService/Command",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CommandPluginServiceServer).Command(ctx, req.(*CommandRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 // CommandPluginService_ServiceDesc is the grpc.ServiceDesc for CommandPluginService service.
@@ -1045,13 +1019,12 @@ func (x *commandPluginServiceCommandServer) Send(m *CommandResponse) error {
 var CommandPluginService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "api.v1.CommandPluginService",
 	HandlerType: (*CommandPluginServiceServer)(nil),
-	Methods:     []grpc.MethodDesc{},
-	Streams: []grpc.StreamDesc{
+	Methods: []grpc.MethodDesc{
 		{
-			StreamName:    "Command",
-			Handler:       _CommandPluginService_Command_Handler,
-			ServerStreams: true,
+			MethodName: "Command",
+			Handler:    _CommandPluginService_Command_Handler,
 		},
 	},
+	Streams:  []grpc.StreamDesc{},
 	Metadata: "api/v1/plugin.proto",
 }

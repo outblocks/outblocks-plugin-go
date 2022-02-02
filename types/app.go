@@ -65,9 +65,6 @@ type ServiceAppProperties struct {
 	Build     *ServiceAppBuild     `json:"build,omitempty"`
 	Container *ServiceAppContainer `json:"container,omitempty"`
 	CDN       *ServiceAppCDN       `json:"cdn,omitempty"`
-
-	LocalDockerImage string `json:"local_docker_image"`
-	LocalDockerHash  string `json:"local_docker_hash"`
 }
 
 func NewServiceAppProperties(in map[string]interface{}) (*ServiceAppProperties, error) {

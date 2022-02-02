@@ -156,6 +156,7 @@ message DNSState {
   string cname = 3;
   string internal_url = 4;
   string url = 5;
+  string cloud_url = 11;
   SSLStatus ssl_status = 7;
   string ssl_status_info = 8;
   string connection_info = 9;
@@ -173,8 +174,14 @@ message AppState {
   DNSState dns = 3;
 }
 
+message AppBuild {
+	string local_docker_image = 1;
+	string local_docker_hash = 2;
+}
+
 message AppPlan {
   AppState state = 1;
+  AppBuild build = 3;
   bool skip = 2;
 }
 

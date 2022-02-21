@@ -23,7 +23,7 @@ func NewFieldVarEvaluator(vars map[string]interface{}) *FieldVarEvaluator {
 	}
 }
 
-func fieldsVarEncoder(input interface{}) ([]byte, error) {
+func fieldsVarEncoder(c *util.VarContext, input interface{}) ([]byte, error) {
 	switch input.(type) {
 	case StringInputField, StringOutputField, string:
 		return []byte("%s"), nil

@@ -10,9 +10,16 @@ import (
 
 var validKey = regexp.MustCompile(`^[a-z]+(\.[a-zA-Z0-9_-]+)*$`)
 
+type VarContext struct {
+	Line       []byte
+	Token      string
+	TokenStart int
+	TokenEnd   int
+}
+
 type BaseVarEvaluator struct {
 	vars                  map[string]interface{}
-	encoder               func(val interface{}) ([]byte, error)
+	encoder               func(c *VarContext, val interface{}) ([]byte, error)
 	keyGetter             func(vars map[string]interface{}, key string) (val interface{}, err error)
 	ignoreComments        bool
 	ignoreInvalid         bool
@@ -31,7 +38,7 @@ func NewBaseVarEvaluator(vars map[string]interface{}) *BaseVarEvaluator {
 	}
 }
 
-func (e *BaseVarEvaluator) WithEncoder(encoder func(val interface{}) ([]byte, error)) *BaseVarEvaluator {
+func (e *BaseVarEvaluator) WithEncoder(encoder func(c *VarContext, val interface{}) ([]byte, error)) *BaseVarEvaluator {
 	e.encoder = encoder
 	return e
 }
@@ -61,7 +68,7 @@ func (e *BaseVarEvaluator) WithCommentsChar(commentsChar byte) *BaseVarEvaluator
 	return e
 }
 
-func defaultVarEncoder(input interface{}) ([]byte, error) {
+func defaultVarEncoder(c *VarContext, input interface{}) ([]byte, error) {
 	return []byte("%v"), nil
 }
 
@@ -156,7 +163,12 @@ func (e *BaseVarEvaluator) ExpandRaw(input []byte) (output []byte, params []inte
 				return nil, nil, fmt.Errorf("[%d:%d] expansion value '%s' could not be evaluated:\n%w", l+1, start+1, token, err)
 			}
 
-			valOut, err := e.encoder(val)
+			valOut, err := e.encoder(&VarContext{
+				Line:       line,
+				Token:      token,
+				TokenStart: start,
+				TokenEnd:   start + 2 + idx,
+			}, val)
 			if err != nil {
 				return nil, nil, fmt.Errorf("[%d:%d] expansion value '%s' could not be encoded, unknown field\nerror: %w",
 					l+1, start+1, token, err)

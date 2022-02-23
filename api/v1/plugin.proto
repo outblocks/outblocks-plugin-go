@@ -41,6 +41,7 @@ message GetStateRequest {
   google.protobuf.Struct properties = 2;
   bool lock = 3;
   google.protobuf.Duration lock_wait = 4;
+  bool skip_create = 5;
 }
 
 message GetStateResponse {

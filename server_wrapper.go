@@ -121,3 +121,15 @@ func (s *dnsPluginHandlerWrapper) ApplyDNS(r *apiv1.ApplyDNSRequest, stream apiv
 	reg := s.createRegistry(false)
 	return s.DNSPluginHandler.ApplyDNS(r, reg, stream)
 }
+
+func DefaultRegistryApplyCallback(stream apiv1.DeployPluginService_ApplyServer) func(*apiv1.ApplyAction) {
+	return func(a *apiv1.ApplyAction) {
+		_ = stream.Send(&apiv1.ApplyResponse{
+			Response: &apiv1.ApplyResponse_Action{
+				Action: &apiv1.ApplyActionResponse{
+					Actions: []*apiv1.ApplyAction{a},
+				},
+			},
+		})
+	}
+}

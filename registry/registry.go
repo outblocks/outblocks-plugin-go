@@ -872,10 +872,6 @@ func waitContext(ctx context.Context, wg *sync.WaitGroup) error {
 }
 
 func handleDiffAction(ctx context.Context, meta interface{}, d *Diff, callback func(*apiv1.ApplyAction)) error {
-	if callback == nil {
-		callback = func(*apiv1.ApplyAction) {}
-	}
-
 	switch d.Type {
 	case DiffTypeCreate:
 		callback(d.ToApplyAction(0, 1))
@@ -1002,6 +998,16 @@ func (r *Registry) Apply(ctx context.Context, meta interface{}, diff []*Diff, ca
 
 	g, _ := errgroup.WithContext(ctxErrgroup)
 
+	var mu sync.Mutex
+
+	cb := func(a *apiv1.ApplyAction) {
+		if callback != nil {
+			mu.Lock()
+			callback(a)
+			mu.Unlock()
+		}
+	}
+
 	for _, d := range diff {
 		d := d
 
@@ -1021,7 +1027,7 @@ func (r *Registry) Apply(ctx context.Context, meta interface{}, diff []*Diff, ca
 				}
 
 				pool.Go(func() error {
-					err := handleDiffAction(ctx, meta, d, callback)
+					err := handleDiffAction(ctx, meta, d, cb)
 					if err != nil {
 						cancelErrgroup()
 

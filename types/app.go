@@ -98,11 +98,18 @@ type StaticAppCDN struct {
 	Enabled bool `json:"enabled"`
 }
 
-type StaticAppProperties struct {
-	Build *StaticAppBuild `json:"build,omitempty"`
-	CDN   *StaticAppCDN   `json:"cdn,omitempty"`
+type StaticAppBasicAuth struct {
+	Realm string            `json:"realm"`
+	Users map[string]string `json:"users,omitempty"`
+}
 
-	Routing string `json:"routing"`
+type StaticAppProperties struct {
+	Build     *StaticAppBuild     `json:"build,omitempty"`
+	CDN       *StaticAppCDN       `json:"cdn,omitempty"`
+	BasicAuth *StaticAppBasicAuth `json:"basic_auth,omitempty"`
+
+	Routing             string `json:"routing"`
+	RemoveTrailingSlash *bool  `json:"remove_trailing_slash"`
 }
 
 func NewStaticAppProperties(in map[string]interface{}) (*StaticAppProperties, error) {

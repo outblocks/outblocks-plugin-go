@@ -38,6 +38,7 @@ message LogRequest {
     LEVEL_INFO = 3;
     LEVEL_DEBUG = 4;
     LEVEL_SUCCESS = 5;
+    LEVEL_PRINT = 6;
   }
 
   string message = 1;

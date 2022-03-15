@@ -23,18 +23,20 @@ type BaseVarEvaluator struct {
 	keyGetter             func(vars map[string]interface{}, key string) (val interface{}, err error)
 	ignoreComments        bool
 	ignoreInvalid         bool
+	skipRowColumnInfo     bool
 	varChar, commentsChar byte
 }
 
 func NewBaseVarEvaluator(vars map[string]interface{}) *BaseVarEvaluator {
 	return &BaseVarEvaluator{
-		vars:           vars,
-		keyGetter:      defaultVarKeyGetter,
-		encoder:        defaultVarEncoder,
-		ignoreComments: false,
-		ignoreInvalid:  false,
-		varChar:        '$',
-		commentsChar:   '#',
+		vars:              vars,
+		keyGetter:         defaultVarKeyGetter,
+		encoder:           defaultVarEncoder,
+		ignoreComments:    false,
+		ignoreInvalid:     false,
+		skipRowColumnInfo: false,
+		varChar:           '$',
+		commentsChar:      '#',
 	}
 }
 
@@ -55,6 +57,11 @@ func (e *BaseVarEvaluator) WithIgnoreComments(ignoreComments bool) *BaseVarEvalu
 
 func (e *BaseVarEvaluator) WithIgnoreInvalid(ignoreInvalid bool) *BaseVarEvaluator {
 	e.ignoreInvalid = ignoreInvalid
+	return e
+}
+
+func (e *BaseVarEvaluator) WithSkipRowColumnInfo(skipRowColumnInfo bool) *BaseVarEvaluator {
+	e.skipRowColumnInfo = skipRowColumnInfo
 	return e
 }
 
@@ -82,30 +89,37 @@ func pathError(path []string, vars map[string]interface{}) error {
 	sort.Strings(keys)
 
 	if len(path) == 0 {
+		if len(keys) == 0 {
+			return fmt.Errorf("no keys found")
+		}
+
 		return fmt.Errorf("possible keys are: %s", strings.Join(keys, ", "))
+	}
+
+	if len(keys) == 0 {
+		return fmt.Errorf("no keys foundfor '%s'", strings.Join(path, "."))
 	}
 
 	return fmt.Errorf("possible keys for '%s' are: %s", strings.Join(path, "."), strings.Join(keys, ", "))
 }
 
 func defaultVarKeyGetter(vars map[string]interface{}, key string) (val interface{}, err error) {
-	var (
-		path []string
-		ok   bool
-	)
+	var path []string
 
 	parts := strings.Split(key, ".")
 
 	for _, part := range parts[:len(parts)-1] {
-		vars, ok = vars[part].(map[string]interface{})
+		varsnext, ok := vars[part].(map[string]interface{})
 		if !ok {
 			return nil, pathError(path, vars)
 		}
 
+		vars = varsnext
+
 		path = append(path, part)
 	}
 
-	val, ok = vars[parts[len(parts)-1]]
+	val, ok := vars[parts[len(parts)-1]]
 	if !ok {
 		return nil, pathError(path, vars)
 	}
@@ -144,23 +158,28 @@ func (e *BaseVarEvaluator) ExpandRaw(input []byte) (output []byte, params []inte
 
 			token = string(line[start+2 : start+2+idx])
 
+			prefix := ""
+			if !e.skipRowColumnInfo {
+				prefix = fmt.Sprintf("[%d:%d] ", l+1, start+1)
+			}
+
 			if !validKey.MatchString(token) {
 				if e.ignoreInvalid {
 					continue
 				}
 
 				if token == "" {
-					return nil, nil, fmt.Errorf("[%d:%d] empty expansion found", l+1, start+1)
+					return nil, nil, fmt.Errorf("%sempty expansion found", prefix)
 				}
 
-				return nil, nil, fmt.Errorf("[%d:%d] invalid expansion found: %s", l+1, start+1, token)
+				return nil, nil, fmt.Errorf("%sinvalid expansion found: %s", prefix, token)
 			}
 
 			out[l] = append(out[l], line[done:start]...)
 
 			val, err := e.keyGetter(e.vars, token)
 			if err != nil {
-				return nil, nil, fmt.Errorf("[%d:%d] expansion value '%s' could not be evaluated:\n%w", l+1, start+1, token, err)
+				return nil, nil, fmt.Errorf("%sexpansion value for '%s' could not be evaluated:\n%w", prefix, token, err)
 			}
 
 			valOut, err := e.encoder(&VarContext{
@@ -170,8 +189,7 @@ func (e *BaseVarEvaluator) ExpandRaw(input []byte) (output []byte, params []inte
 				TokenEnd:   start + 2 + idx,
 			}, val)
 			if err != nil {
-				return nil, nil, fmt.Errorf("[%d:%d] expansion value '%s' could not be encoded, unknown field\nerror: %w",
-					l+1, start+1, token, err)
+				return nil, nil, fmt.Errorf("%sexpansion value for '%s' could not be encoded, unknown field\nerror: %w", prefix, token, err)
 			}
 
 			out[l] = append(out[l], valOut...)

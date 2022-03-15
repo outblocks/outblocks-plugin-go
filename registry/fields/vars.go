@@ -19,7 +19,8 @@ func NewFieldVarEvaluator(vars map[string]interface{}) *FieldVarEvaluator {
 		BaseVarEvaluator: util.NewBaseVarEvaluator(vars).
 			WithEncoder(fieldsVarEncoder).
 			WithVarChar('%').
-			WithIgnoreInvalid(true),
+			WithIgnoreInvalid(true).
+			WithSkipRowColumnInfo(true),
 	}
 }
 

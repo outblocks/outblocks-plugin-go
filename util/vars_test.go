@@ -73,7 +73,7 @@ func TestExpand_Invalid(t *testing.T) {
 		{
 			content:  "abc ${var.abc}",
 			vars:     nil,
-			expected: "[1:5] expansion value 'var.abc' could not be evaluated",
+			expected: "[1:5] expansion value for 'var.abc' could not be evaluated",
 		},
 	}
 

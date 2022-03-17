@@ -97,7 +97,7 @@ func pathError(path []string, vars map[string]interface{}) error {
 	}
 
 	if len(keys) == 0 {
-		return fmt.Errorf("no keys foundfor '%s'", strings.Join(path, "."))
+		return fmt.Errorf("no keys found for '%s'", strings.Join(path, "."))
 	}
 
 	return fmt.Errorf("possible keys for '%s' are: %s", strings.Join(path, "."), strings.Join(keys, ", "))
@@ -109,14 +109,19 @@ func defaultVarKeyGetter(vars map[string]interface{}, key string) (val interface
 	parts := strings.Split(key, ".")
 
 	for _, part := range parts[:len(parts)-1] {
-		varsnext, ok := vars[part].(map[string]interface{})
+		varsint, ok := vars[part]
 		if !ok {
 			return nil, pathError(path, vars)
 		}
 
-		vars = varsnext
-
 		path = append(path, part)
+
+		varsnext, ok := varsint.(map[string]interface{})
+		if !ok {
+			return nil, pathError(path, nil)
+		}
+
+		vars = varsnext
 	}
 
 	val, ok := vars[parts[len(parts)-1]]

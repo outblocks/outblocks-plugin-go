@@ -11,16 +11,18 @@ import (
 var validKey = regexp.MustCompile(`^[a-z]+(\.[a-zA-Z0-9_-]+)*$`)
 
 type VarContext struct {
-	Line       []byte
-	Token      string
-	TokenStart int
-	TokenEnd   int
+	Input            []byte
+	Line             []byte
+	Row              int
+	Token            string
+	TokenColumnStart int
+	TokenColumnEnd   int
 }
 
 type BaseVarEvaluator struct {
 	vars                  map[string]interface{}
 	encoder               func(c *VarContext, val interface{}) ([]byte, error)
-	keyGetter             func(vars map[string]interface{}, key string) (val interface{}, err error)
+	keyGetter             func(c *VarContext, vars map[string]interface{}) (val interface{}, err error)
 	ignoreComments        bool
 	ignoreInvalid         bool
 	skipRowColumnInfo     bool
@@ -30,8 +32,8 @@ type BaseVarEvaluator struct {
 func NewBaseVarEvaluator(vars map[string]interface{}) *BaseVarEvaluator {
 	return &BaseVarEvaluator{
 		vars:              vars,
-		keyGetter:         defaultVarKeyGetter,
-		encoder:           defaultVarEncoder,
+		keyGetter:         DefaultVarKeyGetter,
+		encoder:           DefaultVarEncoder,
 		ignoreComments:    false,
 		ignoreInvalid:     false,
 		skipRowColumnInfo: false,
@@ -45,7 +47,7 @@ func (e *BaseVarEvaluator) WithEncoder(encoder func(c *VarContext, val interface
 	return e
 }
 
-func (e *BaseVarEvaluator) WithKeyGetter(keyGetter func(vars map[string]interface{}, key string) (val interface{}, err error)) *BaseVarEvaluator {
+func (e *BaseVarEvaluator) WithKeyGetter(keyGetter func(c *VarContext, vars map[string]interface{}) (val interface{}, err error)) *BaseVarEvaluator {
 	e.keyGetter = keyGetter
 	return e
 }
@@ -75,7 +77,7 @@ func (e *BaseVarEvaluator) WithCommentsChar(commentsChar byte) *BaseVarEvaluator
 	return e
 }
 
-func defaultVarEncoder(c *VarContext, input interface{}) ([]byte, error) {
+func DefaultVarEncoder(c *VarContext, input interface{}) ([]byte, error) {
 	return []byte("%v"), nil
 }
 
@@ -103,10 +105,10 @@ func pathError(path []string, vars map[string]interface{}) error {
 	return fmt.Errorf("possible keys for '%s' are: %s", strings.Join(path, "."), strings.Join(keys, ", "))
 }
 
-func defaultVarKeyGetter(vars map[string]interface{}, key string) (val interface{}, err error) {
+func DefaultVarKeyGetter(c *VarContext, vars map[string]interface{}) (val interface{}, err error) {
 	var path []string
 
-	parts := strings.Split(key, ".")
+	parts := strings.Split(c.Token, ".")
 
 	for _, part := range parts[:len(parts)-1] {
 		varsint, ok := vars[part]
@@ -182,17 +184,21 @@ func (e *BaseVarEvaluator) ExpandRaw(input []byte) (output []byte, params []inte
 
 			out[l] = append(out[l], line[done:start]...)
 
-			val, err := e.keyGetter(e.vars, token)
+			varCtx := &VarContext{
+				Input:            input,
+				Line:             line,
+				Row:              l + 1,
+				Token:            token,
+				TokenColumnStart: start,
+				TokenColumnEnd:   start + 2 + idx,
+			}
+
+			val, err := e.keyGetter(varCtx, e.vars)
 			if err != nil {
 				return nil, nil, fmt.Errorf("%sexpansion value for '%s' could not be evaluated:\n%w", prefix, token, err)
 			}
 
-			valOut, err := e.encoder(&VarContext{
-				Line:       line,
-				Token:      token,
-				TokenStart: start,
-				TokenEnd:   start + 2 + idx,
-			}, val)
+			valOut, err := e.encoder(varCtx, val)
 			if err != nil {
 				return nil, nil, fmt.Errorf("%sexpansion value for '%s' could not be encoded, unknown field\nerror: %w", prefix, token, err)
 			}

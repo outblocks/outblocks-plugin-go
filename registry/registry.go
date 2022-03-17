@@ -1126,7 +1126,7 @@ func (r *Registry) calculateFieldDiff(field *FieldInfo) (changed, forceNew bool)
 		for _, fd := range fdh.FieldDependencies() {
 			if dep, ok := r.fieldMap[fd]; ok && dep.Resource.Diff() != nil {
 				if dep.Resource.Diff().Type == DiffTypeRecreate || (dep.Resource.IsExisting() && field.Value.Interface().(fields.Field).IsOutput() && !field.Type.Properties.Static) {
-					return true, true
+					return true, field.Type.Properties.ForceNew
 				}
 			}
 		}

@@ -3,7 +3,7 @@ module github.com/outblocks/outblocks-plugin-go
 go 1.18
 
 require (
-	github.com/23doors/go-yaml v1.8.10-0.20220328115725-5f4263177e5e
+	github.com/23doors/go-yaml v1.9.6-0.20220328165103-15fd217cc309
 	github.com/creasty/defaults v1.5.2
 	github.com/golang/protobuf v1.5.2
 	github.com/mitchellh/mapstructure v1.4.3

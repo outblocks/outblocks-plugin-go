@@ -1,6 +1,8 @@
 package util
 
-import "google.golang.org/protobuf/types/known/structpb"
+import (
+	"google.golang.org/protobuf/types/known/structpb"
+)
 
 func MergeMaps(a ...map[string]interface{}) map[string]interface{} {
 	if len(a) == 0 {

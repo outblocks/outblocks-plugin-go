@@ -36,6 +36,12 @@ type PluginState struct {
 }
 
 func (p *PluginState) Proto() *apiv1.PluginState {
+	if p == nil {
+		return &apiv1.PluginState{
+			Other: make(map[string][]byte),
+		}
+	}
+
 	other := make(map[string][]byte, len(p.Other))
 	for k, v := range p.Other {
 		other[k] = v

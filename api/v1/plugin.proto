@@ -110,7 +110,7 @@ service LockingPluginService {
 
 message AppRunInfo {
   string plugin = 1;
-  string command = 2;
+  repeated string command = 2;
   int32 port = 3;
   map<string, string> env = 4;
   google.protobuf.Struct other = 5;
@@ -216,7 +216,7 @@ message PlanRequest {
 
   bool destroy = 4;
   bool verify = 5;
-  PluginState state = 6;
+  PluginState plugin_state = 6;
   google.protobuf.Struct args = 7;
 }
 
@@ -256,7 +256,7 @@ message ApplyRequest {
   repeated DomainInfo domains = 3;
 
   bool destroy = 4;
-  PluginState state = 5;
+  PluginState plugin_state = 5;
   google.protobuf.Struct args = 6;
 }
 
@@ -425,6 +425,7 @@ message CommandRequest {
   // Possible input.
   map<string, AppState> app_states = 3;
   map<string, DependencyState> dependency_states = 4;
+  PluginState plugin_state = 5;
 }
 
 message CommandResponse {}

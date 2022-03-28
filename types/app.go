@@ -6,28 +6,13 @@ import (
 	"strings"
 
 	"github.com/creasty/defaults"
-	"github.com/mitchellh/mapstructure"
 	apiv1 "github.com/outblocks/outblocks-plugin-go/gen/api/v1"
 	"github.com/outblocks/outblocks-plugin-go/util"
+	"github.com/outblocks/outblocks-plugin-go/util/command"
 )
 
 func AppEnvPrefix(a *apiv1.App) string {
 	return fmt.Sprintf("APP_%s_%s_", strings.ToUpper(a.Type), util.SanitizeEnvVar(strings.ToUpper(a.Name)))
-}
-
-func mapstructureJSONDecode(in, out interface{}) error {
-	cfg := &mapstructure.DecoderConfig{
-		Metadata: nil,
-		Result:   out,
-		TagName:  "json",
-	}
-
-	decoder, err := mapstructure.NewDecoder(cfg)
-	if err != nil {
-		return err
-	}
-
-	return decoder.Decode(in)
 }
 
 func encodeToMap(in interface{}) (map[string]interface{}, error) {
@@ -52,7 +37,9 @@ type ServiceAppBuild struct {
 }
 
 type ServiceAppContainer struct {
-	Port int `json:"port" default:"8080"`
+	Entrypoint *command.StringCommand `json:"entrypoint,omitempty"`
+	Command    *command.StringCommand `json:"command,omitempty"`
+	Port       int                    `json:"port" default:"8080"`
 }
 
 type ServiceAppCDN struct {
@@ -74,7 +61,7 @@ func NewServiceAppProperties(in map[string]interface{}) (*ServiceAppProperties, 
 		CDN:       &ServiceAppCDN{},
 	}
 
-	err := mapstructureJSONDecode(in, o)
+	err := util.MapstructureJSONDecode(in, o)
 	if err != nil {
 		return nil, err
 	}
@@ -89,9 +76,9 @@ func (p *ServiceAppProperties) Encode() (map[string]interface{}, error) {
 // Static app properties.
 
 type StaticAppBuild struct {
-	Env     map[string]string `json:"env,omitempty"`
-	Command string            `json:"command"`
-	Dir     string            `json:"dir"`
+	Env     map[string]string      `json:"env,omitempty"`
+	Command *command.StringCommand `json:"command"`
+	Dir     string                 `json:"dir"`
 }
 
 type StaticAppCDN struct {
@@ -118,7 +105,7 @@ func NewStaticAppProperties(in map[string]interface{}) (*StaticAppProperties, er
 		CDN:   &StaticAppCDN{},
 	}
 
-	return o, mapstructureJSONDecode(in, o)
+	return o, util.MapstructureJSONDecode(in, o)
 }
 
 func (p *StaticAppProperties) Encode() (map[string]interface{}, error) {
@@ -129,13 +116,17 @@ type AppVars map[string]interface{}
 
 func VarsFromAppType(app *apiv1.App) map[string]interface{} {
 	return map[string]interface{}{
-		"url": app.Url,
+		"url":         app.Url,
+		"cloud_url":   app.Url,
+		"private_url": app.Url,
 	}
 }
 
 func VarsFromAppRunType(app *apiv1.AppRun) map[string]interface{} {
 	return map[string]interface{}{
-		"url": app.Url,
+		"url":         app.Url,
+		"cloud_url":   app.Url,
+		"private_url": app.Url,
 	}
 }
 

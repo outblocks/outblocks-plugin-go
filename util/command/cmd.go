@@ -58,8 +58,7 @@ func WithDir(dir string) CmdOption {
 	}
 }
 
-func New(cmdStr string, opts ...CmdOption) (*Cmd, error) {
-	cmd := NewCmdAsUser(cmdStr)
+func New(cmd *exec.Cmd, opts ...CmdOption) (*Cmd, error) {
 	c := &Cmd{
 		done: make(chan struct{}),
 		cmd:  cmd,

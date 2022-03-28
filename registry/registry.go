@@ -165,6 +165,21 @@ func (r *Registry) RegisterPluginResource(scope, id string, o Resource) (added b
 	return r.register(resID, o)
 }
 
+func (r *Registry) GetPluginResource(scope, id string, o Resource) (ok bool) {
+	resID := r.createResourceID(types.SourcePlugin, scope, id, o)
+	return r.get(resID, o)
+}
+
+func (r *Registry) GetAppResource(app *apiv1.App, id string, o Resource) (ok bool) {
+	resID := r.createResourceID(types.SourceApp, app.Id, id, o)
+	return r.get(resID, o)
+}
+
+func (r *Registry) GetDependencyResource(dep *apiv1.Dependency, id string, o Resource) (ok bool) {
+	resID := r.createResourceID(types.SourceDependency, dep.Id, id, o)
+	return r.get(resID, o)
+}
+
 func (r *Registry) createResourceID(source, namespace, id string, o Resource) ResourceID {
 	t := reflect.TypeOf(o)
 	if t.Kind() == reflect.Ptr {
@@ -177,6 +192,17 @@ func (r *Registry) createResourceID(source, namespace, id string, o Resource) Re
 		Type:      t.Name(),
 		Source:    source,
 	}
+}
+
+func (r *Registry) get(resourceID ResourceID, o Resource) (ok bool) {
+	erw := r.resources[resourceID]
+	if erw != nil {
+		reflect.ValueOf(o).Elem().Set(reflect.ValueOf(erw.Resource).Elem())
+
+		return true
+	}
+
+	return false
 }
 
 func (r *Registry) register(resourceID ResourceID, o Resource) (added bool, err error) {

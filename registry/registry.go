@@ -11,11 +11,16 @@ import (
 
 	apiv1 "github.com/outblocks/outblocks-plugin-go/gen/api/v1"
 	"github.com/outblocks/outblocks-plugin-go/registry/fields"
-	"github.com/outblocks/outblocks-plugin-go/types"
 	"github.com/outblocks/outblocks-plugin-go/util/errgroup"
 )
 
-const defaultConcurrency = 5
+const (
+	defaultConcurrency = 5
+
+	SourceApp        = "app"
+	SourceDependency = "dependency"
+	SourcePlugin     = "plugin"
+)
 
 type ResourceTypeInfo struct {
 	Type   reflect.Type
@@ -151,32 +156,32 @@ func (r *Registry) SkipAppResources(app *apiv1.App) {
 }
 
 func (r *Registry) RegisterAppResource(app *apiv1.App, id string, o Resource) (added bool, err error) {
-	resID := r.createResourceID(types.SourceApp, app.Id, id, o)
+	resID := r.createResourceID(SourceApp, app.Id, id, o)
 	return r.register(resID, o)
 }
 
 func (r *Registry) RegisterDependencyResource(dep *apiv1.Dependency, id string, o Resource) (added bool, err error) {
-	resID := r.createResourceID(types.SourceDependency, dep.Id, id, o)
+	resID := r.createResourceID(SourceDependency, dep.Id, id, o)
 	return r.register(resID, o)
 }
 
 func (r *Registry) RegisterPluginResource(scope, id string, o Resource) (added bool, err error) {
-	resID := r.createResourceID(types.SourcePlugin, scope, id, o)
+	resID := r.createResourceID(SourcePlugin, scope, id, o)
 	return r.register(resID, o)
 }
 
 func (r *Registry) GetPluginResource(scope, id string, o Resource) (ok bool) {
-	resID := r.createResourceID(types.SourcePlugin, scope, id, o)
+	resID := r.createResourceID(SourcePlugin, scope, id, o)
 	return r.get(resID, o)
 }
 
 func (r *Registry) GetAppResource(app *apiv1.App, id string, o Resource) (ok bool) {
-	resID := r.createResourceID(types.SourceApp, app.Id, id, o)
+	resID := r.createResourceID(SourceApp, app.Id, id, o)
 	return r.get(resID, o)
 }
 
 func (r *Registry) GetDependencyResource(dep *apiv1.Dependency, id string, o Resource) (ok bool) {
-	resID := r.createResourceID(types.SourceDependency, dep.Id, id, o)
+	resID := r.createResourceID(SourceDependency, dep.Id, id, o)
 	return r.get(resID, o)
 }
 
@@ -312,17 +317,17 @@ func (r *Registry) register(resourceID ResourceID, o Resource) (added bool, err 
 }
 
 func (r *Registry) DeregisterAppResource(app *apiv1.App, id string, o Resource) error {
-	resID := r.createResourceID(types.SourceApp, app.Id, id, o)
+	resID := r.createResourceID(SourceApp, app.Id, id, o)
 	return r.deregister(resID, o)
 }
 
 func (r *Registry) DeregisterDependencyResource(dep *apiv1.Dependency, id string, o Resource) error {
-	resID := r.createResourceID(types.SourceDependency, dep.Id, id, o)
+	resID := r.createResourceID(SourceDependency, dep.Id, id, o)
 	return r.deregister(resID, o)
 }
 
 func (r *Registry) DeregisterPluginResource(scope, id string, o Resource) error {
-	resID := r.createResourceID(types.SourcePlugin, scope, id, o)
+	resID := r.createResourceID(SourcePlugin, scope, id, o)
 	return r.deregister(resID, o)
 }
 
@@ -782,7 +787,7 @@ func unskipRecursiveDependencies(rw *ResourceWrapper) {
 
 func (r *Registry) checkResources(resources map[ResourceID]*ResourceWrapper) {
 	for _, rw := range resources {
-		if rw.Source == types.SourceApp && r.skippedAppIDs[rw.Namespace] {
+		if rw.Source == SourceApp && r.skippedAppIDs[rw.Namespace] {
 			rw.IsSkipped = true
 		}
 	}

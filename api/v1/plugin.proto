@@ -108,14 +108,6 @@ service LockingPluginService {
 
 // Deploy Plugin.
 
-message AppRunInfo {
-  string plugin = 1;
-  repeated string command = 2;
-  int32 port = 3;
-  map<string, string> env = 4;
-  google.protobuf.Struct other = 5;
-}
-
 message AppDeployInfo {
   string plugin = 1;
   map<string, string> env = 2;
@@ -138,7 +130,6 @@ message App {
   string deploy_plugin = 8;
   string dns_plugin = 9;
   string run_plugin = 10;
-  AppRunInfo run = 11;
   AppDeployInfo deploy = 12;
   map<string, AppNeed> needs = 13;
   google.protobuf.Struct properties = 14;
@@ -365,6 +356,9 @@ message AppRun {
   string url = 2;
   string ip = 3;
   int32 port = 4;
+  repeated string command = 5;
+  map<string, string> env = 6;
+  google.protobuf.Struct other = 7;
 }
 
 message DependencyRun {

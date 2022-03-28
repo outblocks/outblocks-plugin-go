@@ -14,20 +14,32 @@ type StringCommand struct {
 	valArr []string
 }
 
-func (c *StringCommand) ShArray() []string {
+func (c *StringCommand) Array() []string {
 	if c == nil {
 		return nil
-	}
-
-	if c.valStr != "" {
-		return []string{"sh", "-c", c.valStr}
 	}
 
 	if len(c.valArr) != 0 {
 		return c.valArr
 	}
 
+	if c.valStr != "" {
+		return []string{c.valStr}
+	}
+
 	return nil
+}
+
+func (c *StringCommand) ArrayOrShell() []string {
+	if c == nil {
+		return nil
+	}
+
+	if c.IsArray() {
+		return c.Array()
+	}
+
+	return []string{"sh", "-c", c.valStr}
 }
 
 func (c *StringCommand) ExecCmdAsUser() *exec.Cmd {
@@ -43,7 +55,7 @@ func (c *StringCommand) ExecCmdAsUser() *exec.Cmd {
 }
 
 func (c *StringCommand) MarshalJSON() ([]byte, error) {
-	return json.Marshal(c.ShArray())
+	return json.Marshal(c.Array())
 }
 
 func (c *StringCommand) UnmarshalJSON(b []byte) error {

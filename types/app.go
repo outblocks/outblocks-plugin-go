@@ -63,7 +63,7 @@ func NewServiceAppProperties(in map[string]interface{}) (*ServiceAppProperties, 
 
 	err := util.MapstructureJSONDecode(in, o)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error decoding service app properties: %w", err)
 	}
 
 	return o, defaults.Set(o)

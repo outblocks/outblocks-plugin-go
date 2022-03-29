@@ -21,11 +21,13 @@ const (
 var mutexKV = util.NewMutexKV()
 
 type Resource interface {
+	setRegistry(*Registry)
 	setDiff(*Diff)
 	setRegistered(bool)
 	setWrapper(*ResourceWrapper)
 
 	GetName() string
+	Registry() *Registry
 	Diff() *Diff
 	Wrapper() *ResourceWrapper
 	SetState(ResourceState)
@@ -82,10 +84,19 @@ type ResourceCriticalChecker interface {
 }
 
 type ResourceBase struct {
+	reg        *Registry
 	state      ResourceState
 	wrapper    *ResourceWrapper
 	diff       *Diff
 	registered bool
+}
+
+func (b *ResourceBase) setRegistry(reg *Registry) { // nolint:unused
+	b.reg = reg
+}
+
+func (b *ResourceBase) Registry() *Registry {
+	return b.reg
 }
 
 func (b *ResourceBase) setDiff(v *Diff) { // nolint:unused

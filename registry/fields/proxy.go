@@ -150,6 +150,10 @@ func newProxyMapField(org mapField) *proxyMapField {
 	}
 }
 
+func (f *proxyMapField) WantedFieldMap() map[string]Field {
+	return f.org.(mapField).CurrentFieldMap()
+}
+
 func (f *proxyMapField) LookupWanted() (v map[string]interface{}, ok bool) {
 	return f.org.(mapField).LookupCurrent()
 }

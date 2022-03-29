@@ -210,6 +210,21 @@ func (r *Registry) get(resourceID ResourceID, o Resource) (ok bool) {
 	return false
 }
 
+func (r *Registry) GetFieldDependencies(f fields.Field) []*ResourceWrapper {
+	var ret []*ResourceWrapper
+
+	if fh, ok := f.(fields.FieldDependencyHolder); ok {
+		for _, dep := range fh.FieldDependencies() {
+			rw := r.fieldMap[dep]
+			if rw != nil {
+				ret = append(ret, rw)
+			}
+		}
+	}
+
+	return ret
+}
+
 func (r *Registry) register(resourceID ResourceID, o Resource) (added bool, err error) {
 	tinfo, ok := r.types[resourceID.Type]
 
@@ -243,6 +258,7 @@ func (r *Registry) register(resourceID ResourceID, o Resource) (added bool, err 
 		Dependencies: make(map[*ResourceWrapper]struct{}),
 	}
 
+	o.setRegistry(r)
 	o.setWrapper(rw)
 	o.setRegistered(true)
 
@@ -417,6 +433,7 @@ func (r *Registry) Load(ctx context.Context, state []byte) error {
 			Dependencies: make(map[*ResourceWrapper]struct{}),
 		}
 
+		res.setRegistry(r)
 		res.setWrapper(rw)
 		res.setRegistered(false)
 
@@ -1156,8 +1173,8 @@ func (r *Registry) calculateFieldDiff(field *FieldInfo) (changed, forceNew bool)
 	if fdh, ok := field.Value.Interface().(fields.FieldDependencyHolder); ok {
 		for _, fd := range fdh.FieldDependencies() {
 			if dep, ok := r.fieldMap[fd]; ok && dep.Resource.Diff() != nil {
-				if dep.Resource.Diff().Type == DiffTypeRecreate || (dep.Resource.IsExisting() && field.Value.Interface().(fields.Field).IsOutput() && !field.Type.Properties.Static) {
-					return true, field.Type.Properties.ForceNew
+				if dep.Resource.Diff().Type == DiffTypeRecreate || (dep.Resource.IsExisting() && field.Value.Interface().(fields.Field).IsOutput()) {
+					return true, field.Type.Properties.ForceNew || field.Type.Properties.PropagateRecreate
 				}
 			}
 		}

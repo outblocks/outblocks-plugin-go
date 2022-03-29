@@ -9,6 +9,8 @@ type mapField interface {
 	SetCurrent(map[string]interface{})
 	LookupCurrent() (map[string]interface{}, bool)
 	Current() map[string]interface{}
+	WantedFieldMap() map[string]Field
+	CurrentFieldMap() map[string]Field
 }
 
 type MapInputField interface {
@@ -50,6 +52,22 @@ func MapUnsetOutput() MapOutputField {
 
 func MapOutput(val map[string]Field) MapOutputField {
 	return &MapBaseField{FieldBase: BasicValue(val, true)}
+}
+
+func (f *MapBaseField) WantedFieldMap() map[string]Field {
+	if !f.wantedDefined {
+		return nil
+	}
+
+	return f.wanted().(map[string]Field)
+}
+
+func (f *MapBaseField) CurrentFieldMap() map[string]Field {
+	if !f.currentDefined {
+		return nil
+	}
+
+	return f.currentVal.(map[string]Field)
 }
 
 func (f *MapBaseField) SetCurrent(i map[string]interface{}) {

@@ -119,11 +119,11 @@ func (c *StringCommand) fromInterface(o interface{}) error {
 }
 
 func (c *StringCommand) IsEmpty() bool {
-	return len(c.valArr) == 0 && c.valStr == ""
+	return c == nil || (len(c.valArr) == 0 && c.valStr == "")
 }
 
 func (c *StringCommand) IsArray() bool {
-	return len(c.valArr) != 0
+	return c != nil && len(c.valArr) != 0
 }
 
 func (c *StringCommand) Flatten() string {

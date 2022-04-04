@@ -148,6 +148,40 @@ func AppVarsFromApps(apps []*apiv1.App) AppVars {
 	return appVars
 }
 
+func AppVarsFromAppStates(apps []*apiv1.AppState) AppVars {
+	appVars := make(map[string]interface{}) // type->name->value
+
+	for _, state := range apps {
+		vars := VarsFromAppType(state.App)
+
+		if _, ok := appVars[state.App.Type]; !ok {
+			appVars[state.App.Type] = map[string]interface{}{
+				state.App.Name: vars,
+			}
+		} else {
+			appVars[state.App.Type].(map[string]interface{})[state.App.Name] = vars
+		}
+	}
+
+	for _, state := range apps {
+		if state.Dns == nil {
+			continue
+		}
+
+		vars := appVars[state.App.Type].(map[string]interface{})[state.App.Name].(map[string]interface{})
+
+		if state.Dns.CloudUrl != "" {
+			vars["cloud_url"] = state.Dns.CloudUrl
+		}
+
+		if state.Dns.InternalUrl != "" {
+			vars["private_url"] = state.Dns.InternalUrl
+		}
+	}
+
+	return appVars
+}
+
 func AppVarsFromAppRun(apps []*apiv1.AppRun) AppVars {
 	appVars := make(map[string]interface{}) // type->name->value
 
@@ -176,4 +210,8 @@ func VarsForApp(av AppVars, a *apiv1.App, depVars interface{}) map[string]interf
 		"self": av.ForApp(a),
 		"dep":  depVars,
 	}
+}
+
+func MergeAppVars(a1, a2 AppVars) AppVars {
+	return util.MergeMaps(a1, a2)
 }

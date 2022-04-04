@@ -343,7 +343,7 @@ message ApplyDNSResponse {
 
 
 service DNSPluginService {
-  rpc DomainInfo(DomainInfoRequest) returns (DomainInfoResponse);
+  rpc GetDomainInfo(DomainInfoRequest) returns (DomainInfoResponse);
 
   rpc PlanDNS(PlanDNSRequest) returns (PlanDNSResponse);
   rpc ApplyDNS(ApplyDNSRequest) returns (stream ApplyDNSResponse);

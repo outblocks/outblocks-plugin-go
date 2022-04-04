@@ -23,7 +23,7 @@ type DeployPluginHandler interface {
 }
 
 type DNSPluginHandler interface {
-	DomainInfo(ctx context.Context, in *apiv1.DomainInfoRequest) (*apiv1.DomainInfoResponse, error)
+	GetDomainInfo(ctx context.Context, in *apiv1.DomainInfoRequest) (*apiv1.DomainInfoResponse, error)
 	PlanDNS(context.Context, *registry.Registry, *apiv1.PlanDNSRequest) (*apiv1.PlanDNSResponse, error)
 	ApplyDNS(*apiv1.ApplyDNSRequest, *registry.Registry, apiv1.DNSPluginService_ApplyDNSServer) error
 }

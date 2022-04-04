@@ -654,7 +654,7 @@ var DeployPluginService_ServiceDesc = grpc.ServiceDesc{
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type DNSPluginServiceClient interface {
-	DomainInfo(ctx context.Context, in *DomainInfoRequest, opts ...grpc.CallOption) (*DomainInfoResponse, error)
+	GetDomainInfo(ctx context.Context, in *DomainInfoRequest, opts ...grpc.CallOption) (*DomainInfoResponse, error)
 	PlanDNS(ctx context.Context, in *PlanDNSRequest, opts ...grpc.CallOption) (*PlanDNSResponse, error)
 	ApplyDNS(ctx context.Context, in *ApplyDNSRequest, opts ...grpc.CallOption) (DNSPluginService_ApplyDNSClient, error)
 }
@@ -667,9 +667,9 @@ func NewDNSPluginServiceClient(cc grpc.ClientConnInterface) DNSPluginServiceClie
 	return &dNSPluginServiceClient{cc}
 }
 
-func (c *dNSPluginServiceClient) DomainInfo(ctx context.Context, in *DomainInfoRequest, opts ...grpc.CallOption) (*DomainInfoResponse, error) {
+func (c *dNSPluginServiceClient) GetDomainInfo(ctx context.Context, in *DomainInfoRequest, opts ...grpc.CallOption) (*DomainInfoResponse, error) {
 	out := new(DomainInfoResponse)
-	err := c.cc.Invoke(ctx, "/api.v1.DNSPluginService/DomainInfo", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/api.v1.DNSPluginService/GetDomainInfo", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -721,7 +721,7 @@ func (x *dNSPluginServiceApplyDNSClient) Recv() (*ApplyDNSResponse, error) {
 // All implementations should embed UnimplementedDNSPluginServiceServer
 // for forward compatibility
 type DNSPluginServiceServer interface {
-	DomainInfo(context.Context, *DomainInfoRequest) (*DomainInfoResponse, error)
+	GetDomainInfo(context.Context, *DomainInfoRequest) (*DomainInfoResponse, error)
 	PlanDNS(context.Context, *PlanDNSRequest) (*PlanDNSResponse, error)
 	ApplyDNS(*ApplyDNSRequest, DNSPluginService_ApplyDNSServer) error
 }
@@ -730,8 +730,8 @@ type DNSPluginServiceServer interface {
 type UnimplementedDNSPluginServiceServer struct {
 }
 
-func (UnimplementedDNSPluginServiceServer) DomainInfo(context.Context, *DomainInfoRequest) (*DomainInfoResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DomainInfo not implemented")
+func (UnimplementedDNSPluginServiceServer) GetDomainInfo(context.Context, *DomainInfoRequest) (*DomainInfoResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetDomainInfo not implemented")
 }
 func (UnimplementedDNSPluginServiceServer) PlanDNS(context.Context, *PlanDNSRequest) (*PlanDNSResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PlanDNS not implemented")
@@ -751,20 +751,20 @@ func RegisterDNSPluginServiceServer(s grpc.ServiceRegistrar, srv DNSPluginServic
 	s.RegisterService(&DNSPluginService_ServiceDesc, srv)
 }
 
-func _DNSPluginService_DomainInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _DNSPluginService_GetDomainInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DomainInfoRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DNSPluginServiceServer).DomainInfo(ctx, in)
+		return srv.(DNSPluginServiceServer).GetDomainInfo(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/api.v1.DNSPluginService/DomainInfo",
+		FullMethod: "/api.v1.DNSPluginService/GetDomainInfo",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DNSPluginServiceServer).DomainInfo(ctx, req.(*DomainInfoRequest))
+		return srv.(DNSPluginServiceServer).GetDomainInfo(ctx, req.(*DomainInfoRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -816,8 +816,8 @@ var DNSPluginService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*DNSPluginServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "DomainInfo",
-			Handler:    _DNSPluginService_DomainInfo_Handler,
+			MethodName: "GetDomainInfo",
+			Handler:    _DNSPluginService_GetDomainInfo_Handler,
 		},
 		{
 			MethodName: "PlanDNS",

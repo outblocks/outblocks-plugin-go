@@ -496,12 +496,18 @@ func (r *Registry) Process(ctx context.Context, meta interface{}) error {
 	// Remove unregistered that are already defined with unique id.
 	resourceUniqueIDMap := make(map[string]*ResourceWrapper)
 
-	for id, rw := range r.resources {
+	for _, rw := range r.resources {
 		if rw.Resource.IsRegistered() {
 			if rr, ok := rw.Resource.(ResourceReference); ok && rr.ReferenceID() != "" {
 				resourceUniqueIDMap[rr.ReferenceID()] = rw
 			}
 
+			continue
+		}
+	}
+
+	for id, rw := range r.resources {
+		if rw.Resource.IsRegistered() {
 			continue
 		}
 
@@ -1174,7 +1180,7 @@ func (r *Registry) calculateFieldDiff(field *FieldInfo) (changed, forceNew bool)
 		for _, fd := range fdh.FieldDependencies() {
 			if dep, ok := r.fieldMap[fd]; ok && dep.Resource.Diff() != nil {
 				if dep.Resource.Diff().Type == DiffTypeRecreate || (dep.Resource.IsExisting() && field.Value.Interface().(fields.Field).IsOutput()) {
-					return true, field.Type.Properties.ForceNew || field.Type.Properties.PropagateRecreate
+					return true, field.Type.Properties.ForceNew || field.Type.Properties.HardLink
 				}
 			}
 		}

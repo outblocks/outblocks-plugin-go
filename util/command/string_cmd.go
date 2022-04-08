@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"os/exec"
 	"strings"
-
-	"github.com/23doors/go-yaml"
 )
 
 type StringCommand struct {
@@ -69,10 +67,10 @@ func (c *StringCommand) UnmarshalJSON(b []byte) error {
 	return c.fromInterface(out)
 }
 
-func (c *StringCommand) UnmarshalYAML(b []byte) error {
+func (c *StringCommand) UnmarshalYAML(dec func(interface{}) error) error {
 	var out interface{}
 
-	err := yaml.Unmarshal(b, &out)
+	err := dec(&out)
 	if err != nil {
 		return err
 	}

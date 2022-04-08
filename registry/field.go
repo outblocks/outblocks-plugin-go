@@ -19,10 +19,10 @@ type FieldInfo struct {
 }
 
 type FieldProperties struct {
-	Ignored           bool // ignore from state
-	ForceNew          bool // any change of this field forces new resource
-	Computed          bool // computed field disallows user input and is created by resource itself
-	PropagateRecreate bool // two step update fields support more than 1 update (as they check dependencies if they are recreated)
+	Ignored  bool // ignore from state
+	ForceNew bool // any change of this field forces new resource
+	Computed bool // computed field disallows user input and is created by resource itself
+	HardLink bool // dependencies of this field cannot be removed (propagates recreate)
 }
 
 func parseFieldPropertiesTag(tag string) *FieldProperties {
@@ -45,8 +45,8 @@ func parseFieldPropertiesTag(tag string) *FieldProperties {
 		case "force_new":
 			ret.ForceNew = true
 
-		case "propagate_recreate":
-			ret.PropagateRecreate = true
+		case "hard", "hard_link":
+			ret.HardLink = true
 		default:
 			panic(fmt.Sprintf("unknown field properties tag: %s", t))
 		}

@@ -11,6 +11,10 @@ type Unmarshaler interface {
 }
 
 func MapstructureJSONDecode(in, out interface{}) error {
+	return MapstructureDecode(in, out, "json")
+}
+
+func MapstructureDecode(in, out interface{}, tag string) error {
 	cfg := &mapstructure.DecoderConfig{
 		DecodeHook: func(from reflect.Value, to reflect.Value) (interface{}, error) {
 			// If the destination implements the unmarshaling interface
@@ -32,9 +36,10 @@ func MapstructureJSONDecode(in, out interface{}) error {
 
 			return to.Interface(), nil
 		},
-		Metadata: nil,
-		Result:   out,
-		TagName:  "json",
+		Metadata:         nil,
+		Result:           out,
+		TagName:          tag,
+		WeaklyTypedInput: true,
 	}
 
 	decoder, err := mapstructure.NewDecoder(cfg)

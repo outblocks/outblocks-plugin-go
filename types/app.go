@@ -33,6 +33,7 @@ func encodeToMap(in interface{}) (map[string]interface{}, error) {
 type ServiceAppBuild struct {
 	DockerImage     string            `json:"image"`
 	SkipBuild       bool              `json:"skip_build"`
+	SkipPull        bool              `json:"skip_pull"`
 	Dockerfile      string            `json:"dockerfile"`
 	DockerContext   string            `json:"context"`
 	DockerBuildArgs map[string]string `json:"build_args"`

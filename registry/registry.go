@@ -1144,7 +1144,7 @@ func (r *Registry) calculateDiff(rw *ResourceWrapper) *Diff {
 	var fieldsList []string
 
 	for name, f := range rw.Fields {
-		fieldChanged, fieldForceNew := r.calculateFieldDiff(f)
+		fieldChanged, fieldForceNew := r.calculateFieldDiff(rw, f)
 		if !fieldChanged {
 			continue
 		}
@@ -1168,7 +1168,7 @@ func (r *Registry) calculateDiff(rw *ResourceWrapper) *Diff {
 	return NewDiff(rw, typ, fieldsList)
 }
 
-func (r *Registry) calculateFieldDiff(field *FieldInfo) (changed, forceNew bool) {
+func (r *Registry) calculateFieldDiff(rw *ResourceWrapper, field *FieldInfo) (changed, forceNew bool) {
 	if field.Type.Properties.Ignored {
 		return false, false
 	}
@@ -1178,10 +1178,17 @@ func (r *Registry) calculateFieldDiff(field *FieldInfo) (changed, forceNew bool)
 	// If field is a dep holder (depends on multiple fields) check each field if it is associated with a resource to be deleted/recreated.
 	if fdh, ok := field.Value.Interface().(fields.FieldDependencyHolder); ok {
 		for _, fd := range fdh.FieldDependencies() {
-			if dep, ok := r.fieldMap[fd]; ok && dep.Resource.Diff() != nil {
-				if dep.Resource.Diff().Type == DiffTypeRecreate || (dep.Resource.IsExisting() && field.Value.Interface().(fields.Field).IsOutput()) {
-					return true, field.Type.Properties.ForceNew || field.Type.Properties.HardLink
-				}
+			dep, ok := r.fieldMap[fd]
+			if !ok || dep.Resource.Diff() == nil {
+				continue
+			}
+
+			if field.Type.Properties.HardLink && rw.Resource.IsExisting() && dep.Resource.Diff().Type == DiffTypeCreate {
+				return true, true
+			}
+
+			if dep.Resource.Diff().Type == DiffTypeRecreate || (dep.Resource.IsExisting() && field.Value.Interface().(fields.Field).IsOutput()) {
+				return true, field.Type.Properties.ForceNew || field.Type.Properties.HardLink
 			}
 		}
 	}

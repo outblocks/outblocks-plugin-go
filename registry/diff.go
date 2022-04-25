@@ -100,7 +100,7 @@ func (d *Diff) AppliedSteps() int {
 		}
 	}
 
-	return 0
+	return len(d.applied)
 }
 
 func (d *Diff) RequiredSteps() int {
@@ -125,15 +125,15 @@ func (d *Diff) ObjectType() string {
 func (d *Diff) ToPlanAction() *apiv1.PlanAction {
 	switch d.Type {
 	case DiffTypeCreate:
-		return types.NewPlanActionCreate(d.Object.Source, d.Object.Namespace, d.Object.ID, d.ObjectType(), d.Object.Resource.GetName(), d.Critical)
+		return types.NewPlanActionCreate(d.Object.Source, d.Object.Namespace, d.Object.ID, d.ObjectType(), d.Object.Resource.GetName(), d.Fields, d.Critical)
 	case DiffTypeUpdate:
-		return types.NewPlanActionUpdate(d.Object.Source, d.Object.Namespace, d.Object.ID, d.ObjectType(), d.Object.Resource.GetName(), d.Critical)
+		return types.NewPlanActionUpdate(d.Object.Source, d.Object.Namespace, d.Object.ID, d.ObjectType(), d.Object.Resource.GetName(), d.Fields, d.Critical)
 	case DiffTypeRecreate:
-		return types.NewPlanActionRecreate(d.Object.Source, d.Object.Namespace, d.Object.ID, d.ObjectType(), d.Object.Resource.GetName(), d.Critical)
+		return types.NewPlanActionRecreate(d.Object.Source, d.Object.Namespace, d.Object.ID, d.ObjectType(), d.Object.Resource.GetName(), d.Fields, d.Critical)
 	case DiffTypeDelete:
-		return types.NewPlanActionDelete(d.Object.Source, d.Object.Namespace, d.Object.ID, d.ObjectType(), d.Object.Resource.GetName(), d.Critical)
+		return types.NewPlanActionDelete(d.Object.Source, d.Object.Namespace, d.Object.ID, d.ObjectType(), d.Object.Resource.GetName(), d.Fields, d.Critical)
 	case DiffTypeProcess:
-		return types.NewPlanActionProcess(d.Object.Source, d.Object.Namespace, d.Object.ID, d.ObjectType(), d.Object.Resource.GetName(), d.Critical)
+		return types.NewPlanActionProcess(d.Object.Source, d.Object.Namespace, d.Object.ID, d.ObjectType(), d.Object.Resource.GetName(), d.Fields, d.Critical)
 	case DiffTypeNone:
 		panic("unexpected diff type")
 	default:

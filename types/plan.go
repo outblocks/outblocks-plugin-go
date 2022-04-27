@@ -11,6 +11,7 @@ func NewPlanAction(typ apiv1.PlanType, source, namespace, objectID, objectType, 
 		ObjectType: objectType,
 		ObjectName: objectName,
 		Critical:   critical,
+		Fields:     fields,
 	}
 }
 

@@ -650,11 +650,122 @@ var DeployPluginService_ServiceDesc = grpc.ServiceDesc{
 	Metadata: "api/v1/plugin.proto",
 }
 
+// LogsPluginServiceClient is the client API for LogsPluginService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type LogsPluginServiceClient interface {
+	Logs(ctx context.Context, in *LogsRequest, opts ...grpc.CallOption) (LogsPluginService_LogsClient, error)
+}
+
+type logsPluginServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewLogsPluginServiceClient(cc grpc.ClientConnInterface) LogsPluginServiceClient {
+	return &logsPluginServiceClient{cc}
+}
+
+func (c *logsPluginServiceClient) Logs(ctx context.Context, in *LogsRequest, opts ...grpc.CallOption) (LogsPluginService_LogsClient, error) {
+	stream, err := c.cc.NewStream(ctx, &LogsPluginService_ServiceDesc.Streams[0], "/api.v1.LogsPluginService/Logs", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &logsPluginServiceLogsClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type LogsPluginService_LogsClient interface {
+	Recv() (*LogsResponse, error)
+	grpc.ClientStream
+}
+
+type logsPluginServiceLogsClient struct {
+	grpc.ClientStream
+}
+
+func (x *logsPluginServiceLogsClient) Recv() (*LogsResponse, error) {
+	m := new(LogsResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+// LogsPluginServiceServer is the server API for LogsPluginService service.
+// All implementations should embed UnimplementedLogsPluginServiceServer
+// for forward compatibility
+type LogsPluginServiceServer interface {
+	Logs(*LogsRequest, LogsPluginService_LogsServer) error
+}
+
+// UnimplementedLogsPluginServiceServer should be embedded to have forward compatible implementations.
+type UnimplementedLogsPluginServiceServer struct {
+}
+
+func (UnimplementedLogsPluginServiceServer) Logs(*LogsRequest, LogsPluginService_LogsServer) error {
+	return status.Errorf(codes.Unimplemented, "method Logs not implemented")
+}
+
+// UnsafeLogsPluginServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to LogsPluginServiceServer will
+// result in compilation errors.
+type UnsafeLogsPluginServiceServer interface {
+	mustEmbedUnimplementedLogsPluginServiceServer()
+}
+
+func RegisterLogsPluginServiceServer(s grpc.ServiceRegistrar, srv LogsPluginServiceServer) {
+	s.RegisterService(&LogsPluginService_ServiceDesc, srv)
+}
+
+func _LogsPluginService_Logs_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(LogsRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(LogsPluginServiceServer).Logs(m, &logsPluginServiceLogsServer{stream})
+}
+
+type LogsPluginService_LogsServer interface {
+	Send(*LogsResponse) error
+	grpc.ServerStream
+}
+
+type logsPluginServiceLogsServer struct {
+	grpc.ServerStream
+}
+
+func (x *logsPluginServiceLogsServer) Send(m *LogsResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+// LogsPluginService_ServiceDesc is the grpc.ServiceDesc for LogsPluginService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var LogsPluginService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "api.v1.LogsPluginService",
+	HandlerType: (*LogsPluginServiceServer)(nil),
+	Methods:     []grpc.MethodDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "Logs",
+			Handler:       _LogsPluginService_Logs_Handler,
+			ServerStreams: true,
+		},
+	},
+	Metadata: "api/v1/plugin.proto",
+}
+
 // DNSPluginServiceClient is the client API for DNSPluginService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type DNSPluginServiceClient interface {
-	GetDomainInfo(ctx context.Context, in *DomainInfoRequest, opts ...grpc.CallOption) (*DomainInfoResponse, error)
+	GetDomainInfo(ctx context.Context, in *GetDomainInfoRequest, opts ...grpc.CallOption) (*GetDomainInfoResponse, error)
 	PlanDNS(ctx context.Context, in *PlanDNSRequest, opts ...grpc.CallOption) (*PlanDNSResponse, error)
 	ApplyDNS(ctx context.Context, in *ApplyDNSRequest, opts ...grpc.CallOption) (DNSPluginService_ApplyDNSClient, error)
 }
@@ -667,8 +778,8 @@ func NewDNSPluginServiceClient(cc grpc.ClientConnInterface) DNSPluginServiceClie
 	return &dNSPluginServiceClient{cc}
 }
 
-func (c *dNSPluginServiceClient) GetDomainInfo(ctx context.Context, in *DomainInfoRequest, opts ...grpc.CallOption) (*DomainInfoResponse, error) {
-	out := new(DomainInfoResponse)
+func (c *dNSPluginServiceClient) GetDomainInfo(ctx context.Context, in *GetDomainInfoRequest, opts ...grpc.CallOption) (*GetDomainInfoResponse, error) {
+	out := new(GetDomainInfoResponse)
 	err := c.cc.Invoke(ctx, "/api.v1.DNSPluginService/GetDomainInfo", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -721,7 +832,7 @@ func (x *dNSPluginServiceApplyDNSClient) Recv() (*ApplyDNSResponse, error) {
 // All implementations should embed UnimplementedDNSPluginServiceServer
 // for forward compatibility
 type DNSPluginServiceServer interface {
-	GetDomainInfo(context.Context, *DomainInfoRequest) (*DomainInfoResponse, error)
+	GetDomainInfo(context.Context, *GetDomainInfoRequest) (*GetDomainInfoResponse, error)
 	PlanDNS(context.Context, *PlanDNSRequest) (*PlanDNSResponse, error)
 	ApplyDNS(*ApplyDNSRequest, DNSPluginService_ApplyDNSServer) error
 }
@@ -730,7 +841,7 @@ type DNSPluginServiceServer interface {
 type UnimplementedDNSPluginServiceServer struct {
 }
 
-func (UnimplementedDNSPluginServiceServer) GetDomainInfo(context.Context, *DomainInfoRequest) (*DomainInfoResponse, error) {
+func (UnimplementedDNSPluginServiceServer) GetDomainInfo(context.Context, *GetDomainInfoRequest) (*GetDomainInfoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetDomainInfo not implemented")
 }
 func (UnimplementedDNSPluginServiceServer) PlanDNS(context.Context, *PlanDNSRequest) (*PlanDNSResponse, error) {
@@ -752,7 +863,7 @@ func RegisterDNSPluginServiceServer(s grpc.ServiceRegistrar, srv DNSPluginServic
 }
 
 func _DNSPluginService_GetDomainInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DomainInfoRequest)
+	in := new(GetDomainInfoRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -764,7 +875,7 @@ func _DNSPluginService_GetDomainInfo_Handler(srv interface{}, ctx context.Contex
 		FullMethod: "/api.v1.DNSPluginService/GetDomainInfo",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DNSPluginServiceServer).GetDomainInfo(ctx, req.(*DomainInfoRequest))
+		return srv.(DNSPluginServiceServer).GetDomainInfo(ctx, req.(*GetDomainInfoRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

@@ -86,7 +86,7 @@ func mapFieldTypeInfo(fieldsMap map[string]*FieldTypeInfo, t reflect.Type, prefi
 	}
 }
 
-func (r *Registry) RegisterType(o Resource) error {
+func (r *Registry) RegisterType(o Resource) {
 	t := reflect.TypeOf(o)
 	if t.Kind() == reflect.Ptr {
 		t = t.Elem()
@@ -94,7 +94,7 @@ func (r *Registry) RegisterType(o Resource) error {
 
 	// Check if type wasn't registered.
 	if _, ok := r.types[t.Name()]; ok {
-		return nil
+		return
 	}
 
 	fieldsMap := make(map[string]*FieldTypeInfo)
@@ -105,8 +105,6 @@ func (r *Registry) RegisterType(o Resource) error {
 		Type:   t,
 		Fields: fieldsMap,
 	}
-
-	return nil
 }
 
 func mapFieldInfo(rti *ResourceTypeInfo, fieldsMap map[string]*FieldInfo, t reflect.Type, v reflect.Value, prefix string) {
@@ -229,10 +227,7 @@ func (r *Registry) register(resourceID ResourceID, o Resource) (added bool, err 
 	tinfo, ok := r.types[resourceID.Type]
 
 	if !ok {
-		err := r.RegisterType(o)
-		if err != nil {
-			return false, err
-		}
+		r.RegisterType(o)
 
 		tinfo = r.types[resourceID.Type]
 	}
@@ -372,7 +367,7 @@ func (r *Registry) deregister(resourceID ResourceID, o Resource) error {
 	return nil
 }
 
-func (r *Registry) Load(ctx context.Context, state []byte) error {
+func (r *Registry) Load(state []byte) error {
 	if len(state) == 0 {
 		return nil
 	}

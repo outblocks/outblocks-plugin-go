@@ -3,19 +3,16 @@ package api.v1;
 option go_package = "github.com/outblocks/outblocks-plugin-go/gen/api/v1;apiv1";
 
 import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
 import "google/protobuf/struct.proto";
 
-// Basic Plugin.
+// Basic plugin.
 
-message InitRequest {
-  string host_addr = 1;
-}
+message InitRequest { string host_addr = 1; }
 
 message InitResponse {}
 
-message StartRequest {
-  google.protobuf.Struct properties = 1;
-}
+message StartRequest { google.protobuf.Struct properties = 1; }
 
 message StartResponse {}
 
@@ -34,13 +31,14 @@ service BasicPluginService {
   rpc ProjectInit(ProjectInitRequest) returns (ProjectInitResponse);
 }
 
-// State Plugin.
+// State plugin.
 
 message GetStateRequest {
   string state_type = 1;
   google.protobuf.Struct properties = 2;
   bool lock = 3;
   google.protobuf.Duration lock_wait = 4;
+  google.protobuf.Duration lock_ttl = 6;
   bool skip_create = 5;
 }
 
@@ -81,17 +79,17 @@ service StatePluginService {
       returns (ReleaseStateLockResponse);
 }
 
-// Locking Plugin.
-
+// Locking plugin.
 message AcquireLocksRequest {
   repeated string lock_names = 1;
   google.protobuf.Duration lock_wait = 2;
+  google.protobuf.Duration lock_ttl = 4;
   google.protobuf.Struct properties = 3;
 }
 
 message AcquireLocksResponse {
   bool waiting = 1;
-  map<string,string> locks = 2;
+  map<string, string> locks = 2;
 }
 
 message ReleaseLocksRequest {
@@ -106,7 +104,7 @@ service LockingPluginService {
   rpc ReleaseLocks(ReleaseLocksRequest) returns (ReleaseLocksResponse);
 }
 
-// Deploy Plugin.
+// Deploy plugin.
 
 message AppDeployInfo {
   string plugin = 1;
@@ -167,8 +165,8 @@ message AppState {
 }
 
 message AppBuild {
-	string local_docker_image = 1;
-	string local_docker_hash = 2;
+  string local_docker_image = 1;
+  string local_docker_hash = 2;
 }
 
 message AppPlan {
@@ -227,6 +225,7 @@ message PlanAction {
   string object_id = 4;
   string object_type = 5;
   string object_name = 6;
+  repeated string fields = 8;
   bool critical = 7;
 }
 
@@ -283,15 +282,73 @@ service DeployPluginService {
   rpc Apply(ApplyRequest) returns (stream ApplyResponse);
 }
 
-// DNS Plugin.
+// Logs plugin.
 
-message DomainInfoRequest {
-  repeated string domains = 1;
+enum LogSeverity {
+  LOG_SEVERITY_UNSPECIFIED = 0;
+  LOG_SEVERITY_DEBUG = 100;
+  LOG_SEVERITY_NOTICE = 200;
+  LOG_SEVERITY_INFO = 300;
+  LOG_SEVERITY_WARN = 400;
+  LOG_SEVERITY_ERROR = 500;
 }
 
-message DomainInfoResponse {
-  repeated DomainInfo domains = 1;
+message LogsRequest {
+  repeated App apps = 1;
+  repeated Dependency dependencies = 2;
+  PluginState plugin_state = 3;
+
+  google.protobuf.Timestamp start = 4;
+  google.protobuf.Timestamp end = 5;
+  LogSeverity severity = 6;
+  repeated string contains = 7;
+  repeated string not_contains = 8;
+  string filter = 9;
+  bool follow = 10;
 }
+
+message LogsResponse {
+  message Http {
+    string request_method = 1;
+    string request_url = 2;
+    int64 request_size = 3;
+    int32 status = 4;
+    int64 response_size = 5;
+    string remote_ip = 6;
+    string server_ip = 7;
+    string user_agent = 8;
+    string referer = 9;
+    google.protobuf.Duration latency = 10;
+    string protocol = 11;
+  }
+
+  enum Type {
+    TYPE_UNSPECIFIED = 0;
+    TYPE_STDOUT = 1;
+    TYPE_STDERR = 2;
+  }
+
+  string source = 1;
+  Type type = 2;
+  google.protobuf.Timestamp time = 3;
+  LogSeverity severity = 4;
+  Http http = 5;
+
+  oneof payload {
+    string text = 6;
+    google.protobuf.Struct json = 7;
+  }
+}
+
+service LogsPluginService {
+  rpc Logs(LogsRequest) returns (stream LogsResponse);
+}
+
+// DNS plugin.
+
+message GetDomainInfoRequest { repeated string domains = 1; }
+
+message GetDomainInfoResponse { repeated DomainInfo domains = 1; }
 
 message DomainInfo {
   repeated string domains = 1;
@@ -341,15 +398,14 @@ message ApplyDNSResponse {
   }
 }
 
-
 service DNSPluginService {
-  rpc GetDomainInfo(DomainInfoRequest) returns (DomainInfoResponse);
+  rpc GetDomainInfo(GetDomainInfoRequest) returns (GetDomainInfoResponse);
 
   rpc PlanDNS(PlanDNSRequest) returns (PlanDNSResponse);
   rpc ApplyDNS(ApplyDNSRequest) returns (stream ApplyDNSResponse);
 }
 
-// Run Plugin.
+// Run plugin.
 
 message AppRun {
   App app = 1;
@@ -406,7 +462,8 @@ message RunResponse {
 
 service RunPluginService { rpc Run(RunRequest) returns (stream RunResponse); }
 
-// Command Plugin.
+// Command plugin.
+
 message CommandArgs {
   repeated string positional = 1;
   google.protobuf.Struct flags = 2;

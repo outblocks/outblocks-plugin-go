@@ -131,6 +131,10 @@ func (i *Cmd) Stdout() io.ReadCloser {
 	return i.stdoutPipe
 }
 
+func (i *Cmd) SetStdin(r io.Reader) {
+	i.cmd.Stdin = r
+}
+
 func (i *Cmd) Stderr() io.ReadCloser {
 	return i.stderrPipe
 }

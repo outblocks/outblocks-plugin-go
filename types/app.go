@@ -76,6 +76,19 @@ func (p *ServiceAppProperties) Encode() (map[string]interface{}, error) {
 	return encodeToMap(p)
 }
 
+type ServiceAppDeployOptions struct {
+	CPULimit    float64 `json:"cpu_limit"`
+	MemoryLimit int     `json:"memory_limit"`
+	MinScale    int     `json:"min_scale"`
+	MaxScale    int     `json:"max_scale"`
+}
+
+func NewServiceAppDeployOptions(in map[string]interface{}) (*ServiceAppDeployOptions, error) {
+	o := &ServiceAppDeployOptions{}
+
+	return o, util.MapstructureJSONDecode(in, o)
+}
+
 // Static app properties.
 
 type StaticAppBuild struct {
@@ -113,6 +126,17 @@ func NewStaticAppProperties(in map[string]interface{}) (*StaticAppProperties, er
 
 func (p *StaticAppProperties) Encode() (map[string]interface{}, error) {
 	return encodeToMap(p)
+}
+
+type StaticAppDeployOptions struct {
+	MinScale int `json:"min_scale"`
+	MaxScale int `json:"max_scale"`
+}
+
+func NewStaticAppDeployOptions(in map[string]interface{}) (*StaticAppDeployOptions, error) {
+	o := &StaticAppDeployOptions{}
+
+	return o, util.MapstructureJSONDecode(in, o)
 }
 
 type AppVars map[string]interface{}

@@ -1,25 +1,30 @@
 package types
 
 import (
-	"regexp"
+	"strings"
 
 	apiv1 "github.com/outblocks/outblocks-plugin-go/gen/api/v1"
-	"github.com/outblocks/outblocks-plugin-go/util"
 )
 
 type DomainInfoMatcher struct {
-	matchers map[*regexp.Regexp]*apiv1.DomainInfo
+	normal    map[string]*apiv1.DomainInfo
+	wildcards map[string]*apiv1.DomainInfo
 }
 
 func NewDomainInfoMatcher(domains []*apiv1.DomainInfo) *DomainInfoMatcher {
 	m := &DomainInfoMatcher{
-		matchers: make(map[*regexp.Regexp]*apiv1.DomainInfo),
+		normal:    make(map[string]*apiv1.DomainInfo),
+		wildcards: make(map[string]*apiv1.DomainInfo),
 	}
 
 	for _, o := range domains {
 		for _, d := range o.Domains {
-			re := util.DomainRegex(d)
-			m.matchers[re] = o
+			dparts := strings.SplitN(d, ".", 2)
+			if len(dparts) == 2 && dparts[0] == "*" {
+				m.wildcards[dparts[1]] = o
+			} else {
+				m.normal[d] = o
+			}
 		}
 	}
 
@@ -27,10 +32,16 @@ func NewDomainInfoMatcher(domains []*apiv1.DomainInfo) *DomainInfoMatcher {
 }
 
 func (m *DomainInfoMatcher) Match(v string) *apiv1.DomainInfo {
-	for m, d := range m.matchers {
-		if m.MatchString(v) {
-			return d
-		}
+	di := m.normal[v]
+	if di != nil {
+		return di
+	}
+
+	dparts := strings.SplitN(v, ".", 2)
+
+	di = m.wildcards[dparts[1]]
+	if di != nil {
+		return di
 	}
 
 	return nil

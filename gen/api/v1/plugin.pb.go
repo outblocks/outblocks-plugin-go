@@ -3083,10 +3083,11 @@ type DomainInfo struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Domains   []string `protobuf:"bytes,1,rep,name=domains,proto3" json:"domains,omitempty"`
-	Cert      string   `protobuf:"bytes,2,opt,name=cert,proto3" json:"cert,omitempty"`
-	Key       string   `protobuf:"bytes,3,opt,name=key,proto3" json:"key,omitempty"`
-	DnsPlugin string   `protobuf:"bytes,4,opt,name=dns_plugin,json=dnsPlugin,proto3" json:"dns_plugin,omitempty"`
+	Domains   []string         `protobuf:"bytes,1,rep,name=domains,proto3" json:"domains,omitempty"`
+	Cert      string           `protobuf:"bytes,2,opt,name=cert,proto3" json:"cert,omitempty"`
+	Key       string           `protobuf:"bytes,3,opt,name=key,proto3" json:"key,omitempty"`
+	DnsPlugin string           `protobuf:"bytes,4,opt,name=dns_plugin,json=dnsPlugin,proto3" json:"dns_plugin,omitempty"`
+	Other     *structpb.Struct `protobuf:"bytes,5,opt,name=other,proto3" json:"other,omitempty"`
 }
 
 func (x *DomainInfo) Reset() {
@@ -3147,6 +3148,13 @@ func (x *DomainInfo) GetDnsPlugin() string {
 		return x.DnsPlugin
 	}
 	return ""
+}
+
+func (x *DomainInfo) GetOther() *structpb.Struct {
+	if x != nil {
+		return x.Other
+	}
+	return nil
 }
 
 type DNSRecord struct {
@@ -4919,14 +4927,17 @@ var file_api_v1_plugin_proto_rawDesc = []byte{
 	0x4e, 0x53, 0x50, 0x45, 0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x0f, 0x0a, 0x0b,
 	0x54, 0x59, 0x50, 0x45, 0x5f, 0x53, 0x54, 0x44, 0x4f, 0x55, 0x54, 0x10, 0x01, 0x12, 0x0f, 0x0a,
 	0x0b, 0x54, 0x59, 0x50, 0x45, 0x5f, 0x53, 0x54, 0x44, 0x45, 0x52, 0x52, 0x10, 0x02, 0x42, 0x09,
-	0x0a, 0x07, 0x70, 0x61, 0x79, 0x6c, 0x6f, 0x61, 0x64, 0x22, 0x6b, 0x0a, 0x0a, 0x44, 0x6f, 0x6d,
-	0x61, 0x69, 0x6e, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x18, 0x0a, 0x07, 0x64, 0x6f, 0x6d, 0x61, 0x69,
-	0x6e, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x09, 0x52, 0x07, 0x64, 0x6f, 0x6d, 0x61, 0x69, 0x6e,
-	0x73, 0x12, 0x12, 0x0a, 0x04, 0x63, 0x65, 0x72, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52,
-	0x04, 0x63, 0x65, 0x72, 0x74, 0x12, 0x10, 0x0a, 0x03, 0x6b, 0x65, 0x79, 0x18, 0x03, 0x20, 0x01,
-	0x28, 0x09, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x12, 0x1d, 0x0a, 0x0a, 0x64, 0x6e, 0x73, 0x5f, 0x70,
-	0x6c, 0x75, 0x67, 0x69, 0x6e, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x64, 0x6e, 0x73,
-	0x50, 0x6c, 0x75, 0x67, 0x69, 0x6e, 0x22, 0xc8, 0x01, 0x0a, 0x09, 0x44, 0x4e, 0x53, 0x52, 0x65,
+	0x0a, 0x07, 0x70, 0x61, 0x79, 0x6c, 0x6f, 0x61, 0x64, 0x22, 0x9a, 0x01, 0x0a, 0x0a, 0x44, 0x6f,
+	0x6d, 0x61, 0x69, 0x6e, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x18, 0x0a, 0x07, 0x64, 0x6f, 0x6d, 0x61,
+	0x69, 0x6e, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x09, 0x52, 0x07, 0x64, 0x6f, 0x6d, 0x61, 0x69,
+	0x6e, 0x73, 0x12, 0x12, 0x0a, 0x04, 0x63, 0x65, 0x72, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x04, 0x63, 0x65, 0x72, 0x74, 0x12, 0x10, 0x0a, 0x03, 0x6b, 0x65, 0x79, 0x18, 0x03, 0x20,
+	0x01, 0x28, 0x09, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x12, 0x1d, 0x0a, 0x0a, 0x64, 0x6e, 0x73, 0x5f,
+	0x70, 0x6c, 0x75, 0x67, 0x69, 0x6e, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x64, 0x6e,
+	0x73, 0x50, 0x6c, 0x75, 0x67, 0x69, 0x6e, 0x12, 0x2d, 0x0a, 0x05, 0x6f, 0x74, 0x68, 0x65, 0x72,
+	0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x17, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x53, 0x74, 0x72, 0x75, 0x63, 0x74, 0x52,
+	0x05, 0x6f, 0x74, 0x68, 0x65, 0x72, 0x22, 0xc8, 0x01, 0x0a, 0x09, 0x44, 0x4e, 0x53, 0x52, 0x65,
 	0x63, 0x6f, 0x72, 0x64, 0x12, 0x16, 0x0a, 0x06, 0x72, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x18, 0x01,
 	0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x72, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x12, 0x14, 0x0a, 0x05,
 	0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x76, 0x61, 0x6c,
@@ -5386,85 +5397,86 @@ var file_api_v1_plugin_proto_depIdxs = []int32{
 	1,   // 67: api.v1.LogsResponse.severity:type_name -> api.v1.LogSeverity
 	74,  // 68: api.v1.LogsResponse.http:type_name -> api.v1.LogsResponse.Http
 	81,  // 69: api.v1.LogsResponse.json:type_name -> google.protobuf.Struct
-	4,   // 70: api.v1.DNSRecord.type:type_name -> api.v1.DNSRecord.Type
-	34,  // 71: api.v1.ApplyDNSDoneResponse.state:type_name -> api.v1.PluginState
-	47,  // 72: api.v1.ApplyDNSDoneResponse.dns_records:type_name -> api.v1.DNSRecord
-	47,  // 73: api.v1.PlanDNSRequest.dns_records:type_name -> api.v1.DNSRecord
-	46,  // 74: api.v1.PlanDNSRequest.domains:type_name -> api.v1.DomainInfo
-	34,  // 75: api.v1.PlanDNSRequest.state:type_name -> api.v1.PluginState
-	81,  // 76: api.v1.PlanDNSRequest.args:type_name -> google.protobuf.Struct
-	37,  // 77: api.v1.PlanDNSResponse.dns:type_name -> api.v1.Plan
-	34,  // 78: api.v1.PlanDNSResponse.state:type_name -> api.v1.PluginState
-	47,  // 79: api.v1.PlanDNSResponse.dns_records:type_name -> api.v1.DNSRecord
-	47,  // 80: api.v1.ApplyDNSRequest.dns_records:type_name -> api.v1.DNSRecord
-	46,  // 81: api.v1.ApplyDNSRequest.domains:type_name -> api.v1.DomainInfo
-	34,  // 82: api.v1.ApplyDNSRequest.state:type_name -> api.v1.PluginState
-	81,  // 83: api.v1.ApplyDNSRequest.args:type_name -> google.protobuf.Struct
-	41,  // 84: api.v1.ApplyDNSResponse.action:type_name -> api.v1.ApplyActionResponse
-	48,  // 85: api.v1.ApplyDNSResponse.done:type_name -> api.v1.ApplyDNSDoneResponse
-	25,  // 86: api.v1.AppRun.app:type_name -> api.v1.App
-	75,  // 87: api.v1.AppRun.env:type_name -> api.v1.AppRun.EnvEntry
-	81,  // 88: api.v1.AppRun.other:type_name -> google.protobuf.Struct
-	31,  // 89: api.v1.DependencyRun.dependency:type_name -> api.v1.Dependency
-	53,  // 90: api.v1.RunRequest.apps:type_name -> api.v1.AppRun
-	54,  // 91: api.v1.RunRequest.dependencies:type_name -> api.v1.DependencyRun
-	76,  // 92: api.v1.RunRequest.hosts:type_name -> api.v1.RunRequest.HostsEntry
-	81,  // 93: api.v1.RunRequest.args:type_name -> google.protobuf.Struct
-	77,  // 94: api.v1.RunVars.vars:type_name -> api.v1.RunVars.VarsEntry
-	78,  // 95: api.v1.RunStartResponse.vars:type_name -> api.v1.RunStartResponse.VarsEntry
-	5,   // 96: api.v1.RunOutputResponse.source:type_name -> api.v1.RunOutputResponse.Source
-	6,   // 97: api.v1.RunOutputResponse.stream:type_name -> api.v1.RunOutputResponse.Stream
-	57,  // 98: api.v1.RunResponse.start:type_name -> api.v1.RunStartResponse
-	58,  // 99: api.v1.RunResponse.output:type_name -> api.v1.RunOutputResponse
-	81,  // 100: api.v1.CommandArgs.flags:type_name -> google.protobuf.Struct
-	60,  // 101: api.v1.CommandRequest.args:type_name -> api.v1.CommandArgs
-	79,  // 102: api.v1.CommandRequest.app_states:type_name -> api.v1.CommandRequest.AppStatesEntry
-	80,  // 103: api.v1.CommandRequest.dependency_states:type_name -> api.v1.CommandRequest.DependencyStatesEntry
-	34,  // 104: api.v1.CommandRequest.plugin_state:type_name -> api.v1.PluginState
-	24,  // 105: api.v1.App.NeedsEntry.value:type_name -> api.v1.AppNeed
-	28,  // 106: api.v1.PlanResponse.AppStatesEntry.value:type_name -> api.v1.AppState
-	32,  // 107: api.v1.PlanResponse.DependencyStatesEntry.value:type_name -> api.v1.DependencyState
-	28,  // 108: api.v1.ApplyDoneResponse.AppStatesEntry.value:type_name -> api.v1.AppState
-	32,  // 109: api.v1.ApplyDoneResponse.DependencyStatesEntry.value:type_name -> api.v1.DependencyState
-	82,  // 110: api.v1.LogsResponse.Http.latency:type_name -> google.protobuf.Duration
-	56,  // 111: api.v1.RunStartResponse.VarsEntry.value:type_name -> api.v1.RunVars
-	28,  // 112: api.v1.CommandRequest.AppStatesEntry.value:type_name -> api.v1.AppState
-	32,  // 113: api.v1.CommandRequest.DependencyStatesEntry.value:type_name -> api.v1.DependencyState
-	7,   // 114: api.v1.BasicPluginService.Init:input_type -> api.v1.InitRequest
-	9,   // 115: api.v1.BasicPluginService.Start:input_type -> api.v1.StartRequest
-	11,  // 116: api.v1.BasicPluginService.ProjectInit:input_type -> api.v1.ProjectInitRequest
-	13,  // 117: api.v1.StatePluginService.GetState:input_type -> api.v1.GetStateRequest
-	15,  // 118: api.v1.StatePluginService.SaveState:input_type -> api.v1.SaveStateRequest
-	17,  // 119: api.v1.StatePluginService.ReleaseStateLock:input_type -> api.v1.ReleaseStateLockRequest
-	19,  // 120: api.v1.LockingPluginService.AcquireLocks:input_type -> api.v1.AcquireLocksRequest
-	21,  // 121: api.v1.LockingPluginService.ReleaseLocks:input_type -> api.v1.ReleaseLocksRequest
-	35,  // 122: api.v1.DeployPluginService.Plan:input_type -> api.v1.PlanRequest
-	39,  // 123: api.v1.DeployPluginService.Apply:input_type -> api.v1.ApplyRequest
-	44,  // 124: api.v1.LogsPluginService.Logs:input_type -> api.v1.LogsRequest
-	49,  // 125: api.v1.DNSPluginService.PlanDNS:input_type -> api.v1.PlanDNSRequest
-	51,  // 126: api.v1.DNSPluginService.ApplyDNS:input_type -> api.v1.ApplyDNSRequest
-	55,  // 127: api.v1.RunPluginService.Run:input_type -> api.v1.RunRequest
-	61,  // 128: api.v1.CommandPluginService.Command:input_type -> api.v1.CommandRequest
-	8,   // 129: api.v1.BasicPluginService.Init:output_type -> api.v1.InitResponse
-	10,  // 130: api.v1.BasicPluginService.Start:output_type -> api.v1.StartResponse
-	12,  // 131: api.v1.BasicPluginService.ProjectInit:output_type -> api.v1.ProjectInitResponse
-	14,  // 132: api.v1.StatePluginService.GetState:output_type -> api.v1.GetStateResponse
-	16,  // 133: api.v1.StatePluginService.SaveState:output_type -> api.v1.SaveStateResponse
-	18,  // 134: api.v1.StatePluginService.ReleaseStateLock:output_type -> api.v1.ReleaseStateLockResponse
-	20,  // 135: api.v1.LockingPluginService.AcquireLocks:output_type -> api.v1.AcquireLocksResponse
-	22,  // 136: api.v1.LockingPluginService.ReleaseLocks:output_type -> api.v1.ReleaseLocksResponse
-	38,  // 137: api.v1.DeployPluginService.Plan:output_type -> api.v1.PlanResponse
-	43,  // 138: api.v1.DeployPluginService.Apply:output_type -> api.v1.ApplyResponse
-	45,  // 139: api.v1.LogsPluginService.Logs:output_type -> api.v1.LogsResponse
-	50,  // 140: api.v1.DNSPluginService.PlanDNS:output_type -> api.v1.PlanDNSResponse
-	52,  // 141: api.v1.DNSPluginService.ApplyDNS:output_type -> api.v1.ApplyDNSResponse
-	59,  // 142: api.v1.RunPluginService.Run:output_type -> api.v1.RunResponse
-	62,  // 143: api.v1.CommandPluginService.Command:output_type -> api.v1.CommandResponse
-	129, // [129:144] is the sub-list for method output_type
-	114, // [114:129] is the sub-list for method input_type
-	114, // [114:114] is the sub-list for extension type_name
-	114, // [114:114] is the sub-list for extension extendee
-	0,   // [0:114] is the sub-list for field type_name
+	81,  // 70: api.v1.DomainInfo.other:type_name -> google.protobuf.Struct
+	4,   // 71: api.v1.DNSRecord.type:type_name -> api.v1.DNSRecord.Type
+	34,  // 72: api.v1.ApplyDNSDoneResponse.state:type_name -> api.v1.PluginState
+	47,  // 73: api.v1.ApplyDNSDoneResponse.dns_records:type_name -> api.v1.DNSRecord
+	47,  // 74: api.v1.PlanDNSRequest.dns_records:type_name -> api.v1.DNSRecord
+	46,  // 75: api.v1.PlanDNSRequest.domains:type_name -> api.v1.DomainInfo
+	34,  // 76: api.v1.PlanDNSRequest.state:type_name -> api.v1.PluginState
+	81,  // 77: api.v1.PlanDNSRequest.args:type_name -> google.protobuf.Struct
+	37,  // 78: api.v1.PlanDNSResponse.dns:type_name -> api.v1.Plan
+	34,  // 79: api.v1.PlanDNSResponse.state:type_name -> api.v1.PluginState
+	47,  // 80: api.v1.PlanDNSResponse.dns_records:type_name -> api.v1.DNSRecord
+	47,  // 81: api.v1.ApplyDNSRequest.dns_records:type_name -> api.v1.DNSRecord
+	46,  // 82: api.v1.ApplyDNSRequest.domains:type_name -> api.v1.DomainInfo
+	34,  // 83: api.v1.ApplyDNSRequest.state:type_name -> api.v1.PluginState
+	81,  // 84: api.v1.ApplyDNSRequest.args:type_name -> google.protobuf.Struct
+	41,  // 85: api.v1.ApplyDNSResponse.action:type_name -> api.v1.ApplyActionResponse
+	48,  // 86: api.v1.ApplyDNSResponse.done:type_name -> api.v1.ApplyDNSDoneResponse
+	25,  // 87: api.v1.AppRun.app:type_name -> api.v1.App
+	75,  // 88: api.v1.AppRun.env:type_name -> api.v1.AppRun.EnvEntry
+	81,  // 89: api.v1.AppRun.other:type_name -> google.protobuf.Struct
+	31,  // 90: api.v1.DependencyRun.dependency:type_name -> api.v1.Dependency
+	53,  // 91: api.v1.RunRequest.apps:type_name -> api.v1.AppRun
+	54,  // 92: api.v1.RunRequest.dependencies:type_name -> api.v1.DependencyRun
+	76,  // 93: api.v1.RunRequest.hosts:type_name -> api.v1.RunRequest.HostsEntry
+	81,  // 94: api.v1.RunRequest.args:type_name -> google.protobuf.Struct
+	77,  // 95: api.v1.RunVars.vars:type_name -> api.v1.RunVars.VarsEntry
+	78,  // 96: api.v1.RunStartResponse.vars:type_name -> api.v1.RunStartResponse.VarsEntry
+	5,   // 97: api.v1.RunOutputResponse.source:type_name -> api.v1.RunOutputResponse.Source
+	6,   // 98: api.v1.RunOutputResponse.stream:type_name -> api.v1.RunOutputResponse.Stream
+	57,  // 99: api.v1.RunResponse.start:type_name -> api.v1.RunStartResponse
+	58,  // 100: api.v1.RunResponse.output:type_name -> api.v1.RunOutputResponse
+	81,  // 101: api.v1.CommandArgs.flags:type_name -> google.protobuf.Struct
+	60,  // 102: api.v1.CommandRequest.args:type_name -> api.v1.CommandArgs
+	79,  // 103: api.v1.CommandRequest.app_states:type_name -> api.v1.CommandRequest.AppStatesEntry
+	80,  // 104: api.v1.CommandRequest.dependency_states:type_name -> api.v1.CommandRequest.DependencyStatesEntry
+	34,  // 105: api.v1.CommandRequest.plugin_state:type_name -> api.v1.PluginState
+	24,  // 106: api.v1.App.NeedsEntry.value:type_name -> api.v1.AppNeed
+	28,  // 107: api.v1.PlanResponse.AppStatesEntry.value:type_name -> api.v1.AppState
+	32,  // 108: api.v1.PlanResponse.DependencyStatesEntry.value:type_name -> api.v1.DependencyState
+	28,  // 109: api.v1.ApplyDoneResponse.AppStatesEntry.value:type_name -> api.v1.AppState
+	32,  // 110: api.v1.ApplyDoneResponse.DependencyStatesEntry.value:type_name -> api.v1.DependencyState
+	82,  // 111: api.v1.LogsResponse.Http.latency:type_name -> google.protobuf.Duration
+	56,  // 112: api.v1.RunStartResponse.VarsEntry.value:type_name -> api.v1.RunVars
+	28,  // 113: api.v1.CommandRequest.AppStatesEntry.value:type_name -> api.v1.AppState
+	32,  // 114: api.v1.CommandRequest.DependencyStatesEntry.value:type_name -> api.v1.DependencyState
+	7,   // 115: api.v1.BasicPluginService.Init:input_type -> api.v1.InitRequest
+	9,   // 116: api.v1.BasicPluginService.Start:input_type -> api.v1.StartRequest
+	11,  // 117: api.v1.BasicPluginService.ProjectInit:input_type -> api.v1.ProjectInitRequest
+	13,  // 118: api.v1.StatePluginService.GetState:input_type -> api.v1.GetStateRequest
+	15,  // 119: api.v1.StatePluginService.SaveState:input_type -> api.v1.SaveStateRequest
+	17,  // 120: api.v1.StatePluginService.ReleaseStateLock:input_type -> api.v1.ReleaseStateLockRequest
+	19,  // 121: api.v1.LockingPluginService.AcquireLocks:input_type -> api.v1.AcquireLocksRequest
+	21,  // 122: api.v1.LockingPluginService.ReleaseLocks:input_type -> api.v1.ReleaseLocksRequest
+	35,  // 123: api.v1.DeployPluginService.Plan:input_type -> api.v1.PlanRequest
+	39,  // 124: api.v1.DeployPluginService.Apply:input_type -> api.v1.ApplyRequest
+	44,  // 125: api.v1.LogsPluginService.Logs:input_type -> api.v1.LogsRequest
+	49,  // 126: api.v1.DNSPluginService.PlanDNS:input_type -> api.v1.PlanDNSRequest
+	51,  // 127: api.v1.DNSPluginService.ApplyDNS:input_type -> api.v1.ApplyDNSRequest
+	55,  // 128: api.v1.RunPluginService.Run:input_type -> api.v1.RunRequest
+	61,  // 129: api.v1.CommandPluginService.Command:input_type -> api.v1.CommandRequest
+	8,   // 130: api.v1.BasicPluginService.Init:output_type -> api.v1.InitResponse
+	10,  // 131: api.v1.BasicPluginService.Start:output_type -> api.v1.StartResponse
+	12,  // 132: api.v1.BasicPluginService.ProjectInit:output_type -> api.v1.ProjectInitResponse
+	14,  // 133: api.v1.StatePluginService.GetState:output_type -> api.v1.GetStateResponse
+	16,  // 134: api.v1.StatePluginService.SaveState:output_type -> api.v1.SaveStateResponse
+	18,  // 135: api.v1.StatePluginService.ReleaseStateLock:output_type -> api.v1.ReleaseStateLockResponse
+	20,  // 136: api.v1.LockingPluginService.AcquireLocks:output_type -> api.v1.AcquireLocksResponse
+	22,  // 137: api.v1.LockingPluginService.ReleaseLocks:output_type -> api.v1.ReleaseLocksResponse
+	38,  // 138: api.v1.DeployPluginService.Plan:output_type -> api.v1.PlanResponse
+	43,  // 139: api.v1.DeployPluginService.Apply:output_type -> api.v1.ApplyResponse
+	45,  // 140: api.v1.LogsPluginService.Logs:output_type -> api.v1.LogsResponse
+	50,  // 141: api.v1.DNSPluginService.PlanDNS:output_type -> api.v1.PlanDNSResponse
+	52,  // 142: api.v1.DNSPluginService.ApplyDNS:output_type -> api.v1.ApplyDNSResponse
+	59,  // 143: api.v1.RunPluginService.Run:output_type -> api.v1.RunResponse
+	62,  // 144: api.v1.CommandPluginService.Command:output_type -> api.v1.CommandResponse
+	130, // [130:145] is the sub-list for method output_type
+	115, // [115:130] is the sub-list for method input_type
+	115, // [115:115] is the sub-list for extension type_name
+	115, // [115:115] is the sub-list for extension extendee
+	0,   // [0:115] is the sub-list for field type_name
 }
 
 func init() { file_api_v1_plugin_proto_init() }

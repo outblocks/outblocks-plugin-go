@@ -765,7 +765,6 @@ var LogsPluginService_ServiceDesc = grpc.ServiceDesc{
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type DNSPluginServiceClient interface {
-	GetDomainInfo(ctx context.Context, in *GetDomainInfoRequest, opts ...grpc.CallOption) (*GetDomainInfoResponse, error)
 	PlanDNS(ctx context.Context, in *PlanDNSRequest, opts ...grpc.CallOption) (*PlanDNSResponse, error)
 	ApplyDNS(ctx context.Context, in *ApplyDNSRequest, opts ...grpc.CallOption) (DNSPluginService_ApplyDNSClient, error)
 }
@@ -776,15 +775,6 @@ type dNSPluginServiceClient struct {
 
 func NewDNSPluginServiceClient(cc grpc.ClientConnInterface) DNSPluginServiceClient {
 	return &dNSPluginServiceClient{cc}
-}
-
-func (c *dNSPluginServiceClient) GetDomainInfo(ctx context.Context, in *GetDomainInfoRequest, opts ...grpc.CallOption) (*GetDomainInfoResponse, error) {
-	out := new(GetDomainInfoResponse)
-	err := c.cc.Invoke(ctx, "/api.v1.DNSPluginService/GetDomainInfo", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *dNSPluginServiceClient) PlanDNS(ctx context.Context, in *PlanDNSRequest, opts ...grpc.CallOption) (*PlanDNSResponse, error) {
@@ -832,7 +822,6 @@ func (x *dNSPluginServiceApplyDNSClient) Recv() (*ApplyDNSResponse, error) {
 // All implementations should embed UnimplementedDNSPluginServiceServer
 // for forward compatibility
 type DNSPluginServiceServer interface {
-	GetDomainInfo(context.Context, *GetDomainInfoRequest) (*GetDomainInfoResponse, error)
 	PlanDNS(context.Context, *PlanDNSRequest) (*PlanDNSResponse, error)
 	ApplyDNS(*ApplyDNSRequest, DNSPluginService_ApplyDNSServer) error
 }
@@ -841,9 +830,6 @@ type DNSPluginServiceServer interface {
 type UnimplementedDNSPluginServiceServer struct {
 }
 
-func (UnimplementedDNSPluginServiceServer) GetDomainInfo(context.Context, *GetDomainInfoRequest) (*GetDomainInfoResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetDomainInfo not implemented")
-}
 func (UnimplementedDNSPluginServiceServer) PlanDNS(context.Context, *PlanDNSRequest) (*PlanDNSResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PlanDNS not implemented")
 }
@@ -860,24 +846,6 @@ type UnsafeDNSPluginServiceServer interface {
 
 func RegisterDNSPluginServiceServer(s grpc.ServiceRegistrar, srv DNSPluginServiceServer) {
 	s.RegisterService(&DNSPluginService_ServiceDesc, srv)
-}
-
-func _DNSPluginService_GetDomainInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetDomainInfoRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DNSPluginServiceServer).GetDomainInfo(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api.v1.DNSPluginService/GetDomainInfo",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DNSPluginServiceServer).GetDomainInfo(ctx, req.(*GetDomainInfoRequest))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _DNSPluginService_PlanDNS_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -926,10 +894,6 @@ var DNSPluginService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "api.v1.DNSPluginService",
 	HandlerType: (*DNSPluginServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "GetDomainInfo",
-			Handler:    _DNSPluginService_GetDomainInfo_Handler,
-		},
 		{
 			MethodName: "PlanDNS",
 			Handler:    _DNSPluginService_PlanDNS_Handler,

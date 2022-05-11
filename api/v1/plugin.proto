@@ -126,7 +126,6 @@ message App {
   string path_redirect = 6;
   map<string, string> env = 7;
   string deploy_plugin = 8;
-  string dns_plugin = 9;
   string run_plugin = 10;
   AppDeployInfo deploy = 12;
   map<string, AppNeed> needs = 13;
@@ -205,7 +204,7 @@ message PlanRequest {
 
   bool destroy = 4;
   bool verify = 5;
-  PluginState plugin_state = 6;
+  PluginState state = 6;
   google.protobuf.Struct args = 7;
 }
 
@@ -246,7 +245,7 @@ message ApplyRequest {
   repeated DomainInfo domains = 3;
 
   bool destroy = 4;
-  PluginState plugin_state = 5;
+  PluginState state = 5;
   google.protobuf.Struct args = 6;
 }
 
@@ -296,7 +295,7 @@ enum LogSeverity {
 message LogsRequest {
   repeated App apps = 1;
   repeated Dependency dependencies = 2;
-  PluginState plugin_state = 3;
+  PluginState state = 3;
 
   google.protobuf.Timestamp start = 4;
   google.protobuf.Timestamp end = 5;
@@ -346,14 +345,11 @@ service LogsPluginService {
 
 // DNS plugin.
 
-message GetDomainInfoRequest { repeated string domains = 1; }
-
-message GetDomainInfoResponse { repeated DomainInfo domains = 1; }
-
 message DomainInfo {
   repeated string domains = 1;
   string cert = 2;
   string key = 3;
+  string dns_plugin = 4;
 }
 
 message DNSRecord {
@@ -370,37 +366,45 @@ message DNSRecord {
   bool created = 4;
 }
 
+message ApplyDNSDoneResponse {
+  PluginState state = 1;
+  repeated DNSRecord dns_records = 2;
+}
+
 message PlanDNSRequest {
   repeated DNSRecord dns_records = 1;
+  repeated DomainInfo domains = 2;
 
-  bool verify = 2;
-  PluginState state = 3;
-  google.protobuf.Struct args = 4;
+  bool destroy = 3;
+  bool verify = 4;
+  PluginState state = 5;
+  google.protobuf.Struct args = 6;
 }
 
 message PlanDNSResponse {
   Plan dns = 1;
 
   PluginState state = 2;
+  repeated DNSRecord dns_records = 3;
 }
 
 message ApplyDNSRequest {
   repeated DNSRecord dns_records = 1;
+  repeated DomainInfo domains = 2;
 
-  PluginState state = 2;
-  google.protobuf.Struct args = 3;
+  bool destroy = 3;
+  PluginState state = 4;
+  google.protobuf.Struct args = 5;
 }
 
 message ApplyDNSResponse {
   oneof response {
     ApplyActionResponse action = 1;
-    ApplyDoneResponse done = 2;
+    ApplyDNSDoneResponse done = 2;
   }
 }
 
 service DNSPluginService {
-  rpc GetDomainInfo(GetDomainInfoRequest) returns (GetDomainInfoResponse);
-
   rpc PlanDNS(PlanDNSRequest) returns (PlanDNSResponse);
   rpc ApplyDNS(ApplyDNSRequest) returns (stream ApplyDNSResponse);
 }

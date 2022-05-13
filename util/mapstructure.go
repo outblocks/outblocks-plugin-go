@@ -36,6 +36,7 @@ func MapstructureDecode(in, out interface{}, tag string) error {
 
 			return to.Interface(), nil
 		},
+		Squash:           true,
 		Metadata:         nil,
 		Result:           out,
 		TagName:          tag,

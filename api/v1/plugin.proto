@@ -205,6 +205,7 @@ message PlanRequest {
   bool destroy = 4;
   bool verify = 5;
   PluginState state = 6;
+  int32 priority = 8;
   google.protobuf.Struct args = 7;
 }
 
@@ -233,6 +234,7 @@ message Plan { repeated PlanAction actions = 1; }
 message PlanResponse {
   Plan deploy = 1;
 
+  repeated DomainInfo domains = 2;
   PluginState state = 3;
   map<string, AppState> app_states = 4;
   map<string, DependencyState> dependency_states = 5;
@@ -246,6 +248,7 @@ message ApplyRequest {
 
   bool destroy = 4;
   PluginState state = 5;
+  int32 priority = 7;
   google.protobuf.Struct args = 6;
 }
 
@@ -264,6 +267,7 @@ message ApplyActionResponse { repeated ApplyAction actions = 1; }
 
 message ApplyDoneResponse {
   PluginState state = 1;
+  repeated DomainInfo domains = 5;
   map<string, AppState> app_states = 2;
   map<string, DependencyState> dependency_states = 3;
   repeated DNSRecord dns_records = 4;
@@ -369,7 +373,8 @@ message DNSRecord {
 
 message ApplyDNSDoneResponse {
   PluginState state = 1;
-  repeated DNSRecord dns_records = 2;
+  repeated DomainInfo domains = 2;
+  repeated DNSRecord dns_records = 3;
 }
 
 message PlanDNSRequest {
@@ -386,7 +391,8 @@ message PlanDNSResponse {
   Plan dns = 1;
 
   PluginState state = 2;
-  repeated DNSRecord dns_records = 3;
+  repeated DomainInfo domains = 3;
+  repeated DNSRecord dns_records = 4;
 }
 
 message ApplyDNSRequest {
@@ -489,3 +495,39 @@ message CommandResponse {}
 service CommandPluginService {
   rpc Command(CommandRequest) returns (CommandResponse);
 }
+
+
+// Deploy Hooks
+
+message DeployHookRequest {
+  enum Stage {
+    STAGE_UNSPECIFIED = 0;
+    STAGE_PRE_PLAN = 1;
+    STAGE_PRE_APPLY = 2;
+    STAGE_POST_APPLY = 3;
+    STAGE_POST_DEPLOY = 4;
+  }
+
+  Stage stage = 1;
+  repeated AppPlan apps = 2;
+  repeated DependencyPlan dependencies = 3;
+  repeated DomainInfo domains = 4;
+
+  bool destroy = 5;
+  bool verify = 6;
+  PluginState state = 7;
+  google.protobuf.Struct args = 8;
+}
+
+message DeployHookResponse {
+  PluginState state = 1;
+  repeated DomainInfo domains = 2;
+  map<string, AppState> app_states = 3;
+  map<string, DependencyState> dependency_states = 4;
+  repeated DNSRecord dns_records = 5;
+}
+
+service DeployHookService {
+  rpc DeployHook(DeployHookRequest) returns (DeployHookResponse);
+}
+

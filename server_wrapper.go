@@ -47,6 +47,10 @@ type LockingPluginHandler interface {
 	apiv1.LockingPluginServiceServer
 }
 
+type DeployHookHandler interface {
+	apiv1.DeployHookServiceServer
+}
+
 type Cleanup interface {
 	Cleanup() error
 }
@@ -76,12 +80,8 @@ type deployPluginHandlerWrapper struct {
 	RegistryOptions RegistryOptions
 }
 
-func (s *deployPluginHandlerWrapper) createRegistry(apps []*apiv1.AppPlan, destroy, read bool) *registry.Registry {
-	reg := registry.NewRegistry(&registry.Options{
-		Destroy:         destroy,
-		Read:            read,
-		AllowDuplicates: s.RegistryOptions.AllowDuplicates,
-	})
+func createRegistry(opts *registry.Options, apps []*apiv1.AppPlan) *registry.Registry {
+	reg := registry.NewRegistry(opts)
 
 	for _, plan := range apps {
 		if plan.Skip {
@@ -91,6 +91,15 @@ func (s *deployPluginHandlerWrapper) createRegistry(apps []*apiv1.AppPlan, destr
 
 	return reg
 }
+
+func (s *deployPluginHandlerWrapper) createRegistry(apps []*apiv1.AppPlan, destroy, read bool) *registry.Registry {
+	return createRegistry(&registry.Options{
+		Read:            read,
+		Destroy:         destroy,
+		AllowDuplicates: s.RegistryOptions.AllowDuplicates,
+	}, apps)
+}
+
 func (s *deployPluginHandlerWrapper) Plan(ctx context.Context, r *apiv1.PlanRequest) (*apiv1.PlanResponse, error) {
 	reg := s.createRegistry(r.Apps, r.Destroy, r.Verify)
 	return s.DeployPluginHandler.Plan(ctx, reg, r)
@@ -108,13 +117,11 @@ type dnsPluginHandlerWrapper struct {
 }
 
 func (s *dnsPluginHandlerWrapper) createRegistry(read, destroy bool) *registry.Registry {
-	reg := registry.NewRegistry(&registry.Options{
+	return createRegistry(&registry.Options{
 		Read:            read,
 		Destroy:         destroy,
 		AllowDuplicates: s.RegistryOptions.AllowDuplicates,
-	})
-
-	return reg
+	}, nil)
 }
 
 func (s *dnsPluginHandlerWrapper) PlanDNS(ctx context.Context, r *apiv1.PlanDNSRequest) (*apiv1.PlanDNSResponse, error) {
@@ -125,28 +132,4 @@ func (s *dnsPluginHandlerWrapper) PlanDNS(ctx context.Context, r *apiv1.PlanDNSR
 func (s *dnsPluginHandlerWrapper) ApplyDNS(r *apiv1.ApplyDNSRequest, stream apiv1.DNSPluginService_ApplyDNSServer) error {
 	reg := s.createRegistry(false, r.Destroy)
 	return s.DNSPluginHandler.ApplyDNS(r, reg, stream)
-}
-
-func DefaultRegistryApplyCallback(stream apiv1.DeployPluginService_ApplyServer) func(*apiv1.ApplyAction) {
-	return func(a *apiv1.ApplyAction) {
-		_ = stream.Send(&apiv1.ApplyResponse{
-			Response: &apiv1.ApplyResponse_Action{
-				Action: &apiv1.ApplyActionResponse{
-					Actions: []*apiv1.ApplyAction{a},
-				},
-			},
-		})
-	}
-}
-
-func DefaultRegistryApplyDNSCallback(stream apiv1.DNSPluginService_ApplyDNSServer) func(*apiv1.ApplyAction) {
-	return func(a *apiv1.ApplyAction) {
-		_ = stream.Send(&apiv1.ApplyDNSResponse{
-			Response: &apiv1.ApplyDNSResponse_Action{
-				Action: &apiv1.ApplyActionResponse{
-					Actions: []*apiv1.ApplyAction{a},
-				},
-			},
-		})
-	}
 }

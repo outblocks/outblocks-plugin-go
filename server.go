@@ -103,6 +103,10 @@ func (s *Server) serve(handler BasicPluginHandler, opts ...ServerOption) error {
 		apiv1.RegisterLockingPluginServiceServer(grpcServer, srv)
 	}
 
+	if srv, ok := handler.(DeployHookHandler); ok {
+		apiv1.RegisterDeployHookServiceServer(grpcServer, srv)
+	}
+
 	// Handle SIGINT and SIGTERM.
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)

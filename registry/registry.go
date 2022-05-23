@@ -38,6 +38,7 @@ type Registry struct {
 	types         map[string]*ResourceTypeInfo
 	fieldMap      map[interface{}]*ResourceWrapper
 	skippedAppIDs map[string]bool
+	partition     string
 
 	resources       map[ResourceID]*ResourceWrapper
 	loadedResources map[ResourceID]*ResourceSerialized
@@ -84,6 +85,13 @@ func mapFieldTypeInfo(fieldsMap map[string]*FieldTypeInfo, t reflect.Type, prefi
 			DefaultSet:  defSet,
 		}
 	}
+}
+
+func (r *Registry) Partition(p string) *Registry {
+	ret := *r
+	ret.partition = p
+
+	return &ret
 }
 
 func (r *Registry) RegisterType(o Resource) {
@@ -194,6 +202,7 @@ func (r *Registry) createResourceID(source, namespace, id string, o Resource) Re
 		Namespace: namespace,
 		Type:      t.Name(),
 		Source:    source,
+		Partition: r.partition,
 	}
 }
 
@@ -596,7 +605,7 @@ func (r *Registry) read(ctx context.Context, meta interface{}) error {
 	r.checkResources(r.resources)
 
 	err := r.processInOrder(ctx, defaultConcurrency, func(res *ResourceWrapper) error {
-		if res.IsSkipped {
+		if res.IsSkipped || res.Partition != r.partition {
 			return nil
 		}
 
@@ -609,17 +618,16 @@ func (r *Registry) read(ctx context.Context, meta interface{}) error {
 		mu.Lock()
 		defer mu.Unlock()
 
-		// Skip reading objects that do not have unique id defined.
-		if rr, ok := res.Resource.(ResourceReference); ok && rr.ReferenceID() == "" {
-			return nil
-		}
+		// Only merge objects that do have unique id defined.
+		if rr, ok := res.Resource.(ResourceReference); ok && rr.ReferenceID() != "" {
+			obsoleteID, err := mergeUniqueResource(res, resourceUniqueIDMap)
+			if err != nil {
+				return err
+			}
 
-		obsoleteID, err := mergeUniqueResource(res, resourceUniqueIDMap)
-		if err != nil {
-			return err
-		}
-		if obsoleteID != nil {
-			obsoleteIDs = append(obsoleteIDs, obsoleteID)
+			if obsoleteID != nil {
+				obsoleteIDs = append(obsoleteIDs, obsoleteID)
+			}
 		}
 
 		return rr.Read(ctx, meta)
@@ -826,7 +834,7 @@ func (r *Registry) Diff(ctx context.Context) ([]*Diff, error) {
 
 	// Process actual diff.
 	err := r.processInOrder(ctx, -1, func(res *ResourceWrapper) error {
-		if res.IsSkipped {
+		if res.IsSkipped || res.Partition != r.partition {
 			return nil
 		}
 
@@ -1189,4 +1197,13 @@ func (r *Registry) calculateFieldDiff(rw *ResourceWrapper, field *FieldInfo) (ch
 	}
 
 	return v.IsChanged(), field.Type.Properties.ForceNew
+}
+
+func (r *Registry) ProcessAndDiff(ctx context.Context, meta interface{}) ([]*Diff, error) {
+	err := r.Process(ctx, meta)
+	if err != nil {
+		return nil, err
+	}
+
+	return r.Diff(ctx)
 }

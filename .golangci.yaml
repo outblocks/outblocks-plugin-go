@@ -40,11 +40,12 @@ linters-settings:
     disabled-checks:
       - whyNoLint
       - commentedOutCode
+      - hugeParam
 
 linters:
   disable-all: true
   enable:
-    - bodyclose
+    # - bodyclose
     - deadcode
     - depguard
     - dogsled
@@ -64,17 +65,16 @@ linters:
     - ineffassign
     - misspell
     - nakedret
-    - nestif
-    - noctx
+    # - noctx
     - nolintlint
     - revive
-    - rowserrcheck
+    # - rowserrcheck
     - staticcheck
-    - structcheck
+    # - structcheck
     - stylecheck
     - typecheck
     - unconvert
-    - unparam
+    # - unparam
     - unused
     - varcheck
     - whitespace
@@ -84,10 +84,11 @@ linters:
     # - funlen
     # - gochecknoglobals
     # - gochecknoinits
+    # - gocognit
     # - godox
     # - golint
-    # - gocognit
     # - gomnd
     # - gosec
     # - lll
     # - maligned
+    # - nestif

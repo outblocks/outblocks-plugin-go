@@ -172,6 +172,7 @@ type ResourceID struct {
 	Namespace string `json:"namespace"`
 	Type      string `json:"type"`
 	Source    string `json:"source"`
+	Partition string `json:"partition,omitempty"`
 }
 
 func (rid *ResourceID) Less(rid2 *ResourceID) bool {

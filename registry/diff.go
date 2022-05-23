@@ -187,3 +187,12 @@ func deleteObjectTree(r *ResourceWrapper, diffMap map[*ResourceWrapper]*Diff, on
 
 	r.Resource.setDiff(diff)
 }
+
+func PlanActionFromDiff(diff []*Diff) []*apiv1.PlanAction {
+	actions := make([]*apiv1.PlanAction, len(diff))
+	for i, d := range diff {
+		actions[i] = d.ToPlanAction()
+	}
+
+	return actions
+}

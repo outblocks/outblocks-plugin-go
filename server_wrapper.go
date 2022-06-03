@@ -51,6 +51,10 @@ type DeployHookHandler interface {
 	apiv1.DeployHookServiceServer
 }
 
+type SecretPluginHandler interface {
+	apiv1.SecretPluginServiceServer
+}
+
 type Cleanup interface {
 	Cleanup() error
 }

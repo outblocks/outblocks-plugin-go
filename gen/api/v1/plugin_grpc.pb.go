@@ -1187,3 +1187,267 @@ var DeployHookService_ServiceDesc = grpc.ServiceDesc{
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "api/v1/plugin.proto",
 }
+
+// SecretPluginServiceClient is the client API for SecretPluginService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type SecretPluginServiceClient interface {
+	GetSecret(ctx context.Context, in *GetSecretRequest, opts ...grpc.CallOption) (*GetSecretResponse, error)
+	SetSecret(ctx context.Context, in *SetSecretRequest, opts ...grpc.CallOption) (*SetSecretResponse, error)
+	DeleteSecret(ctx context.Context, in *DeleteSecretRequest, opts ...grpc.CallOption) (*DeleteSecretResponse, error)
+	GetSecrets(ctx context.Context, in *GetSecretsRequest, opts ...grpc.CallOption) (*GetSecretsResponse, error)
+	ReplaceSecrets(ctx context.Context, in *ReplaceSecretsRequest, opts ...grpc.CallOption) (*ReplaceSecretsResponse, error)
+	DeleteSecrets(ctx context.Context, in *DeleteSecretsRequest, opts ...grpc.CallOption) (*DeleteSecretsResponse, error)
+}
+
+type secretPluginServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewSecretPluginServiceClient(cc grpc.ClientConnInterface) SecretPluginServiceClient {
+	return &secretPluginServiceClient{cc}
+}
+
+func (c *secretPluginServiceClient) GetSecret(ctx context.Context, in *GetSecretRequest, opts ...grpc.CallOption) (*GetSecretResponse, error) {
+	out := new(GetSecretResponse)
+	err := c.cc.Invoke(ctx, "/api.v1.SecretPluginService/GetSecret", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *secretPluginServiceClient) SetSecret(ctx context.Context, in *SetSecretRequest, opts ...grpc.CallOption) (*SetSecretResponse, error) {
+	out := new(SetSecretResponse)
+	err := c.cc.Invoke(ctx, "/api.v1.SecretPluginService/SetSecret", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *secretPluginServiceClient) DeleteSecret(ctx context.Context, in *DeleteSecretRequest, opts ...grpc.CallOption) (*DeleteSecretResponse, error) {
+	out := new(DeleteSecretResponse)
+	err := c.cc.Invoke(ctx, "/api.v1.SecretPluginService/DeleteSecret", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *secretPluginServiceClient) GetSecrets(ctx context.Context, in *GetSecretsRequest, opts ...grpc.CallOption) (*GetSecretsResponse, error) {
+	out := new(GetSecretsResponse)
+	err := c.cc.Invoke(ctx, "/api.v1.SecretPluginService/GetSecrets", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *secretPluginServiceClient) ReplaceSecrets(ctx context.Context, in *ReplaceSecretsRequest, opts ...grpc.CallOption) (*ReplaceSecretsResponse, error) {
+	out := new(ReplaceSecretsResponse)
+	err := c.cc.Invoke(ctx, "/api.v1.SecretPluginService/ReplaceSecrets", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *secretPluginServiceClient) DeleteSecrets(ctx context.Context, in *DeleteSecretsRequest, opts ...grpc.CallOption) (*DeleteSecretsResponse, error) {
+	out := new(DeleteSecretsResponse)
+	err := c.cc.Invoke(ctx, "/api.v1.SecretPluginService/DeleteSecrets", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// SecretPluginServiceServer is the server API for SecretPluginService service.
+// All implementations should embed UnimplementedSecretPluginServiceServer
+// for forward compatibility
+type SecretPluginServiceServer interface {
+	GetSecret(context.Context, *GetSecretRequest) (*GetSecretResponse, error)
+	SetSecret(context.Context, *SetSecretRequest) (*SetSecretResponse, error)
+	DeleteSecret(context.Context, *DeleteSecretRequest) (*DeleteSecretResponse, error)
+	GetSecrets(context.Context, *GetSecretsRequest) (*GetSecretsResponse, error)
+	ReplaceSecrets(context.Context, *ReplaceSecretsRequest) (*ReplaceSecretsResponse, error)
+	DeleteSecrets(context.Context, *DeleteSecretsRequest) (*DeleteSecretsResponse, error)
+}
+
+// UnimplementedSecretPluginServiceServer should be embedded to have forward compatible implementations.
+type UnimplementedSecretPluginServiceServer struct {
+}
+
+func (UnimplementedSecretPluginServiceServer) GetSecret(context.Context, *GetSecretRequest) (*GetSecretResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSecret not implemented")
+}
+func (UnimplementedSecretPluginServiceServer) SetSecret(context.Context, *SetSecretRequest) (*SetSecretResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetSecret not implemented")
+}
+func (UnimplementedSecretPluginServiceServer) DeleteSecret(context.Context, *DeleteSecretRequest) (*DeleteSecretResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteSecret not implemented")
+}
+func (UnimplementedSecretPluginServiceServer) GetSecrets(context.Context, *GetSecretsRequest) (*GetSecretsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSecrets not implemented")
+}
+func (UnimplementedSecretPluginServiceServer) ReplaceSecrets(context.Context, *ReplaceSecretsRequest) (*ReplaceSecretsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReplaceSecrets not implemented")
+}
+func (UnimplementedSecretPluginServiceServer) DeleteSecrets(context.Context, *DeleteSecretsRequest) (*DeleteSecretsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteSecrets not implemented")
+}
+
+// UnsafeSecretPluginServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to SecretPluginServiceServer will
+// result in compilation errors.
+type UnsafeSecretPluginServiceServer interface {
+	mustEmbedUnimplementedSecretPluginServiceServer()
+}
+
+func RegisterSecretPluginServiceServer(s grpc.ServiceRegistrar, srv SecretPluginServiceServer) {
+	s.RegisterService(&SecretPluginService_ServiceDesc, srv)
+}
+
+func _SecretPluginService_GetSecret_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSecretRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SecretPluginServiceServer).GetSecret(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.v1.SecretPluginService/GetSecret",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SecretPluginServiceServer).GetSecret(ctx, req.(*GetSecretRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SecretPluginService_SetSecret_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetSecretRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SecretPluginServiceServer).SetSecret(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.v1.SecretPluginService/SetSecret",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SecretPluginServiceServer).SetSecret(ctx, req.(*SetSecretRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SecretPluginService_DeleteSecret_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteSecretRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SecretPluginServiceServer).DeleteSecret(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.v1.SecretPluginService/DeleteSecret",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SecretPluginServiceServer).DeleteSecret(ctx, req.(*DeleteSecretRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SecretPluginService_GetSecrets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSecretsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SecretPluginServiceServer).GetSecrets(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.v1.SecretPluginService/GetSecrets",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SecretPluginServiceServer).GetSecrets(ctx, req.(*GetSecretsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SecretPluginService_ReplaceSecrets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReplaceSecretsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SecretPluginServiceServer).ReplaceSecrets(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.v1.SecretPluginService/ReplaceSecrets",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SecretPluginServiceServer).ReplaceSecrets(ctx, req.(*ReplaceSecretsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SecretPluginService_DeleteSecrets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteSecretsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SecretPluginServiceServer).DeleteSecrets(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.v1.SecretPluginService/DeleteSecrets",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SecretPluginServiceServer).DeleteSecrets(ctx, req.(*DeleteSecretsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// SecretPluginService_ServiceDesc is the grpc.ServiceDesc for SecretPluginService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var SecretPluginService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "api.v1.SecretPluginService",
+	HandlerType: (*SecretPluginServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetSecret",
+			Handler:    _SecretPluginService_GetSecret_Handler,
+		},
+		{
+			MethodName: "SetSecret",
+			Handler:    _SecretPluginService_SetSecret_Handler,
+		},
+		{
+			MethodName: "DeleteSecret",
+			Handler:    _SecretPluginService_DeleteSecret_Handler,
+		},
+		{
+			MethodName: "GetSecrets",
+			Handler:    _SecretPluginService_GetSecrets_Handler,
+		},
+		{
+			MethodName: "ReplaceSecrets",
+			Handler:    _SecretPluginService_ReplaceSecrets_Handler,
+		},
+		{
+			MethodName: "DeleteSecrets",
+			Handler:    _SecretPluginService_DeleteSecrets_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "api/v1/plugin.proto",
+}

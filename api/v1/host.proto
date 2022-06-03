@@ -47,9 +47,19 @@ message LogRequest {
 
 message LogResponse {}
 
+message HostGetSecretRequest {
+  string key = 1;
+}
+
+message HostGetSecretResponse {
+  string value = 1;
+  bool specified = 2;
+}
+
 service HostService {
   rpc PromptConfirmation(PromptConfirmationRequest) returns (PromptConfirmationResponse);
   rpc PromptInput(PromptInputRequest) returns (PromptInputResponse);
   rpc PromptSelect(PromptSelectRequest) returns (PromptSelectResponse);
   rpc Log(LogRequest) returns (LogResponse);
+  rpc HostGetSecret(HostGetSecretRequest) returns (HostGetSecretResponse);
 }

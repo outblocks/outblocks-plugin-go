@@ -6,17 +6,17 @@ import (
 )
 
 func CheckDir(path string) (string, bool) {
-	path, err := filepath.EvalSymlinks(path)
+	eval, err := filepath.EvalSymlinks(path)
 	if err != nil {
-		return "", false
+		return path, false
 	}
 
-	fi, err := os.Stat(path)
+	fi, err := os.Stat(eval)
 	if os.IsNotExist(err) || !fi.IsDir() {
-		return "", false
+		return path, false
 	}
 
-	return path, true
+	return eval, true
 }
 
 func FileExists(path string) bool {

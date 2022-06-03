@@ -22,6 +22,7 @@ type HostServiceClient interface {
 	PromptInput(ctx context.Context, in *PromptInputRequest, opts ...grpc.CallOption) (*PromptInputResponse, error)
 	PromptSelect(ctx context.Context, in *PromptSelectRequest, opts ...grpc.CallOption) (*PromptSelectResponse, error)
 	Log(ctx context.Context, in *LogRequest, opts ...grpc.CallOption) (*LogResponse, error)
+	HostGetSecret(ctx context.Context, in *HostGetSecretRequest, opts ...grpc.CallOption) (*HostGetSecretResponse, error)
 }
 
 type hostServiceClient struct {
@@ -68,6 +69,15 @@ func (c *hostServiceClient) Log(ctx context.Context, in *LogRequest, opts ...grp
 	return out, nil
 }
 
+func (c *hostServiceClient) HostGetSecret(ctx context.Context, in *HostGetSecretRequest, opts ...grpc.CallOption) (*HostGetSecretResponse, error) {
+	out := new(HostGetSecretResponse)
+	err := c.cc.Invoke(ctx, "/api.v1.HostService/HostGetSecret", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // HostServiceServer is the server API for HostService service.
 // All implementations should embed UnimplementedHostServiceServer
 // for forward compatibility
@@ -76,6 +86,7 @@ type HostServiceServer interface {
 	PromptInput(context.Context, *PromptInputRequest) (*PromptInputResponse, error)
 	PromptSelect(context.Context, *PromptSelectRequest) (*PromptSelectResponse, error)
 	Log(context.Context, *LogRequest) (*LogResponse, error)
+	HostGetSecret(context.Context, *HostGetSecretRequest) (*HostGetSecretResponse, error)
 }
 
 // UnimplementedHostServiceServer should be embedded to have forward compatible implementations.
@@ -93,6 +104,9 @@ func (UnimplementedHostServiceServer) PromptSelect(context.Context, *PromptSelec
 }
 func (UnimplementedHostServiceServer) Log(context.Context, *LogRequest) (*LogResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Log not implemented")
+}
+func (UnimplementedHostServiceServer) HostGetSecret(context.Context, *HostGetSecretRequest) (*HostGetSecretResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method HostGetSecret not implemented")
 }
 
 // UnsafeHostServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -178,6 +192,24 @@ func _HostService_Log_Handler(srv interface{}, ctx context.Context, dec func(int
 	return interceptor(ctx, in, info, handler)
 }
 
+func _HostService_HostGetSecret_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(HostGetSecretRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(HostServiceServer).HostGetSecret(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.v1.HostService/HostGetSecret",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(HostServiceServer).HostGetSecret(ctx, req.(*HostGetSecretRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // HostService_ServiceDesc is the grpc.ServiceDesc for HostService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -200,6 +232,10 @@ var HostService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Log",
 			Handler:    _HostService_Log_Handler,
+		},
+		{
+			MethodName: "HostGetSecret",
+			Handler:    _HostService_HostGetSecret_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

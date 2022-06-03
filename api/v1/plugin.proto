@@ -497,7 +497,7 @@ service CommandPluginService {
 }
 
 
-// Deploy Hooks
+// Deploy hooks.
 
 message DeployHookRequest {
   enum Stage {
@@ -531,3 +531,74 @@ service DeployHookService {
   rpc DeployHook(DeployHookRequest) returns (DeployHookResponse);
 }
 
+// Secret plugin.
+
+message GetSecretRequest {
+  string key = 1;
+
+  string secrets_type = 2;
+  google.protobuf.Struct properties = 3;
+}
+
+message GetSecretResponse {
+  string value = 3;
+  bool specified = 4;
+}
+
+message SetSecretRequest {
+  string key = 1;
+  string value = 2;
+
+  string secrets_type = 3;
+  google.protobuf.Struct properties = 4;
+}
+
+message SetSecretResponse {
+  bool changed = 1;
+}
+
+message DeleteSecretRequest {
+  string key = 1;
+
+  string secrets_type = 2;
+  google.protobuf.Struct properties = 3;
+}
+
+message DeleteSecretResponse {
+  bool deleted = 1;
+}
+
+message GetSecretsRequest {
+  string secrets_type = 1;
+  google.protobuf.Struct properties = 2;
+}
+
+message GetSecretsResponse {
+  map<string, string> values = 1;
+}
+
+message ReplaceSecretsRequest {
+  map<string, string> values = 1;
+
+  string secrets_type = 2;
+  google.protobuf.Struct properties = 3;
+}
+
+message ReplaceSecretsResponse {}
+
+message DeleteSecretsRequest {
+  string secrets_type = 1;
+  google.protobuf.Struct properties = 2;
+}
+
+message DeleteSecretsResponse {}
+
+service SecretPluginService {
+  rpc GetSecret(GetSecretRequest) returns (GetSecretResponse);
+  rpc SetSecret(SetSecretRequest) returns (SetSecretResponse);
+  rpc DeleteSecret(DeleteSecretRequest) returns (DeleteSecretResponse);
+
+  rpc GetSecrets(GetSecretsRequest) returns (GetSecretsResponse);
+  rpc ReplaceSecrets(ReplaceSecretsRequest) returns (ReplaceSecretsResponse);
+  rpc DeleteSecrets(DeleteSecretsRequest) returns (DeleteSecretsResponse);
+}

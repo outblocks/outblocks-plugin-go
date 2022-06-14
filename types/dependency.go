@@ -22,9 +22,9 @@ type StorageDepOptions struct {
 	Public             bool   `json:"public"`
 
 	CORS []struct {
-		Origins         []string `json:"origin"`
-		Methods         []string `json:"method"`
-		ResponseHeaders []string `json:"response_header"`
+		Origins         []string `json:"origins"`
+		Methods         []string `json:"methods"`
+		ResponseHeaders []string `json:"response_headers"`
 		MaxAgeInSeconds int      `json:"max_age_in_seconds"`
 	} `json:"cors"`
 }

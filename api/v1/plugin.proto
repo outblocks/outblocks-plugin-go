@@ -165,8 +165,14 @@ message AppState {
 }
 
 message AppBuild {
+  // Docker based deployments.
   string local_docker_image = 1;
   string local_docker_hash = 2;
+
+  // Archive based deployments.
+  string local_archive_path = 3;
+  string local_archive_hash = 4;
+
 }
 
 message AppPlan {

@@ -1187,7 +1187,7 @@ func (r *Registry) calculateFieldDiff(rw *ResourceWrapper, field *FieldInfo) (ch
 			}
 
 			if field.Type.Properties.HardLink && rw.Resource.IsExisting() && dep.Resource.Diff().Type == DiffTypeCreate {
-				return true, true
+				return true, false
 			}
 
 			if dep.Resource.Diff().Type == DiffTypeRecreate || (dep.Resource.IsExisting() && field.Value.Interface().(fields.Field).IsOutput()) {

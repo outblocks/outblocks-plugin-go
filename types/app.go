@@ -28,6 +28,11 @@ func encodeToMap(in interface{}) (map[string]interface{}, error) {
 	return out, err
 }
 
+// Common properties.
+type AppCDN struct {
+	Enabled bool `json:"enabled"`
+}
+
 // Service app properties.
 
 type ServiceAppBuild struct {
@@ -45,23 +50,19 @@ type ServiceAppContainer struct {
 	Port       int                    `json:"port" default:"8080"`
 }
 
-type ServiceAppCDN struct {
-	Enabled bool `json:"enabled"`
-}
-
 type ServiceAppProperties struct {
 	Private bool `json:"private"`
 
 	Build     *ServiceAppBuild     `json:"build,omitempty"`
 	Container *ServiceAppContainer `json:"container,omitempty"`
-	CDN       *ServiceAppCDN       `json:"cdn,omitempty"`
+	CDN       *AppCDN              `json:"cdn,omitempty"`
 }
 
 func NewServiceAppProperties(in map[string]interface{}) (*ServiceAppProperties, error) {
 	o := &ServiceAppProperties{
 		Build:     &ServiceAppBuild{},
 		Container: &ServiceAppContainer{},
-		CDN:       &ServiceAppCDN{},
+		CDN:       &AppCDN{},
 	}
 
 	err := util.MapstructureJSONDecode(in, o)
@@ -77,10 +78,11 @@ func (p *ServiceAppProperties) Encode() (map[string]interface{}, error) {
 }
 
 type ServiceAppDeployOptions struct {
-	CPULimit    float64 `json:"cpu_limit"`
-	MemoryLimit int     `json:"memory_limit"`
-	MinScale    int     `json:"min_scale"`
-	MaxScale    int     `json:"max_scale"`
+	CPULimit    float64 `json:"cpu_limit,omitempty"`
+	MemoryLimit int     `json:"memory_limit,omitempty"`
+	MinScale    int     `json:"min_scale,omitempty"`
+	MaxScale    int     `json:"max_scale,omitempty"`
+	Timeout     int     `json:"timeout,omitempty"`
 }
 
 func NewServiceAppDeployOptions(in map[string]interface{}) (*ServiceAppDeployOptions, error) {
@@ -92,33 +94,29 @@ func NewServiceAppDeployOptions(in map[string]interface{}) (*ServiceAppDeployOpt
 // Static app properties.
 
 type StaticAppBuild struct {
-	Env     map[string]string      `json:"env,omitempty"`
+	Env     map[string]string      `json:"env"`
 	Command *command.StringCommand `json:"command"`
 	Dir     string                 `json:"dir"`
 }
 
-type StaticAppCDN struct {
-	Enabled bool `json:"enabled"`
-}
-
 type StaticAppBasicAuth struct {
-	Realm string            `json:"realm"`
+	Realm string            `json:"realm,omitempty"`
 	Users map[string]string `json:"users,omitempty"`
 }
 
 type StaticAppProperties struct {
 	Build     *StaticAppBuild     `json:"build,omitempty"`
-	CDN       *StaticAppCDN       `json:"cdn,omitempty"`
+	CDN       *AppCDN             `json:"cdn,omitempty"`
 	BasicAuth *StaticAppBasicAuth `json:"basic_auth,omitempty"`
 
-	Routing             string `json:"routing"`
-	RemoveTrailingSlash *bool  `json:"remove_trailing_slash"`
+	Routing             string `json:"routing,omitempty"`
+	RemoveTrailingSlash *bool  `json:"remove_trailing_slash,omitempty"`
 }
 
 func NewStaticAppProperties(in map[string]interface{}) (*StaticAppProperties, error) {
 	o := &StaticAppProperties{
 		Build: &StaticAppBuild{},
-		CDN:   &StaticAppCDN{},
+		CDN:   &AppCDN{},
 	}
 
 	return o, util.MapstructureJSONDecode(in, o)
@@ -129,14 +127,53 @@ func (p *StaticAppProperties) Encode() (map[string]interface{}, error) {
 }
 
 type StaticAppDeployOptions struct {
-	MinScale int `json:"min_scale"`
-	MaxScale int `json:"max_scale"`
+	MinScale int `json:"min_scale,omitempty"`
+	MaxScale int `json:"max_scale,omitempty"`
+	Timeout  int `json:"timeout,omitempty"`
 }
 
 func NewStaticAppDeployOptions(in map[string]interface{}) (*StaticAppDeployOptions, error) {
 	o := &StaticAppDeployOptions{}
 
 	return o, util.MapstructureJSONDecode(in, o)
+}
+
+// Function app properties.
+type FunctionAppBuild struct{}
+
+type FunctionAppProperties struct {
+	Private    bool   `json:"private,omitempty"`
+	Entrypoint string `json:"entrypoint,omitempty"`
+	Runtime    string `json:"runtime,omitempty"`
+
+	Build *FunctionAppBuild `json:"build,omitempty"`
+	CDN   *AppCDN           `json:"cdn,omitempty"`
+}
+
+func NewFunctionAppProperties(in map[string]interface{}) (*FunctionAppProperties, error) {
+	o := &FunctionAppProperties{
+		Build: &FunctionAppBuild{},
+		CDN:   &AppCDN{},
+	}
+
+	return o, util.MapstructureJSONDecode(in, o)
+}
+
+type FunctionAppDeployOptions struct {
+	MemoryLimit int `json:"memory_limit,omitempty"`
+	MinScale    int `json:"min_scale,omitempty"`
+	MaxScale    int `json:"max_scale,omitempty"`
+	Timeout     int `json:"timeout,omitempty"`
+}
+
+func NewFunctionAppDeployOptions(in map[string]interface{}) (*FunctionAppDeployOptions, error) {
+	o := &FunctionAppDeployOptions{}
+
+	return o, util.MapstructureJSONDecode(in, o)
+}
+
+func (p *FunctionAppProperties) Encode() (map[string]interface{}, error) {
+	return encodeToMap(p)
 }
 
 type AppVars map[string]interface{}

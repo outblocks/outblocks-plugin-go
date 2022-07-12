@@ -53,7 +53,7 @@ func (c *StringCommand) ExecCmdAsUser() *exec.Cmd {
 }
 
 func (c *StringCommand) MarshalJSON() ([]byte, error) {
-	if c.IsArray() {
+	if !c.IsEmpty() && c.IsArray() {
 		return json.Marshal(c.Array())
 	}
 

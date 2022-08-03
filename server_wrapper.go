@@ -27,6 +27,11 @@ type DNSPluginHandler interface {
 	ApplyDNS(*apiv1.ApplyDNSRequest, *registry.Registry, apiv1.DNSPluginService_ApplyDNSServer) error
 }
 
+type MonitoringPluginHandler interface {
+	PlanMonitoring(context.Context, *registry.Registry, *apiv1.PlanMonitoringRequest) (*apiv1.PlanMonitoringResponse, error)
+	ApplyMonitoring(*apiv1.ApplyMonitoringRequest, *registry.Registry, apiv1.MonitoringPluginService_ApplyMonitoringServer) error
+}
+
 type LogsPluginHandler interface {
 	apiv1.LogsPluginServiceServer
 }
@@ -136,4 +141,28 @@ func (s *dnsPluginHandlerWrapper) PlanDNS(ctx context.Context, r *apiv1.PlanDNSR
 func (s *dnsPluginHandlerWrapper) ApplyDNS(r *apiv1.ApplyDNSRequest, stream apiv1.DNSPluginService_ApplyDNSServer) error {
 	reg := s.createRegistry(false, r.Destroy)
 	return s.DNSPluginHandler.ApplyDNS(r, reg, stream)
+}
+
+type monitoringPluginHandlerWrapper struct {
+	MonitoringPluginHandler
+
+	RegistryOptions RegistryOptions
+}
+
+func (s *monitoringPluginHandlerWrapper) createRegistry(read, destroy bool) *registry.Registry {
+	return createRegistry(&registry.Options{
+		Read:            read,
+		Destroy:         destroy,
+		AllowDuplicates: s.RegistryOptions.AllowDuplicates,
+	}, nil)
+}
+
+func (s *monitoringPluginHandlerWrapper) PlanMonitoring(ctx context.Context, r *apiv1.PlanMonitoringRequest) (*apiv1.PlanMonitoringResponse, error) {
+	reg := s.createRegistry(r.Verify, r.Destroy)
+	return s.MonitoringPluginHandler.PlanMonitoring(ctx, reg, r)
+}
+
+func (s *monitoringPluginHandlerWrapper) ApplyMonitoring(r *apiv1.ApplyMonitoringRequest, stream apiv1.MonitoringPluginService_ApplyMonitoringServer) error {
+	reg := s.createRegistry(false, r.Destroy)
+	return s.MonitoringPluginHandler.ApplyMonitoring(r, reg, stream)
 }

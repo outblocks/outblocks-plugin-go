@@ -110,7 +110,7 @@ service LockingPluginService {
 message AppDeployInfo {
   string plugin = 1;
   map<string, string> env = 2;
-  google.protobuf.Struct other = 3;
+  google.protobuf.Struct properties = 3;
 }
 
 message AppNeed {
@@ -239,7 +239,7 @@ message PlanAction {
 message Plan { repeated PlanAction actions = 1; }
 
 message PlanResponse {
-  Plan deploy = 1;
+  Plan plan = 1;
 
   repeated DomainInfo domains = 2;
   PluginState state = 3;
@@ -361,7 +361,7 @@ message DomainInfo {
   string cert = 2;
   string key = 3;
   string dns_plugin = 4;
-  google.protobuf.Struct other = 5;
+  google.protobuf.Struct properties = 5;
 }
 
 message DNSRecord {
@@ -395,7 +395,7 @@ message PlanDNSRequest {
 }
 
 message PlanDNSResponse {
-  Plan dns = 1;
+  Plan plan = 1;
 
   PluginState state = 2;
   repeated DomainInfo domains = 3;
@@ -432,7 +432,7 @@ message AppRun {
   int32 port = 4;
   repeated string command = 5;
   map<string, string> env = 6;
-  google.protobuf.Struct other = 7;
+  google.protobuf.Struct properties = 7;
 }
 
 message DependencyRun {
@@ -608,4 +608,64 @@ service SecretPluginService {
   rpc GetSecrets(GetSecretsRequest) returns (GetSecretsResponse);
   rpc ReplaceSecrets(ReplaceSecretsRequest) returns (ReplaceSecretsResponse);
   rpc DeleteSecrets(DeleteSecretsRequest) returns (DeleteSecretsResponse);
+}
+
+// Monitoring plugin.
+
+message MonitoringTarget {
+  string url = 1;
+  int32 frequency = 2;
+  repeated string locations = 3;
+}
+
+message MonitoringChannel {
+  string type = 1;
+  google.protobuf.Struct properties = 2;
+}
+
+message MonitoringData {
+  repeated MonitoringTarget targets = 1;
+  repeated MonitoringChannel channels = 2;
+
+  string plugin = 3;
+  bool use_existing_channels = 4;
+}
+
+message PlanMonitoringRequest {
+  MonitoringData data = 1;
+
+  bool destroy = 2;
+  bool verify = 3;
+  PluginState state = 4;
+  google.protobuf.Struct args = 5;
+}
+
+message PlanMonitoringResponse {
+  Plan plan = 1;
+
+  PluginState state = 2;
+}
+
+message ApplyMonitoringRequest {
+  MonitoringData data = 1;
+
+  bool destroy = 2;
+  PluginState state = 3;
+  google.protobuf.Struct args = 4;
+}
+
+message ApplyMonitoringDoneResponse {
+  PluginState state = 1;
+}
+
+message ApplyMonitoringResponse {
+  oneof response {
+    ApplyActionResponse action = 1;
+    ApplyMonitoringDoneResponse done = 2;
+  }
+}
+
+service MonitoringPluginService {
+  rpc PlanMonitoring(PlanMonitoringRequest) returns (PlanMonitoringResponse);
+  rpc ApplyMonitoring(ApplyMonitoringRequest) returns (stream ApplyMonitoringResponse);
 }

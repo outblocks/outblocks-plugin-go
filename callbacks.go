@@ -25,3 +25,15 @@ func DefaultRegistryApplyDNSCallback(stream apiv1.DNSPluginService_ApplyDNSServe
 		})
 	}
 }
+
+func DefaultRegistryApplyMonitoringCallback(stream apiv1.MonitoringPluginService_ApplyMonitoringServer) func(*apiv1.ApplyAction) {
+	return func(a *apiv1.ApplyAction) {
+		_ = stream.Send(&apiv1.ApplyMonitoringResponse{
+			Response: &apiv1.ApplyMonitoringResponse_Action{
+				Action: &apiv1.ApplyActionResponse{
+					Actions: []*apiv1.ApplyAction{a},
+				},
+			},
+		})
+	}
+}

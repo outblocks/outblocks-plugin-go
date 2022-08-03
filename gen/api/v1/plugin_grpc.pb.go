@@ -1451,3 +1451,151 @@ var SecretPluginService_ServiceDesc = grpc.ServiceDesc{
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "api/v1/plugin.proto",
 }
+
+// MonitoringPluginServiceClient is the client API for MonitoringPluginService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type MonitoringPluginServiceClient interface {
+	PlanMonitoring(ctx context.Context, in *PlanMonitoringRequest, opts ...grpc.CallOption) (*PlanMonitoringResponse, error)
+	ApplyMonitoring(ctx context.Context, in *ApplyMonitoringRequest, opts ...grpc.CallOption) (MonitoringPluginService_ApplyMonitoringClient, error)
+}
+
+type monitoringPluginServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewMonitoringPluginServiceClient(cc grpc.ClientConnInterface) MonitoringPluginServiceClient {
+	return &monitoringPluginServiceClient{cc}
+}
+
+func (c *monitoringPluginServiceClient) PlanMonitoring(ctx context.Context, in *PlanMonitoringRequest, opts ...grpc.CallOption) (*PlanMonitoringResponse, error) {
+	out := new(PlanMonitoringResponse)
+	err := c.cc.Invoke(ctx, "/api.v1.MonitoringPluginService/PlanMonitoring", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *monitoringPluginServiceClient) ApplyMonitoring(ctx context.Context, in *ApplyMonitoringRequest, opts ...grpc.CallOption) (MonitoringPluginService_ApplyMonitoringClient, error) {
+	stream, err := c.cc.NewStream(ctx, &MonitoringPluginService_ServiceDesc.Streams[0], "/api.v1.MonitoringPluginService/ApplyMonitoring", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &monitoringPluginServiceApplyMonitoringClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type MonitoringPluginService_ApplyMonitoringClient interface {
+	Recv() (*ApplyMonitoringResponse, error)
+	grpc.ClientStream
+}
+
+type monitoringPluginServiceApplyMonitoringClient struct {
+	grpc.ClientStream
+}
+
+func (x *monitoringPluginServiceApplyMonitoringClient) Recv() (*ApplyMonitoringResponse, error) {
+	m := new(ApplyMonitoringResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+// MonitoringPluginServiceServer is the server API for MonitoringPluginService service.
+// All implementations should embed UnimplementedMonitoringPluginServiceServer
+// for forward compatibility
+type MonitoringPluginServiceServer interface {
+	PlanMonitoring(context.Context, *PlanMonitoringRequest) (*PlanMonitoringResponse, error)
+	ApplyMonitoring(*ApplyMonitoringRequest, MonitoringPluginService_ApplyMonitoringServer) error
+}
+
+// UnimplementedMonitoringPluginServiceServer should be embedded to have forward compatible implementations.
+type UnimplementedMonitoringPluginServiceServer struct {
+}
+
+func (UnimplementedMonitoringPluginServiceServer) PlanMonitoring(context.Context, *PlanMonitoringRequest) (*PlanMonitoringResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PlanMonitoring not implemented")
+}
+func (UnimplementedMonitoringPluginServiceServer) ApplyMonitoring(*ApplyMonitoringRequest, MonitoringPluginService_ApplyMonitoringServer) error {
+	return status.Errorf(codes.Unimplemented, "method ApplyMonitoring not implemented")
+}
+
+// UnsafeMonitoringPluginServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to MonitoringPluginServiceServer will
+// result in compilation errors.
+type UnsafeMonitoringPluginServiceServer interface {
+	mustEmbedUnimplementedMonitoringPluginServiceServer()
+}
+
+func RegisterMonitoringPluginServiceServer(s grpc.ServiceRegistrar, srv MonitoringPluginServiceServer) {
+	s.RegisterService(&MonitoringPluginService_ServiceDesc, srv)
+}
+
+func _MonitoringPluginService_PlanMonitoring_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PlanMonitoringRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MonitoringPluginServiceServer).PlanMonitoring(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.v1.MonitoringPluginService/PlanMonitoring",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MonitoringPluginServiceServer).PlanMonitoring(ctx, req.(*PlanMonitoringRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MonitoringPluginService_ApplyMonitoring_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(ApplyMonitoringRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(MonitoringPluginServiceServer).ApplyMonitoring(m, &monitoringPluginServiceApplyMonitoringServer{stream})
+}
+
+type MonitoringPluginService_ApplyMonitoringServer interface {
+	Send(*ApplyMonitoringResponse) error
+	grpc.ServerStream
+}
+
+type monitoringPluginServiceApplyMonitoringServer struct {
+	grpc.ServerStream
+}
+
+func (x *monitoringPluginServiceApplyMonitoringServer) Send(m *ApplyMonitoringResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+// MonitoringPluginService_ServiceDesc is the grpc.ServiceDesc for MonitoringPluginService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var MonitoringPluginService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "api.v1.MonitoringPluginService",
+	HandlerType: (*MonitoringPluginServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "PlanMonitoring",
+			Handler:    _MonitoringPluginService_PlanMonitoring_Handler,
+		},
+	},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "ApplyMonitoring",
+			Handler:       _MonitoringPluginService_ApplyMonitoring_Handler,
+			ServerStreams: true,
+		},
+	},
+	Metadata: "api/v1/plugin.proto",
+}

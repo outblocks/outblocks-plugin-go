@@ -628,7 +628,6 @@ message MonitoringData {
   repeated MonitoringChannel channels = 2;
 
   string plugin = 3;
-  bool use_existing_channels = 4;
 }
 
 message PlanMonitoringRequest {

@@ -796,10 +796,6 @@ func setFieldDefaults(r *ResourceWrapper) error {
 }
 
 func unskipRecursiveDependencies(rw *ResourceWrapper) {
-	if !rw.IsSkipped {
-		return
-	}
-
 	rw.IsSkipped = false
 
 	for dep := range rw.Dependencies {

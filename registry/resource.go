@@ -91,7 +91,7 @@ type ResourceBase struct {
 	registered bool
 }
 
-func (b *ResourceBase) setRegistry(reg *Registry) { // nolint:unused
+func (b *ResourceBase) setRegistry(reg *Registry) { //nolint:unused
 	b.reg = reg
 }
 
@@ -99,7 +99,7 @@ func (b *ResourceBase) Registry() *Registry {
 	return b.reg
 }
 
-func (b *ResourceBase) setDiff(v *Diff) { // nolint:unused
+func (b *ResourceBase) setDiff(v *Diff) { //nolint:unused
 	b.diff = v
 }
 
@@ -107,7 +107,7 @@ func (b *ResourceBase) Diff() *Diff {
 	return b.diff
 }
 
-func (b *ResourceBase) setWrapper(v *ResourceWrapper) { // nolint:unused
+func (b *ResourceBase) setWrapper(v *ResourceWrapper) { //nolint:unused
 	b.wrapper = v
 }
 
@@ -127,7 +127,7 @@ func (b *ResourceBase) IsRegistered() bool {
 	return b.registered
 }
 
-func (b *ResourceBase) setRegistered(v bool) { // nolint:unused
+func (b *ResourceBase) setRegistered(v bool) { //nolint:unused
 	b.registered = v
 }
 

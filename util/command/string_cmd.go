@@ -138,7 +138,7 @@ func (c *StringCommand) Flatten() string {
 		ret[i] = strings.ReplaceAll(v, "\"", "\\\"")
 	}
 
-	return fmt.Sprintf("\"%s\"", strings.Join(ret, "\"")) // nolint:gocritic
+	return fmt.Sprintf("\"%s\"", strings.Join(ret, "\"")) //nolint:gocritic
 }
 
 func NewStringCommandFromString(s string) *StringCommand {

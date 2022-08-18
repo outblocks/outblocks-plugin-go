@@ -439,6 +439,7 @@ message DependencyRun {
   Dependency dependency = 1;
   string ip = 2;
   int32 port = 3;
+  repeated AppNeed needs = 4;
 }
 
 message RunRequest {

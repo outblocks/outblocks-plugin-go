@@ -127,9 +127,10 @@ func (p *StaticAppProperties) Encode() (map[string]interface{}, error) {
 }
 
 type StaticAppDeployOptions struct {
-	MinScale int `json:"min_scale,omitempty"`
-	MaxScale int `json:"max_scale,omitempty"`
-	Timeout  int `json:"timeout,omitempty"`
+	MinScale int      `json:"min_scale,omitempty"`
+	MaxScale int      `json:"max_scale,omitempty"`
+	Timeout  int      `json:"timeout,omitempty"`
+	Patterns []string `json:"patterns,omitempty"`
 }
 
 func NewStaticAppDeployOptions(in map[string]interface{}) (*StaticAppDeployOptions, error) {
@@ -139,7 +140,11 @@ func NewStaticAppDeployOptions(in map[string]interface{}) (*StaticAppDeployOptio
 }
 
 // Function app properties.
-type FunctionAppBuild struct{}
+type FunctionAppBuild struct {
+	Env     map[string]string      `json:"env"`
+	Command *command.StringCommand `json:"command"`
+	Dir     string                 `json:"dir"`
+}
 
 type FunctionAppProperties struct {
 	Private    bool   `json:"private,omitempty"`

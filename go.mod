@@ -4,6 +4,7 @@ go 1.19
 
 require (
 	github.com/creasty/defaults v1.6.0
+	github.com/gobwas/glob v0.2.3
 	github.com/golang/protobuf v1.5.2
 	github.com/mitchellh/mapstructure v1.5.0
 	golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f

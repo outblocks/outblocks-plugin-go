@@ -68,11 +68,11 @@ type ResourceCUD interface {
 }
 
 type ResourceDiffCalculator interface {
-	CalculateDiff() DiffType
+	CalculateDiff(ctx context.Context, meta interface{}) (DiffType, error)
 }
 
 type ResourceBeforeDiffHook interface {
-	BeforeDiff()
+	BeforeDiff(ctx context.Context, meta interface{}) error
 }
 
 type ResourceTypeVerbose interface {

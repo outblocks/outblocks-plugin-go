@@ -821,7 +821,7 @@ func (r *Registry) checkResources(resources map[ResourceID]*ResourceWrapper) {
 	}
 }
 
-func (r *Registry) Diff(ctx context.Context) ([]*Diff, error) {
+func (r *Registry) Diff(ctx context.Context, meta interface{}) ([]*Diff, error) {
 	r.checkResources(r.resources)
 
 	var mu sync.RWMutex
@@ -859,7 +859,11 @@ func (r *Registry) Diff(ctx context.Context) ([]*Diff, error) {
 			return nil
 		}
 
-		d := r.calculateDiff(res)
+		d, err := r.calculateDiff(ctx, res, meta)
+		if err != nil {
+			return err
+		}
+
 		if d != nil {
 			res.Resource.setDiff(d)
 
@@ -1118,24 +1122,31 @@ func (r *Registry) Apply(ctx context.Context, meta interface{}, diff []*Diff, ca
 	return err
 }
 
-func (r *Registry) calculateDiff(rw *ResourceWrapper) *Diff {
+func (r *Registry) calculateDiff(ctx context.Context, rw *ResourceWrapper, meta interface{}) (*Diff, error) {
 	if rdc, ok := rw.Resource.(ResourceDiffCalculator); ok {
-		typ := rdc.CalculateDiff()
-		if typ != DiffTypeNone {
-			return NewDiff(rw, typ, rw.FieldList())
+		typ, err := rdc.CalculateDiff(ctx, meta)
+		if err != nil {
+			return nil, err
 		}
 
-		return nil
+		if typ != DiffTypeNone {
+			return NewDiff(rw, typ, rw.FieldList()), nil
+		}
+
+		return nil, nil
 	}
 
 	if rbdh, ok := rw.Resource.(ResourceBeforeDiffHook); ok {
-		rbdh.BeforeDiff()
+		err := rbdh.BeforeDiff(ctx, meta)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if rw.Resource.IsNew() {
 		typ := DiffTypeCreate
 
-		return NewDiff(rw, typ, rw.FieldList())
+		return NewDiff(rw, typ, rw.FieldList()), nil
 	}
 
 	forceNew := false
@@ -1156,7 +1167,7 @@ func (r *Registry) calculateDiff(rw *ResourceWrapper) *Diff {
 	}
 
 	if len(fieldsList) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	typ := DiffTypeUpdate
@@ -1164,7 +1175,7 @@ func (r *Registry) calculateDiff(rw *ResourceWrapper) *Diff {
 		typ = DiffTypeRecreate
 	}
 
-	return NewDiff(rw, typ, fieldsList)
+	return NewDiff(rw, typ, fieldsList), nil
 }
 
 func (r *Registry) calculateFieldDiff(rw *ResourceWrapper, field *FieldInfo) (changed, forceNew bool) {
@@ -1201,5 +1212,5 @@ func (r *Registry) ProcessAndDiff(ctx context.Context, meta interface{}) ([]*Dif
 		return nil, err
 	}
 
-	return r.Diff(ctx)
+	return r.Diff(ctx, meta)
 }

@@ -362,6 +362,7 @@ message DomainInfo {
   string key = 3;
   string dns_plugin = 4;
   google.protobuf.Struct properties = 5;
+  repeated string app_ids = 6;
 }
 
 message DNSRecord {

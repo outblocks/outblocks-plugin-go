@@ -33,6 +33,13 @@ type AppCDN struct {
 	Enabled bool `json:"enabled"`
 }
 
+type AppScheduler struct {
+	Cron    string            `json:"cron"`
+	Method  string            `json:"method,omitempty"`
+	Path    string            `json:"path,omitempty"`
+	Headers map[string]string `json:"headers,omitempty"`
+}
+
 // Service app properties.
 
 type ServiceAppBuild struct {
@@ -56,6 +63,7 @@ type ServiceAppProperties struct {
 	Build     *ServiceAppBuild     `json:"build,omitempty"`
 	Container *ServiceAppContainer `json:"container,omitempty"`
 	CDN       *AppCDN              `json:"cdn,omitempty"`
+	Scheduler []*AppScheduler      `json:"scheduler,omitempty"`
 }
 
 func NewServiceAppProperties(in map[string]interface{}) (*ServiceAppProperties, error) {
@@ -151,8 +159,9 @@ type FunctionAppProperties struct {
 	Entrypoint string `json:"entrypoint,omitempty"`
 	Runtime    string `json:"runtime,omitempty"`
 
-	Build *FunctionAppBuild `json:"build,omitempty"`
-	CDN   *AppCDN           `json:"cdn,omitempty"`
+	Build     *FunctionAppBuild `json:"build,omitempty"`
+	CDN       *AppCDN           `json:"cdn,omitempty"`
+	Scheduler []*AppScheduler   `json:"scheduler,omitempty"`
 }
 
 func NewFunctionAppProperties(in map[string]interface{}) (*FunctionAppProperties, error) {

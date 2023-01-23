@@ -35,6 +35,7 @@ type AppCDN struct {
 
 type AppScheduler struct {
 	Cron    string            `json:"cron"`
+	Name    string            `json:"name,omitempty"`
 	Method  string            `json:"method,omitempty"`
 	Path    string            `json:"path,omitempty"`
 	Headers map[string]string `json:"headers,omitempty"`

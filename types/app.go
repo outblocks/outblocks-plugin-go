@@ -53,9 +53,21 @@ type ServiceAppBuild struct {
 }
 
 type ServiceAppContainer struct {
-	Entrypoint *command.StringCommand `json:"entrypoint,omitempty"`
-	Command    *command.StringCommand `json:"command,omitempty"`
-	Port       int                    `json:"port" default:"8080"`
+	Entrypoint    *command.StringCommand    `json:"entrypoint,omitempty"`
+	Command       *command.StringCommand    `json:"command,omitempty"`
+	Port          int                       `json:"port" default:"8080"`
+	StartupProbe  *ServiceAppContainerProbe `json:"startup_probe,omitempty"`
+	LivenessProbe *ServiceAppContainerProbe `json:"liveness_probe,omitempty"`
+}
+
+type ServiceAppContainerProbe struct {
+	HTTPPath            string `json:"http_path,omitempty"`
+	GRPCService         string `json:"grpc_service,omitempty"`
+	Port                int    `json:"port,omitempty"`
+	InitialDelaySeconds int    `json:"initial_delay_seconds,omitempty" default:"0"`
+	PeriodSeconds       int    `json:"period_seconds,omitempty" default:"10"`
+	TimeoutSeconds      int    `json:"timeout_seconds,omitempty" default:"1"`
+	FailureThreshold    int    `json:"failure_threshold,omitempty" default:"3"`
 }
 
 type ServiceAppProperties struct {
@@ -69,9 +81,12 @@ type ServiceAppProperties struct {
 
 func NewServiceAppProperties(in map[string]interface{}) (*ServiceAppProperties, error) {
 	o := &ServiceAppProperties{
-		Build:     &ServiceAppBuild{},
-		Container: &ServiceAppContainer{},
-		CDN:       &AppCDN{},
+		Build: &ServiceAppBuild{},
+		Container: &ServiceAppContainer{
+			StartupProbe:  &ServiceAppContainerProbe{},
+			LivenessProbe: &ServiceAppContainerProbe{},
+		},
+		CDN: &AppCDN{},
 	}
 
 	err := util.MapstructureJSONDecode(in, o)

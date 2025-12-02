@@ -50,6 +50,7 @@ type ServiceAppBuild struct {
 	Dockerfile      string            `json:"dockerfile"`
 	DockerContext   string            `json:"context"`
 	DockerBuildArgs map[string]string `json:"build_args"`
+	DockerSecrets   map[string]string `json:"secrets"`
 }
 
 type ServiceAppContainer struct {

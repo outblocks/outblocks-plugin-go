@@ -46,7 +46,7 @@ type Resource interface {
 }
 
 type ResourceReader interface {
-	Read(ctx context.Context, meta interface{}) error
+	Read(ctx context.Context, meta any) error
 }
 
 type ResourceReference interface {
@@ -54,25 +54,25 @@ type ResourceReference interface {
 }
 
 type ResourceIniter interface {
-	Init(ctx context.Context, meta interface{}, opts *Options) error
+	Init(ctx context.Context, meta any, opts *Options) error
 }
 
 type ResourceProcessor interface {
-	Process(ctx context.Context, meta interface{}) error
+	Process(ctx context.Context, meta any) error
 }
 
 type ResourceCUD interface {
-	Create(ctx context.Context, meta interface{}) error
-	Update(ctx context.Context, meta interface{}) error
-	Delete(ctx context.Context, meta interface{}) error
+	Create(ctx context.Context, meta any) error
+	Update(ctx context.Context, meta any) error
+	Delete(ctx context.Context, meta any) error
 }
 
 type ResourceDiffCalculator interface {
-	CalculateDiff(ctx context.Context, meta interface{}) (DiffType, error)
+	CalculateDiff(ctx context.Context, meta any) (DiffType, error)
 }
 
 type ResourceBeforeDiffHook interface {
-	BeforeDiff(ctx context.Context, meta interface{}) error
+	BeforeDiff(ctx context.Context, meta any) error
 }
 
 type ResourceTypeVerbose interface {
@@ -193,11 +193,11 @@ func (rid *ResourceID) Less(rid2 *ResourceID) bool {
 
 type ResourceSerialized struct {
 	ResourceID
-	IsNew        bool                   `json:"is_new,omitempty"`
-	ReferenceID  string                 `json:"ref_id,omitempty"`
-	Properties   map[string]interface{} `json:"properties,omitempty"`
-	Dependencies []ResourceID           `json:"dependencies,omitempty"`
-	DependedBy   []ResourceID           `json:"depended_by,omitempty"`
+	IsNew        bool           `json:"is_new,omitempty"`
+	ReferenceID  string         `json:"ref_id,omitempty"`
+	Properties   map[string]any `json:"properties,omitempty"`
+	Dependencies []ResourceID   `json:"dependencies,omitempty"`
+	DependedBy   []ResourceID   `json:"depended_by,omitempty"`
 }
 
 type ResourceWrapper struct {
@@ -214,7 +214,7 @@ func (w *ResourceWrapper) String() string {
 	return fmt.Sprintf("ResourceWrapper<ID=%s,Type=%s,Ns=%s>", w.ID, w.Type, w.Namespace)
 }
 
-func (w *ResourceWrapper) SetFieldValues(props map[string]interface{}) error {
+func (w *ResourceWrapper) SetFieldValues(props map[string]any) error {
 	for k, v := range props {
 		f, ok := w.Fields[k]
 		if !ok || v == nil {
@@ -241,14 +241,14 @@ func (w *ResourceWrapper) FieldList() []string {
 }
 
 func (w *ResourceWrapper) MarshalJSON() ([]byte, error) {
-	props := make(map[string]interface{})
+	props := make(map[string]any)
 
 	for k, v := range w.Fields {
 		if v.Type.Properties.Ignored {
 			continue
 		}
 
-		f := v.Value.Interface().(fields.Field)
+		f := v.Value.Interface().(fields.Field) //nolint:errcheck
 
 		val, ok := f.LookupCurrentRaw()
 		if ok {
@@ -335,6 +335,6 @@ func (w *ResourceWrapper) UnsetAllCurrent() {
 			continue
 		}
 
-		f.Value.Interface().(fields.Field).UnsetCurrent()
+		f.Value.Interface().(fields.Field).UnsetCurrent() //nolint:errcheck
 	}
 }

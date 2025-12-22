@@ -1,6 +1,7 @@
 package plugin
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -30,7 +31,7 @@ type Server struct {
 }
 
 func newServer() *Server {
-	rand.Seed(time.Now().UnixNano())
+	rand.Seed(time.Now().UnixNano()) //nolint
 
 	return &Server{
 		env: env.NewEnv(),
@@ -57,7 +58,9 @@ func (s *Server) serve(handler BasicPluginHandler, opts ...ServerOption) error {
 		Protocol: ProtocolV1,
 	}
 
-	l, err := net.Listen("tcp4", "")
+	lCfg := net.ListenConfig{}
+
+	l, err := lCfg.Listen(context.TODO(), "tcp4", "")
 	if err != nil {
 		panic(err)
 	}
@@ -69,7 +72,7 @@ func (s *Server) serve(handler BasicPluginHandler, opts ...ServerOption) error {
 		return err
 	}
 
-	fmt.Println(string(out))
+	fmt.Println(string(out)) //nolint:forbidigo
 
 	grpcServer := grpc.NewServer()
 	basicWrapper := &basicPluginHandlerWrapper{BasicPluginHandler: handler, env: s.env}

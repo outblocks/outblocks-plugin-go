@@ -71,7 +71,7 @@ type basicPluginHandlerWrapper struct {
 }
 
 func (s *basicPluginHandlerWrapper) Init(ctx context.Context, req *apiv1.InitRequest) (*apiv1.InitResponse, error) {
-	conn, err := grpc.DialContext(ctx, req.HostAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(req.HostAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, err
 	}

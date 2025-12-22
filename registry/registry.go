@@ -3,6 +3,7 @@ package registry
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"reflect"
 	"sort"
@@ -36,7 +37,7 @@ type Options struct {
 type Registry struct {
 	opts          *Options
 	types         map[string]*ResourceTypeInfo
-	fieldMap      map[interface{}]*ResourceWrapper
+	fieldMap      map[any]*ResourceWrapper
 	skippedAppIDs map[string]bool
 	partition     string
 
@@ -52,7 +53,7 @@ func NewRegistry(opts *Options) *Registry {
 	return &Registry{
 		opts:          opts,
 		types:         make(map[string]*ResourceTypeInfo),
-		fieldMap:      make(map[interface{}]*ResourceWrapper),
+		fieldMap:      make(map[any]*ResourceWrapper),
 		skippedAppIDs: make(map[string]bool),
 		resources:     make(map[ResourceID]*ResourceWrapper),
 	}
@@ -63,7 +64,7 @@ func mapFieldTypeInfo(fieldsMap map[string]*FieldTypeInfo, t reflect.Type, prefi
 		t = t.Elem()
 	}
 
-	for i := 0; i < t.NumField(); i++ {
+	for i := range t.NumField() {
 		ft := t.Field(i)
 
 		if ft.Anonymous {
@@ -124,7 +125,7 @@ func mapFieldInfo(rti *ResourceTypeInfo, fieldsMap map[string]*FieldInfo, t refl
 		v = v.Elem()
 	}
 
-	for i := 0; i < t.NumField(); i++ {
+	for i := range t.NumField() {
 		ft := t.Field(i)
 		fv := v.Field(i)
 
@@ -206,7 +207,7 @@ func (r *Registry) createResourceID(source, namespace, id string, o Resource) Re
 	}
 }
 
-func (r *Registry) get(resourceID ResourceID, o Resource) (ok bool) {
+func (r *Registry) get(resourceID ResourceID, o Resource) (ok bool) { //nolint:gocritic
 	erw := r.resources[resourceID]
 	if erw != nil {
 		reflect.ValueOf(o).Elem().Set(reflect.ValueOf(erw.Resource).Elem())
@@ -232,7 +233,7 @@ func (r *Registry) GetFieldDependencies(f fields.Field) []*ResourceWrapper {
 	return ret
 }
 
-func (r *Registry) register(resourceID ResourceID, o Resource) (added bool, err error) {
+func (r *Registry) register(resourceID ResourceID, o Resource) (added bool, err error) { //nolint:gocritic
 	tinfo, ok := r.types[resourceID.Type]
 
 	if !ok {
@@ -351,7 +352,7 @@ func (r *Registry) DeregisterPluginResource(scope, id string, o Resource) error 
 	return r.deregister(resID, o)
 }
 
-func (r *Registry) deregister(resourceID ResourceID, o Resource) error {
+func (r *Registry) deregister(resourceID ResourceID, o Resource) error { //nolint:gocritic
 	erw := r.resources[resourceID]
 	if erw == nil || !erw.Resource.IsRegistered() {
 		return fmt.Errorf("resource not registered: %s", resourceID.ID)
@@ -427,7 +428,7 @@ func (r *Registry) Load(state []byte) error {
 		}
 
 		obj := reflect.New(rti.Type)
-		res := obj.Interface().(Resource)
+		res := obj.Interface().(Resource) //nolint:errcheck
 
 		rw := &ResourceWrapper{
 			ResourceID:   v.ResourceID,
@@ -496,7 +497,7 @@ func (r *Registry) Load(state []byte) error {
 	return nil
 }
 
-func (r *Registry) Process(ctx context.Context, meta interface{}) error {
+func (r *Registry) Process(ctx context.Context, meta any) error {
 	// Remove unregistered that are already defined with unique id.
 	resourceUniqueIDMap := make(map[string]*ResourceWrapper)
 
@@ -584,7 +585,7 @@ func mergeUniqueResource(res *ResourceWrapper, resourceUniqueIDMap map[string]*R
 	return nil, nil
 }
 
-func (r *Registry) init(ctx context.Context, meta interface{}) error {
+func (r *Registry) init(ctx context.Context, meta any) error {
 	return r.processInOrder(ctx, defaultConcurrency, func(res *ResourceWrapper) error {
 		if rr, ok := res.Resource.(ResourceIniter); ok {
 			return rr.Init(ctx, meta, r.opts)
@@ -594,7 +595,7 @@ func (r *Registry) init(ctx context.Context, meta interface{}) error {
 	})
 }
 
-func (r *Registry) read(ctx context.Context, meta interface{}) error {
+func (r *Registry) read(ctx context.Context, meta any) error {
 	var (
 		obsoleteIDs []*ResourceID
 		mu          sync.Mutex
@@ -670,9 +671,6 @@ func (r *Registry) processInOrder(ctx context.Context, concurrency int, f func(r
 	}
 
 	for res, wg := range resMap {
-		res := res
-		wg := wg
-
 		g.Go(func() error {
 			// Wait for all dependencies to finish.
 			err := waitContext(ctx, wg)
@@ -700,7 +698,7 @@ func (r *Registry) processInOrder(ctx context.Context, concurrency int, f func(r
 	}
 
 	err := g.Wait()
-	if err != nil && err != context.Canceled {
+	if err != nil && !errors.Is(err, context.Canceled) {
 		return err
 	}
 
@@ -720,11 +718,11 @@ var (
 	arrayOutputType  = reflect.TypeOf((*fields.ArrayOutputField)(nil)).Elem()
 )
 
-func mapFieldDefaultValue(typ *FieldTypeInfo) interface{} {
+func mapFieldDefaultValue(typ *FieldTypeInfo) any {
 	defaultTag := typ.Default
 	ok := typ.DefaultSet
 
-	var val interface{}
+	var val any
 
 	switch typ.ReflectType.Type {
 	// String.
@@ -821,7 +819,7 @@ func (r *Registry) checkResources(resources map[ResourceID]*ResourceWrapper) {
 	}
 }
 
-func (r *Registry) Diff(ctx context.Context, meta interface{}) ([]*Diff, error) {
+func (r *Registry) Diff(ctx context.Context, meta any) ([]*Diff, error) {
 	r.checkResources(r.resources)
 
 	var mu sync.RWMutex
@@ -852,7 +850,9 @@ func (r *Registry) Diff(ctx context.Context, meta interface{}) ([]*Diff, error) 
 		}
 
 		mu.RLock()
+
 		existing := diffMap[res]
+
 		mu.RUnlock()
 
 		if existing != nil && existing.Type == DiffTypeRecreate {
@@ -868,6 +868,7 @@ func (r *Registry) Diff(ctx context.Context, meta interface{}) ([]*Diff, error) 
 			res.Resource.setDiff(d)
 
 			mu.Lock()
+
 			diffMap[res] = d
 
 			if d.Type == DiffTypeRecreate {
@@ -875,6 +876,7 @@ func (r *Registry) Diff(ctx context.Context, meta interface{}) ([]*Diff, error) 
 					dep.IsSkipped = false
 				}
 			}
+
 			mu.Unlock()
 		}
 
@@ -917,6 +919,7 @@ func waitContext(ctx context.Context, wg *sync.WaitGroup) error {
 
 	go func() {
 		defer close(c)
+
 		wg.Wait()
 	}()
 
@@ -928,12 +931,12 @@ func waitContext(ctx context.Context, wg *sync.WaitGroup) error {
 	}
 }
 
-func handleDiffAction(ctx context.Context, meta interface{}, d *Diff, callback func(*apiv1.ApplyAction)) error {
+func handleDiffAction(ctx context.Context, meta any, d *Diff, callback func(*apiv1.ApplyAction)) error {
 	switch d.Type {
 	case DiffTypeCreate:
 		callback(d.ToApplyAction(0, 1))
 
-		err := d.Object.Resource.(ResourceCUD).Create(ctx, meta)
+		err := d.Object.Resource.(ResourceCUD).Create(ctx, meta) //nolint:errcheck
 		if err != nil {
 			return err
 		}
@@ -945,7 +948,7 @@ func handleDiffAction(ctx context.Context, meta interface{}, d *Diff, callback f
 	case DiffTypeUpdate:
 		callback(d.ToApplyAction(0, 1))
 
-		err := d.Object.Resource.(ResourceCUD).Update(ctx, meta)
+		err := d.Object.Resource.(ResourceCUD).Update(ctx, meta) //nolint:errcheck
 		if err != nil {
 			return err
 		}
@@ -956,7 +959,7 @@ func handleDiffAction(ctx context.Context, meta interface{}, d *Diff, callback f
 	case DiffTypeProcess:
 		callback(d.ToApplyAction(0, 1))
 
-		err := d.Object.Resource.(ResourceProcessor).Process(ctx, meta)
+		err := d.Object.Resource.(ResourceProcessor).Process(ctx, meta) //nolint:errcheck
 		if err != nil {
 			return err
 		}
@@ -967,7 +970,7 @@ func handleDiffAction(ctx context.Context, meta interface{}, d *Diff, callback f
 	case DiffTypeDelete:
 		callback(d.ToApplyAction(0, 1))
 
-		err := d.Object.Resource.(ResourceCUD).Delete(ctx, meta)
+		err := d.Object.Resource.(ResourceCUD).Delete(ctx, meta) //nolint:errcheck
 		if err != nil {
 			return err
 		}
@@ -979,7 +982,7 @@ func handleDiffAction(ctx context.Context, meta interface{}, d *Diff, callback f
 		if d.AppliedSteps() == 0 {
 			callback(d.ToApplyAction(0, 2))
 
-			err := d.Object.Resource.(ResourceCUD).Delete(ctx, meta)
+			err := d.Object.Resource.(ResourceCUD).Delete(ctx, meta) //nolint:errcheck
 			if err != nil {
 				return err
 			}
@@ -988,7 +991,7 @@ func handleDiffAction(ctx context.Context, meta interface{}, d *Diff, callback f
 			d.Object.Resource.SetState(ResourceStateDeleted)
 			callback(d.ToApplyAction(1, 2))
 		} else {
-			err := d.Object.Resource.(ResourceCUD).Create(ctx, meta)
+			err := d.Object.Resource.(ResourceCUD).Create(ctx, meta) //nolint:errcheck
 			if err != nil {
 				return err
 			}
@@ -1041,7 +1044,7 @@ func waitForDiffDeps(ctx context.Context, d *Diff, step int) error {
 	return nil
 }
 
-func (r *Registry) Apply(ctx context.Context, meta interface{}, diff []*Diff, callback func(*apiv1.ApplyAction)) error {
+func (r *Registry) Apply(ctx context.Context, meta any, diff []*Diff, callback func(*apiv1.ApplyAction)) error {
 	pool, ctx := errgroup.WithConcurrency(ctx, defaultConcurrency)
 
 	for _, d := range diff {
@@ -1066,11 +1069,7 @@ func (r *Registry) Apply(ctx context.Context, meta interface{}, diff []*Diff, ca
 	}
 
 	for _, d := range diff {
-		d := d
-
-		for step := 0; step < d.RequiredSteps(); step++ {
-			step := step
-
+		for step := range d.RequiredSteps() {
 			g.Go(func() error {
 				if step > 0 {
 					if err := d.WaitContext(ctxErrgroup, step); err != nil {
@@ -1102,7 +1101,7 @@ func (r *Registry) Apply(ctx context.Context, meta interface{}, diff []*Diff, ca
 	}
 
 	err := g.Wait()
-	if err != nil && err != context.Canceled {
+	if err != nil && !errors.Is(err, context.Canceled) {
 		return err
 	}
 
@@ -1122,7 +1121,7 @@ func (r *Registry) Apply(ctx context.Context, meta interface{}, diff []*Diff, ca
 	return err
 }
 
-func (r *Registry) calculateDiff(ctx context.Context, rw *ResourceWrapper, meta interface{}) (*Diff, error) {
+func (r *Registry) calculateDiff(ctx context.Context, rw *ResourceWrapper, meta any) (*Diff, error) {
 	if rdc, ok := rw.Resource.(ResourceDiffCalculator); ok {
 		typ, err := rdc.CalculateDiff(ctx, meta)
 		if err != nil {
@@ -1183,7 +1182,7 @@ func (r *Registry) calculateFieldDiff(rw *ResourceWrapper, field *FieldInfo) (ch
 		return false, false
 	}
 
-	v := field.Value.Interface().(fields.ValueTracker)
+	v := field.Value.Interface().(fields.ValueTracker) //nolint:errcheck
 
 	// If field is a dep holder (depends on multiple fields) check each field if it is associated with a resource to be deleted/recreated.
 	if fdh, ok := field.Value.Interface().(fields.FieldDependencyHolder); ok {
@@ -1197,7 +1196,7 @@ func (r *Registry) calculateFieldDiff(rw *ResourceWrapper, field *FieldInfo) (ch
 				return true, false
 			}
 
-			if dep.Resource.Diff().Type == DiffTypeRecreate || (dep.Resource.IsExisting() && field.Value.Interface().(fields.Field).IsOutput()) {
+			if dep.Resource.Diff().Type == DiffTypeRecreate || (dep.Resource.IsExisting() && field.Value.Interface().(fields.Field).IsOutput()) { //nolint:errcheck
 				return true, field.Type.Properties.ForceNew || field.Type.Properties.HardLink
 			}
 		}
@@ -1206,7 +1205,7 @@ func (r *Registry) calculateFieldDiff(rw *ResourceWrapper, field *FieldInfo) (ch
 	return v.IsChanged(), field.Type.Properties.ForceNew
 }
 
-func (r *Registry) ProcessAndDiff(ctx context.Context, meta interface{}) ([]*Diff, error) {
+func (r *Registry) ProcessAndDiff(ctx context.Context, meta any) ([]*Diff, error) {
 	err := r.Process(ctx, meta)
 	if err != nil {
 		return nil, err

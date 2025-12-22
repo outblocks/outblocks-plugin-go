@@ -9,17 +9,17 @@ import (
 func TestExpandWithPercent(t *testing.T) {
 	tests := []struct {
 		content  string
-		vars     map[string]interface{}
+		vars     map[string]any
 		expected string
 	}{
 		{
 			content:  "abc: %{var.abc}",
-			vars:     map[string]interface{}{"var": map[string]interface{}{"abc": 1}},
+			vars:     map[string]any{"var": map[string]any{"abc": 1}},
 			expected: `abc: 1`,
 		},
 		{
 			content:  "abc: %d%{var.abc}",
-			vars:     map[string]interface{}{"var": map[string]interface{}{"abc": 1}},
+			vars:     map[string]any{"var": map[string]any{"abc": 1}},
 			expected: `abc: %d1`,
 		},
 		{
@@ -42,7 +42,6 @@ func TestExpandWithPercent(t *testing.T) {
 
 	for _, test := range tests {
 		out, err := fields.NewFieldVarEvaluator(test.vars).Expand(test.content)
-
 		if err != nil {
 			t.Fatalf(`Expand(%q) for %q = (%q, %q), expected non error`, test.content, test.vars, out, err)
 		}

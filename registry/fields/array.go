@@ -5,19 +5,19 @@ import (
 )
 
 type arrayField interface {
-	SetCurrent([]interface{})
-	LookupCurrent() ([]interface{}, bool)
-	Current() []interface{}
+	SetCurrent([]any)
+	LookupCurrent() ([]any, bool)
+	Current() []any
 }
 
 type ArrayInputField interface {
 	arrayField
 	InputField
 
-	LookupWanted() ([]interface{}, bool)
-	Wanted() []interface{}
-	SetWanted([]interface{})
-	Any() []interface{}
+	LookupWanted() ([]any, bool)
+	Wanted() []any
+	SetWanted([]any)
+	Any() []any
 }
 
 type ArrayOutputField interface {
@@ -47,41 +47,45 @@ func ArrayOutput(val []Field) ArrayOutputField {
 	return &ArrayBaseField{FieldBase: BasicValue(val, true)}
 }
 
-func (f *ArrayBaseField) SetCurrent(i []interface{}) {
+func (f *ArrayBaseField) SetCurrent(i []any) {
 	f.setCurrent(interfaceArrayToFieldArray(i))
 }
 
-func (f *ArrayBaseField) LookupCurrent() (v []interface{}, ok bool) {
+func (f *ArrayBaseField) LookupCurrent() (v []any, ok bool) {
 	if !f.currentDefined {
 		return nil, f.currentDefined
 	}
 
-	return f.Serialize(f.currentVal).([]interface{}), true
+	val, ok := f.Serialize(f.currentVal).([]any)
+
+	return val, ok
 }
 
-func (f *ArrayBaseField) SetWanted(i []interface{}) {
+func (f *ArrayBaseField) SetWanted(i []any) {
 	f.setWanted(interfaceArrayToFieldArray(i))
 }
 
-func (f *ArrayBaseField) LookupWanted() (v []interface{}, ok bool) {
+func (f *ArrayBaseField) LookupWanted() (v []any, ok bool) {
 	if !f.wantedDefined {
 		return nil, false
 	}
 
-	return f.Serialize(f.wanted()).([]interface{}), true
+	val, ok := f.Serialize(f.wanted()).([]any)
+
+	return val, ok
 }
 
-func (f *ArrayBaseField) Wanted() []interface{} {
+func (f *ArrayBaseField) Wanted() []any {
 	v, _ := f.LookupWanted()
 	return v
 }
 
-func (f *ArrayBaseField) Current() []interface{} {
+func (f *ArrayBaseField) Current() []any {
 	v, _ := f.LookupCurrent()
 	return v
 }
 
-func (f *ArrayBaseField) Any() []interface{} {
+func (f *ArrayBaseField) Any() []any {
 	cur, ok := f.LookupCurrent()
 	if ok {
 		return cur
@@ -90,13 +94,13 @@ func (f *ArrayBaseField) Any() []interface{} {
 	return f.Wanted()
 }
 
-func (f *ArrayBaseField) Serialize(i interface{}) interface{} {
+func (f *ArrayBaseField) Serialize(i any) any {
 	if i == nil {
-		return make([]interface{}, 0)
+		return make([]any, 0)
 	}
 
-	c := i.([]Field)
-	m := make([]interface{}, len(c))
+	c := i.([]Field) //nolint:errcheck
+	m := make([]any, len(c))
 
 	for i, v := range c {
 		if v == nil {
@@ -120,14 +124,14 @@ func (f *ArrayBaseField) Serialize(i interface{}) interface{} {
 	return m
 }
 
-func (f *ArrayBaseField) FieldDependencies() []interface{} {
+func (f *ArrayBaseField) FieldDependencies() []any {
 	if f.wanted() == nil {
 		return nil
 	}
 
-	var deps []interface{}
+	var deps []any
 
-	for _, v := range f.wanted().([]Field) {
+	for _, v := range f.wanted().([]Field) { //nolint:errcheck
 		if v == nil {
 			continue
 		}
@@ -159,12 +163,12 @@ func (f *ArrayBaseField) Input() ArrayInputField {
 	return f
 }
 
-func (f *ArrayBaseField) EmptyValue() interface{} {
-	var ret []interface{}
+func (f *ArrayBaseField) EmptyValue() any {
+	var ret []any
 	return ret
 }
 
-func interfaceArrayToFieldArray(in []interface{}) []Field {
+func interfaceArrayToFieldArray(in []any) []Field {
 	o := make([]Field, len(in))
 
 	for i, v := range in {

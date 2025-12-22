@@ -2,7 +2,7 @@ package util
 
 import (
 	cryptoRand "crypto/rand"
-	"crypto/sha1"
+	"crypto/sha1" //nolint:gosec
 	"encoding/hex"
 	"math/big"
 	"math/rand"
@@ -25,7 +25,7 @@ func SanitizeName(n string, allowUnderscore, allowDot bool) string {
 }
 
 func SHAString(n string) string {
-	h := sha1.New()
+	h := sha1.New() //nolint:gosec
 	h.Write([]byte(n))
 	sha := h.Sum(nil)
 
@@ -50,9 +50,7 @@ func StringSliceContains(arr []string, s string) bool {
 	return false
 }
 
-var (
-	validEnvVarRegex = regexp.MustCompile(`[^A-Za-z0-9_]`)
-)
+var validEnvVarRegex = regexp.MustCompile(`[^A-Za-z0-9_]`)
 
 func SanitizeEnvVar(in string) string {
 	return validEnvVarRegex.ReplaceAllString(in, "_")
@@ -64,10 +62,12 @@ func StripAnsiControl(in string) string {
 	return ansiControlRegex.ReplaceAllString(in, "")
 }
 
-const numChars = "0123456789"
-const lowerChars = "abcdefghijklmnopqrstuvwxyz"
-const upperChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-const specialChars = "!@#$%&*()-_=+[]{}<>:?"
+const (
+	numChars     = "0123456789"
+	lowerChars   = "abcdefghijklmnopqrstuvwxyz"
+	upperChars   = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	specialChars = "!@#$%&*()-_=+[]{}<>:?"
+)
 
 func RandomStringCrypto(length int) string {
 	return randomString(true, true, true, true, length, true)
@@ -142,6 +142,6 @@ func randomChars(bytes []byte, chars string) {
 	setLen := len(chars)
 
 	for i := range bytes {
-		bytes[i] = chars[rand.Intn(setLen)]
+		bytes[i] = chars[rand.Intn(setLen)] //nolint:gosec
 	}
 }

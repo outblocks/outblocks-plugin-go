@@ -20,16 +20,16 @@ type VarContext struct {
 }
 
 type BaseVarEvaluator struct {
-	vars                  map[string]interface{}
-	encoder               func(c *VarContext, val interface{}) ([]byte, error)
-	keyGetter             func(c *VarContext, vars map[string]interface{}) (val interface{}, err error)
+	vars                  map[string]any
+	encoder               func(c *VarContext, val any) ([]byte, error)
+	keyGetter             func(c *VarContext, vars map[string]any) (val any, err error)
 	ignoreComments        bool
 	ignoreInvalid         bool
 	skipRowColumnInfo     bool
 	varChar, commentsChar byte
 }
 
-func NewBaseVarEvaluator(vars map[string]interface{}) *BaseVarEvaluator {
+func NewBaseVarEvaluator(vars map[string]any) *BaseVarEvaluator {
 	return &BaseVarEvaluator{
 		vars:              vars,
 		keyGetter:         DefaultVarKeyGetter,
@@ -42,12 +42,12 @@ func NewBaseVarEvaluator(vars map[string]interface{}) *BaseVarEvaluator {
 	}
 }
 
-func (e *BaseVarEvaluator) WithEncoder(encoder func(c *VarContext, val interface{}) ([]byte, error)) *BaseVarEvaluator {
+func (e *BaseVarEvaluator) WithEncoder(encoder func(c *VarContext, val any) ([]byte, error)) *BaseVarEvaluator {
 	e.encoder = encoder
 	return e
 }
 
-func (e *BaseVarEvaluator) WithKeyGetter(keyGetter func(c *VarContext, vars map[string]interface{}) (val interface{}, err error)) *BaseVarEvaluator {
+func (e *BaseVarEvaluator) WithKeyGetter(keyGetter func(c *VarContext, vars map[string]any) (val any, err error)) *BaseVarEvaluator {
 	e.keyGetter = keyGetter
 	return e
 }
@@ -77,11 +77,11 @@ func (e *BaseVarEvaluator) WithCommentsChar(commentsChar byte) *BaseVarEvaluator
 	return e
 }
 
-func DefaultVarEncoder(c *VarContext, input interface{}) ([]byte, error) {
+func DefaultVarEncoder(c *VarContext, input any) ([]byte, error) {
 	return []byte("%v"), nil
 }
 
-func pathError(path []string, vars map[string]interface{}) error {
+func pathError(path []string, vars map[string]any) error {
 	keys := make([]string, 0, len(vars))
 
 	for k := range vars {
@@ -105,7 +105,7 @@ func pathError(path []string, vars map[string]interface{}) error {
 	return fmt.Errorf("possible keys for '%s' are: %s", strings.Join(path, "."), strings.Join(keys, ", "))
 }
 
-func DefaultVarKeyGetter(c *VarContext, vars map[string]interface{}) (val interface{}, err error) {
+func DefaultVarKeyGetter(c *VarContext, vars map[string]any) (val any, err error) {
 	var path []string
 
 	parts := strings.Split(c.Token, ".")
@@ -118,7 +118,7 @@ func DefaultVarKeyGetter(c *VarContext, vars map[string]interface{}) (val interf
 
 		path = append(path, part)
 
-		varsnext, ok := varsint.(map[string]interface{})
+		varsnext, ok := varsint.(map[string]any)
 		if !ok {
 			return nil, pathError(path, nil)
 		}
@@ -134,7 +134,7 @@ func DefaultVarKeyGetter(c *VarContext, vars map[string]interface{}) (val interf
 	return val, nil
 }
 
-func (e *BaseVarEvaluator) ExpandRaw(input []byte) (output []byte, params []interface{}, err error) {
+func (e *BaseVarEvaluator) ExpandRaw(input []byte) (output []byte, params []any, err error) {
 	var token string
 
 	in := bytes.Split(bytes.ReplaceAll(input, []byte{'\r', '\n'}, []byte{'\n'}), []byte{'\n'})

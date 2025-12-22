@@ -6,9 +6,9 @@ import (
 )
 
 type mapField interface {
-	SetCurrent(map[string]interface{})
-	LookupCurrent() (map[string]interface{}, bool)
-	Current() map[string]interface{}
+	SetCurrent(map[string]any)
+	LookupCurrent() (map[string]any, bool)
+	Current() map[string]any
 	WantedFieldMap() map[string]Field
 	CurrentFieldMap() map[string]Field
 }
@@ -17,10 +17,10 @@ type MapInputField interface {
 	mapField
 	InputField
 
-	LookupWanted() (map[string]interface{}, bool)
-	Wanted() map[string]interface{}
-	SetWanted(map[string]interface{})
-	Any() map[string]interface{}
+	LookupWanted() (map[string]any, bool)
+	Wanted() map[string]any
+	SetWanted(map[string]any)
+	Any() map[string]any
 }
 
 type MapOutputField interface {
@@ -39,7 +39,7 @@ func Map(val map[string]Field) MapInputField {
 }
 
 func MapLazy(f func() map[string]Field) MapInputField {
-	return &MapBaseField{FieldBase: BasicValueLazy(func() interface{} { return f() })}
+	return &MapBaseField{FieldBase: BasicValueLazy(func() any { return f() })}
 }
 
 func MapUnset() MapInputField {
@@ -59,7 +59,7 @@ func (f *MapBaseField) WantedFieldMap() map[string]Field {
 		return nil
 	}
 
-	return f.wanted().(map[string]Field)
+	return f.wanted().(map[string]Field) //nolint:errcheck
 }
 
 func (f *MapBaseField) CurrentFieldMap() map[string]Field {
@@ -67,44 +67,48 @@ func (f *MapBaseField) CurrentFieldMap() map[string]Field {
 		return nil
 	}
 
-	return f.currentVal.(map[string]Field)
+	return f.currentVal.(map[string]Field) //nolint:errcheck
 }
 
-func (f *MapBaseField) SetCurrent(i map[string]interface{}) {
+func (f *MapBaseField) SetCurrent(i map[string]any) {
 	f.setCurrent(interfaceMapToFieldMap(i))
 }
 
-func (f *MapBaseField) LookupCurrent() (v map[string]interface{}, ok bool) {
+func (f *MapBaseField) LookupCurrent() (v map[string]any, ok bool) {
 	if !f.currentDefined {
 		return nil, f.currentDefined
 	}
 
-	return f.Serialize(f.currentVal).(map[string]interface{}), true
+	val, ok := f.Serialize(f.currentVal).(map[string]any)
+
+	return val, ok
 }
 
-func (f *MapBaseField) SetWanted(i map[string]interface{}) {
+func (f *MapBaseField) SetWanted(i map[string]any) {
 	f.setWanted(interfaceMapToFieldMap(i))
 }
 
-func (f *MapBaseField) LookupWanted() (v map[string]interface{}, ok bool) {
+func (f *MapBaseField) LookupWanted() (v map[string]any, ok bool) {
 	if !f.wantedDefined {
 		return nil, false
 	}
 
-	return f.Serialize(f.wanted()).(map[string]interface{}), true
+	val, ok := f.Serialize(f.wanted()).(map[string]any)
+
+	return val, ok
 }
 
-func (f *MapBaseField) Wanted() map[string]interface{} {
+func (f *MapBaseField) Wanted() map[string]any {
 	v, _ := f.LookupWanted()
 	return v
 }
 
-func (f *MapBaseField) Current() map[string]interface{} {
+func (f *MapBaseField) Current() map[string]any {
 	v, _ := f.LookupCurrent()
 	return v
 }
 
-func (f *MapBaseField) Any() map[string]interface{} {
+func (f *MapBaseField) Any() map[string]any {
 	cur, ok := f.LookupCurrent()
 	if ok {
 		return cur
@@ -113,14 +117,14 @@ func (f *MapBaseField) Any() map[string]interface{} {
 	return f.Wanted()
 }
 
-func (f *MapBaseField) Serialize(i interface{}) interface{} {
-	m := make(map[string]interface{})
+func (f *MapBaseField) Serialize(i any) any {
+	m := make(map[string]any)
 
 	if i == nil {
 		return m
 	}
 
-	for k, v := range i.(map[string]Field) {
+	for k, v := range i.(map[string]Field) { //nolint:errcheck
 		if v == nil {
 			m[k] = v
 
@@ -144,14 +148,14 @@ func (f *MapBaseField) Serialize(i interface{}) interface{} {
 	return m
 }
 
-func (f *MapBaseField) FieldDependencies() []interface{} {
+func (f *MapBaseField) FieldDependencies() []any {
 	if f.wanted() == nil {
 		return nil
 	}
 
-	var deps []interface{}
+	var deps []any
 
-	for _, v := range f.wanted().(map[string]Field) {
+	for _, v := range f.wanted().(map[string]Field) { //nolint:errcheck
 		if v == nil {
 			continue
 		}
@@ -183,7 +187,7 @@ func (f *MapBaseField) Input() MapInputField {
 	return f
 }
 
-func mapFieldFromInterface(i interface{}) Field {
+func mapFieldFromInterface(i any) Field {
 	if i == nil {
 		return nil
 	}
@@ -203,7 +207,7 @@ func mapFieldFromInterface(i interface{}) Field {
 		o := BoolUnset()
 		o.SetCurrent(v)
 
-	case map[string]interface{}:
+	case map[string]any:
 		o := MapUnset()
 		o.SetCurrent(v)
 
@@ -213,7 +217,7 @@ func mapFieldFromInterface(i interface{}) Field {
 	panic(fmt.Sprintf("unmappable field: %+v", i))
 }
 
-func interfaceMapToFieldMap(i map[string]interface{}) map[string]Field {
+func interfaceMapToFieldMap(i map[string]any) map[string]Field {
 	o := make(map[string]Field)
 
 	for k, v := range i {
@@ -223,7 +227,7 @@ func interfaceMapToFieldMap(i map[string]interface{}) map[string]Field {
 	return o
 }
 
-func (f *MapBaseField) EmptyValue() interface{} {
-	var ret map[string]interface{}
+func (f *MapBaseField) EmptyValue() any {
+	var ret map[string]any
 	return ret
 }

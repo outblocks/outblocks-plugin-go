@@ -30,7 +30,7 @@ func (o *RandomString) GetName() string {
 	return o.Name.Any()
 }
 
-func (o *RandomString) Create(ctx context.Context, meta interface{}) error {
+func (o *RandomString) Create(ctx context.Context, meta any) error {
 	res := util.RandomStringCryptoCustom(o.Lower.Wanted(), o.Upper.Wanted(), o.Numeric.Wanted(), o.Special.Wanted(), o.Length.Wanted())
 
 	o.Result.SetCurrent(res)
@@ -38,10 +38,10 @@ func (o *RandomString) Create(ctx context.Context, meta interface{}) error {
 	return nil
 }
 
-func (o *RandomString) Update(ctx context.Context, meta interface{}) error {
+func (o *RandomString) Update(ctx context.Context, meta any) error {
 	return fmt.Errorf("unimplemented")
 }
 
-func (o *RandomString) Delete(ctx context.Context, meta interface{}) error {
+func (o *RandomString) Delete(ctx context.Context, meta any) error {
 	return nil
 }

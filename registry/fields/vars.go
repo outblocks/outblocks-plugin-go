@@ -14,7 +14,7 @@ type FieldVarEvaluator struct {
 	*util.BaseVarEvaluator
 }
 
-func NewFieldVarEvaluator(vars map[string]interface{}) *FieldVarEvaluator {
+func NewFieldVarEvaluator(vars map[string]any) *FieldVarEvaluator {
 	return &FieldVarEvaluator{
 		BaseVarEvaluator: util.NewBaseVarEvaluator(vars).
 			WithEncoder(fieldsVarEncoder).
@@ -24,7 +24,7 @@ func NewFieldVarEvaluator(vars map[string]interface{}) *FieldVarEvaluator {
 	}
 }
 
-func fieldsVarEncoder(c *util.VarContext, input interface{}) ([]byte, error) {
+func fieldsVarEncoder(c *util.VarContext, input any) ([]byte, error) {
 	switch input.(type) {
 	case StringInputField, StringOutputField, string:
 		return []byte("%s"), nil

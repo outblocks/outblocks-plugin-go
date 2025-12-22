@@ -52,7 +52,9 @@ func (f *BoolBaseField) LookupCurrent() (v, ok bool) {
 		return false, f.currentDefined
 	}
 
-	return f.currentVal.(bool), true
+	val, ok := f.currentVal.(bool)
+
+	return val, ok
 }
 
 func (f *BoolBaseField) SetWanted(i bool) {
@@ -64,7 +66,9 @@ func (f *BoolBaseField) LookupWanted() (v, ok bool) {
 		return false, false
 	}
 
-	return f.wanted().(bool), true
+	val, ok := f.wanted().(bool)
+
+	return val, ok
 }
 
 func (f *BoolBaseField) Wanted() bool {
@@ -78,18 +82,18 @@ func (f *BoolBaseField) Current() bool {
 }
 
 func (f *BoolBaseField) Any() bool {
-	any, defined := f.lookupAny()
+	val, defined := f.lookupAny()
 	if !defined {
 		return false
 	}
 
-	return any.(bool)
+	return val.(bool) //nolint:errcheck
 }
 
 func (f *BoolBaseField) Input() BoolInputField {
 	return f
 }
 
-func (f *BoolBaseField) EmptyValue() interface{} {
+func (f *BoolBaseField) EmptyValue() any {
 	return false
 }

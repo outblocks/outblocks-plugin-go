@@ -29,7 +29,7 @@ type StorageDepOptions struct {
 	} `json:"cors"`
 }
 
-func NewStorageDepOptions(in map[string]interface{}) (*StorageDepOptions, error) {
+func NewStorageDepOptions(in map[string]any) (*StorageDepOptions, error) {
 	o := &StorageDepOptions{}
 
 	return o, util.MapstructureJSONDecode(in, o)
@@ -48,7 +48,7 @@ type DatabaseDepOptions struct {
 	Users   map[string]*DatabaseDepOptionUser `json:"users"`
 }
 
-func NewDatabaseDepOptions(in map[string]interface{}) (*DatabaseDepOptions, error) {
+func NewDatabaseDepOptions(in map[string]any) (*DatabaseDepOptions, error) {
 	o := &DatabaseDepOptions{}
 
 	return o, util.MapstructureJSONDecode(in, o)
@@ -61,7 +61,7 @@ type DatabaseDepNeed struct {
 	Database string `json:"database"`
 }
 
-func NewDatabaseDepNeed(in map[string]interface{}) (*DatabaseDepNeed, error) {
+func NewDatabaseDepNeed(in map[string]any) (*DatabaseDepNeed, error) {
 	o := &DatabaseDepNeed{}
 
 	return o, util.MapstructureJSONDecode(in, o)

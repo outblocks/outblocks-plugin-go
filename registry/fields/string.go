@@ -59,7 +59,9 @@ func (f *StringBaseField) LookupCurrent() (v string, ok bool) {
 		return "", false
 	}
 
-	return f.currentVal.(string), true
+	val, ok := f.currentVal.(string)
+
+	return val, ok
 }
 
 func (f *StringBaseField) SetWanted(i string) {
@@ -71,7 +73,9 @@ func (f *StringBaseField) LookupWanted() (v string, ok bool) {
 		return "", false
 	}
 
-	return f.wanted().(string), true
+	val, ok := f.wanted().(string)
+
+	return val, ok
 }
 
 func (f *StringBaseField) Wanted() string {
@@ -85,19 +89,19 @@ func (f *StringBaseField) Current() string {
 }
 
 func (f *StringBaseField) Any() string {
-	any, defined := f.lookupAny()
+	val, defined := f.lookupAny()
 	if !defined {
 		return ""
 	}
 
-	return any.(string)
+	return val.(string) //nolint:errcheck
 }
 
 func (f *StringBaseField) Input() StringInputField {
 	return f
 }
 
-func (f *StringBaseField) EmptyValue() interface{} {
+func (f *StringBaseField) EmptyValue() any {
 	return ""
 }
 
@@ -110,7 +114,7 @@ func (f *IStringBaseField) IsChanged() bool {
 		return f.StringBaseField.IsChanged()
 	}
 
-	return strings.EqualFold(f.currentVal.(string), f.wanted().(string))
+	return strings.EqualFold(f.currentVal.(string), f.wanted().(string)) //nolint:errcheck
 }
 
 func IString(val string) StringInputField {
@@ -119,11 +123,11 @@ func IString(val string) StringInputField {
 
 type SprintfBaseField struct {
 	FieldBase
-	args []interface{}
+	args []any
 	fmt  string
 }
 
-func Sprintf(format string, args ...interface{}) StringInputField {
+func Sprintf(format string, args ...any) StringInputField {
 	return &SprintfBaseField{
 		FieldBase: BasicValue(nil, false),
 		fmt:       format,
@@ -133,10 +137,10 @@ func Sprintf(format string, args ...interface{}) StringInputField {
 
 func (f *SprintfBaseField) Any() string {
 	if f.currentDefined {
-		return f.currentVal.(string)
+		return f.currentVal.(string) //nolint:errcheck
 	}
 
-	var args []interface{}
+	var args []any
 
 	for _, a := range f.args {
 		v, ok := a.(Field)
@@ -146,7 +150,7 @@ func (f *SprintfBaseField) Any() string {
 		}
 
 		if !v.IsOutput() {
-			a, ok = v.(InputField).LookupWantedRaw()
+			a, ok = v.(InputField).LookupWantedRaw() //nolint:errcheck
 			if ok {
 				args = append(args, a)
 				continue
@@ -169,7 +173,7 @@ func (f *SprintfBaseField) LookupWanted() (string, bool) {
 		return "", false
 	}
 
-	var args []interface{}
+	var args []any
 
 	for _, a := range f.args {
 		v, ok := a.(InputField)
@@ -201,7 +205,7 @@ func (f *SprintfBaseField) SetWanted(i string) {
 	f.setWanted(i)
 }
 
-func (f *SprintfBaseField) LookupWantedRaw() (interface{}, bool) {
+func (f *SprintfBaseField) LookupWantedRaw() (any, bool) {
 	return f.LookupWanted()
 }
 
@@ -215,8 +219,8 @@ func (f *SprintfBaseField) Current() string {
 	return v
 }
 
-func (f *SprintfBaseField) FieldDependencies() []interface{} {
-	var deps []interface{}
+func (f *SprintfBaseField) FieldDependencies() []any {
+	var deps []any
 
 	for _, a := range f.args {
 		_, ok := a.(Field)
@@ -236,10 +240,10 @@ func (f *SprintfBaseField) FieldDependencies() []interface{} {
 
 func (f *SprintfBaseField) LookupCurrent() (v string, ok bool) {
 	if f.currentDefined {
-		return f.currentVal.(string), true
+		return f.currentVal.(string), true //nolint:errcheck
 	}
 
-	var args []interface{}
+	var args []any
 
 	for _, a := range f.args {
 		v, ok := a.(InputField)
@@ -259,7 +263,7 @@ func (f *SprintfBaseField) LookupCurrent() (v string, ok bool) {
 	return fmt.Sprintf(f.fmt, args...), true
 }
 
-func (f *SprintfBaseField) LookupCurrentRaw() (v interface{}, ok bool) {
+func (f *SprintfBaseField) LookupCurrentRaw() (v any, ok bool) {
 	return f.LookupCurrent()
 }
 
@@ -271,7 +275,7 @@ func (f *SprintfBaseField) IsChanged() bool {
 	return f.Current() != f.Wanted()
 }
 
-func (f *SprintfBaseField) EmptyValue() interface{} {
+func (f *SprintfBaseField) EmptyValue() any {
 	return ""
 }
 
@@ -280,7 +284,7 @@ func (f *SprintfBaseField) EmptyValue() interface{} {
 type LazyStringBaseField struct {
 	StringBaseField
 
-	newValue func() interface{}
+	newValue func() any
 }
 
 func (f *LazyStringBaseField) SetCurrent(i string) {
@@ -295,7 +299,7 @@ func (f *LazyStringBaseField) UnsetCurrent() {
 
 func LazyString(newValue func() string) StringInputField {
 	f := &LazyStringBaseField{
-		newValue: func() interface{} {
+		newValue: func() any {
 			return newValue()
 		},
 	}
@@ -332,7 +336,7 @@ func randomString(prefix, suffix string, lower, upper, numeric, special bool, le
 		special: special,
 		length:  length,
 	}
-	f.newValue = func() interface{} {
+	f.newValue = func() any {
 		return f.prefix + util.RandomStringCustom(f.lower, f.upper, f.numeric, f.special, f.length) + f.suffix
 	}
 

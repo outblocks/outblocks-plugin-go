@@ -1,6 +1,7 @@
 package command
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os/exec"
@@ -42,7 +43,7 @@ func (c *StringCommand) ArrayOrShell() []string {
 
 func (c *StringCommand) ExecCmdAsUser() *exec.Cmd {
 	if len(c.valArr) != 0 {
-		return exec.Command(c.valArr[0], c.valArr[1:]...)
+		return exec.CommandContext(context.TODO(), c.valArr[0], c.valArr[1:]...) //nolint:gosec
 	}
 
 	if c.valStr == "" {
@@ -61,7 +62,7 @@ func (c *StringCommand) MarshalJSON() ([]byte, error) {
 }
 
 func (c *StringCommand) UnmarshalJSON(b []byte) error {
-	var out interface{}
+	var out any
 
 	err := json.Unmarshal(b, &out)
 	if err != nil {
@@ -71,8 +72,8 @@ func (c *StringCommand) UnmarshalJSON(b []byte) error {
 	return c.fromInterface(out)
 }
 
-func (c *StringCommand) UnmarshalYAML(dec func(interface{}) error) error {
-	var out interface{}
+func (c *StringCommand) UnmarshalYAML(dec func(any) error) error {
+	var out any
 
 	err := dec(&out)
 	if err != nil {
@@ -82,11 +83,11 @@ func (c *StringCommand) UnmarshalYAML(dec func(interface{}) error) error {
 	return c.fromInterface(out)
 }
 
-func (c *StringCommand) UnmarshalMapstructure(o interface{}) error {
+func (c *StringCommand) UnmarshalMapstructure(o any) error {
 	return c.fromInterface(o)
 }
 
-func (c *StringCommand) fromInterface(o interface{}) error {
+func (c *StringCommand) fromInterface(o any) error {
 	if o == nil {
 		return nil
 	}
@@ -97,7 +98,7 @@ func (c *StringCommand) fromInterface(o interface{}) error {
 		return nil
 	}
 
-	if v, ok := o.([]interface{}); ok {
+	if v, ok := o.([]any); ok {
 		c.valArr = make([]string, len(v))
 
 		for i, val := range v {

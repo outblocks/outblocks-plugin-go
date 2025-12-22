@@ -4,8 +4,8 @@ import (
 	"fmt"
 )
 
-func GenerateID(format string, a ...interface{}) string {
-	var params []interface{}
+func GenerateID(format string, a ...any) string {
+	var params []any
 
 	for _, f := range a {
 		field, ok := f.(Field)
@@ -23,7 +23,7 @@ func GenerateID(format string, a ...interface{}) string {
 			continue
 		}
 
-		var param interface{}
+		var param any
 
 		switch input := f.(type) {
 		case StringInputField:

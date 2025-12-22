@@ -92,7 +92,7 @@ func (d *Diff) SetApplied(step int) {
 }
 
 func (d *Diff) AppliedSteps() int {
-	for i := 0; i < len(d.applied); i++ {
+	for i := range len(d.applied) {
 		select {
 		case <-d.applied[i]:
 		default:
@@ -168,8 +168,8 @@ func (d *Diff) ToApplyAction(step, total int) *apiv1.ApplyAction {
 		ObjectId:   d.Object.ID,
 		ObjectType: d.ObjectType(),
 		ObjectName: d.Object.Resource.GetName(),
-		Progress:   int32(step),
-		Total:      int32(total),
+		Progress:   int32(step),  //nolint:gosec
+		Total:      int32(total), //nolint:gosec
 	}
 }
 

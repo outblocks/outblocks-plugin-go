@@ -1,6 +1,7 @@
 package command
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -12,7 +13,7 @@ import (
 
 func NewCmdAsUser(command string) *exec.Cmd {
 	if runtime.GOOS == "windows" {
-		return exec.Command("cmd", "/C", command)
+		return exec.CommandContext(context.TODO(), "cmd", "/C", command)
 	}
 
 	shell, ok := os.LookupEnv("SHELL")
@@ -20,12 +21,12 @@ func NewCmdAsUser(command string) *exec.Cmd {
 		shell = "sh"
 	}
 
-	cmd := exec.Command(shell, "-c", command)
+	cmd := exec.CommandContext(context.TODO(), shell, "-c", command)
 
 	if os.Geteuid() == 0 {
 		uidStr, ok := os.LookupEnv("SUDO_UID")
 		if ok {
-			cmd = exec.Command("sudo", "-E", "-u", "#"+uidStr, shell, "-c", command)
+			cmd = exec.CommandContext(context.TODO(), "sudo", "-E", "-u", "#"+uidStr, shell, "-c", command) //nolint:gosec
 		}
 	}
 
@@ -105,7 +106,7 @@ func (i *Cmd) Run() error {
 	go func() {
 		err := i.cmd.Wait()
 		if err != nil {
-			i.err = fmt.Errorf("exited: %s", err)
+			i.err = fmt.Errorf("exited: %w", err)
 		}
 
 		close(i.done)

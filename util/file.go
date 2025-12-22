@@ -54,7 +54,7 @@ func WalkWithExclusions(dir string, excludes []string, fn func(path, rel string,
 	)
 
 	for _, pat := range excludes {
-		if len(pat) > 0 && pat[0] == '!' {
+		if pat != "" && pat[0] == '!' {
 			g, err = glob.Compile(pat[1:])
 			if err != nil {
 				return fmt.Errorf("unable to parse inclusion '%s': %w", pat, err)
@@ -73,12 +73,12 @@ func WalkWithExclusions(dir string, excludes []string, fn func(path, rel string,
 
 	return filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			return fmt.Errorf("error encountered during file walk: %s", err)
+			return fmt.Errorf("error encountered during file walk: %w", err)
 		}
 
 		relname, err := filepath.Rel(dir, path)
 		if err != nil {
-			return fmt.Errorf("error relativizing file: %s", err)
+			return fmt.Errorf("error relativizing file: %w", err)
 		}
 
 		isMatch := CheckMatch(relname, excludeGlobs)
@@ -90,6 +90,7 @@ func WalkWithExclusions(dir string, excludes []string, fn func(path, rel string,
 			if isMatch {
 				return filepath.SkipDir
 			}
+
 			return nil
 		}
 

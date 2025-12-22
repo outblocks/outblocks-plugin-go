@@ -263,7 +263,7 @@ func file_api_v1_errors_proto_rawDescGZIP() []byte {
 }
 
 var file_api_v1_errors_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
-var file_api_v1_errors_proto_goTypes = []interface{}{
+var file_api_v1_errors_proto_goTypes = []any{
 	(*StateLockError)(nil),        // 0: api.v1.StateLockError
 	(*LockError)(nil),             // 1: api.v1.LockError
 	(*ValidationError)(nil),       // 2: api.v1.ValidationError
@@ -285,7 +285,7 @@ func file_api_v1_errors_proto_init() {
 		return
 	}
 	if !protoimpl.UnsafeEnabled {
-		file_api_v1_errors_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_errors_proto_msgTypes[0].Exporter = func(v any, i int) any {
 			switch v := v.(*StateLockError); i {
 			case 0:
 				return &v.state
@@ -297,7 +297,7 @@ func file_api_v1_errors_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_errors_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_errors_proto_msgTypes[1].Exporter = func(v any, i int) any {
 			switch v := v.(*LockError); i {
 			case 0:
 				return &v.state
@@ -309,7 +309,7 @@ func file_api_v1_errors_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_errors_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_errors_proto_msgTypes[2].Exporter = func(v any, i int) any {
 			switch v := v.(*ValidationError); i {
 			case 0:
 				return &v.state

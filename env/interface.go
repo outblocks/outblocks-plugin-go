@@ -9,6 +9,4 @@ type Enver interface {
 	Env() string
 }
 
-var (
-	_ Enver = (*Env)(nil)
-)
+var _ Enver = (*Env)(nil)

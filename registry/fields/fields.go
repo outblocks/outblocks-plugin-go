@@ -12,27 +12,27 @@ type ValueTracker interface {
 }
 
 type FieldDependencyHolder interface {
-	FieldDependencies() []interface{}
+	FieldDependencies() []any
 }
 
-type Field interface {
+type Field interface { //nolint:iface
 	ValueTracker
 
-	Serialize(interface{}) interface{}
-	LookupCurrentRaw() (interface{}, bool)
+	Serialize(any) any
+	LookupCurrentRaw() (any, bool)
 	UnsetCurrent()
 	IsOutput() bool
-	EmptyValue() interface{}
+	EmptyValue() any
 }
 
 type InputField interface {
 	Field
 
-	LookupWantedRaw() (interface{}, bool)
+	LookupWantedRaw() (any, bool)
 	UnsetWanted()
 }
 
-type OutputField interface {
+type OutputField interface { //nolint:iface
 	Field
 }
 
@@ -43,10 +43,10 @@ type VerboseField interface {
 type FieldBase struct {
 	isOutput                      bool
 	currentDefined, wantedDefined bool
-	currentVal                    interface{}
-	wantedVal                     interface{}
-	wantedLazy                    func() interface{}
-	wantedFunc                    func() interface{}
+	currentVal                    any
+	wantedVal                     any
+	wantedLazy                    func() any
+	wantedFunc                    func() any
 	invalidated                   bool
 
 	once struct {
@@ -54,7 +54,7 @@ type FieldBase struct {
 	}
 }
 
-func BasicValue(n interface{}, output bool) FieldBase {
+func BasicValue(n any, output bool) FieldBase {
 	if output {
 		return FieldBase{
 			currentDefined: true,
@@ -68,14 +68,14 @@ func BasicValue(n interface{}, output bool) FieldBase {
 	}
 }
 
-func BasicValueLazy(f func() interface{}) FieldBase {
+func BasicValueLazy(f func() any) FieldBase {
 	return FieldBase{
 		wantedDefined: true,
 		wantedLazy:    f,
 	}
 }
 
-func BasicValueFunc(f func() interface{}) FieldBase {
+func BasicValueFunc(f func() any) FieldBase {
 	return FieldBase{
 		wantedDefined: true,
 		wantedFunc:    f,
@@ -96,27 +96,27 @@ func (f *FieldBase) UnsetCurrent() {
 	f.currentDefined = false
 }
 
-func (f *FieldBase) setCurrent(i interface{}) {
+func (f *FieldBase) setCurrent(i any) {
 	f.currentDefined = true
 	f.invalidated = false
 	f.currentVal = i
 }
 
-func (f *FieldBase) setWanted(i interface{}) {
+func (f *FieldBase) setWanted(i any) {
 	f.wantedDefined = true
 	f.wantedLazy = nil
 	f.wantedFunc = nil
 	f.wantedVal = i
 }
 
-func (f *FieldBase) SetWantedLazy(i func() interface{}) {
+func (f *FieldBase) SetWantedLazy(i func() any) {
 	f.once.lazyWanted = sync.Once{}
 	f.wantedDefined = true
 	f.wantedLazy = i
 	f.wantedFunc = nil
 }
 
-func (f *FieldBase) wanted() interface{} {
+func (f *FieldBase) wanted() any {
 	if f.wantedLazy != nil {
 		f.once.lazyWanted.Do(func() {
 			f.wantedVal = f.wantedLazy()
@@ -166,7 +166,7 @@ func (f *FieldBase) IsWantedDefined() bool {
 	return f.wantedDefined
 }
 
-func (f *FieldBase) lookupAny() (interface{}, bool) {
+func (f *FieldBase) lookupAny() (any, bool) {
 	if f.currentDefined {
 		return f.currentVal, true
 	}
@@ -174,19 +174,19 @@ func (f *FieldBase) lookupAny() (interface{}, bool) {
 	return f.wanted(), f.wantedDefined
 }
 
-func (f *FieldBase) LookupCurrentRaw() (interface{}, bool) {
+func (f *FieldBase) LookupCurrentRaw() (any, bool) {
 	return f.currentVal, f.currentDefined
 }
 
-func (f *FieldBase) LookupWantedRaw() (interface{}, bool) {
+func (f *FieldBase) LookupWantedRaw() (any, bool) {
 	return f.wanted(), f.wantedDefined
 }
 
-func (f *FieldBase) Serialize(i interface{}) interface{} {
+func (f *FieldBase) Serialize(i any) any {
 	return i
 }
 
-func toInt(in interface{}) (v int, ok bool) {
+func toInt(in any) (v int, ok bool) {
 	switch i := in.(type) {
 	case float64:
 		return int(i), true
@@ -199,21 +199,21 @@ func toInt(in interface{}) (v int, ok bool) {
 	}
 }
 
-func SetFieldValue(f, v interface{}) error {
+func SetFieldValue(f, v any) error {
 	switch val := f.(type) {
 	case stringField:
 		if _, ok := v.(string); !ok {
 			return nil
 		}
 
-		val.SetCurrent(v.(string))
+		val.SetCurrent(v.(string)) //nolint:errcheck
 
 	case boolField:
 		if _, ok := v.(bool); !ok {
 			return nil
 		}
 
-		val.SetCurrent(v.(bool))
+		val.SetCurrent(v.(bool)) //nolint:errcheck
 
 	case intField:
 		out, ok := toInt(v)
@@ -224,18 +224,18 @@ func SetFieldValue(f, v interface{}) error {
 		val.SetCurrent(out)
 
 	case mapField:
-		if _, ok := v.(map[string]interface{}); !ok {
+		if _, ok := v.(map[string]any); !ok {
 			return nil
 		}
 
-		val.SetCurrent(v.(map[string]interface{}))
+		val.SetCurrent(v.(map[string]any)) //nolint:errcheck
 
 	case arrayField:
-		if _, ok := v.([]interface{}); !ok {
+		if _, ok := v.([]any); !ok {
 			return nil
 		}
 
-		val.SetCurrent(v.([]interface{}))
+		val.SetCurrent(v.([]any)) //nolint:errcheck
 
 	default:
 		return fmt.Errorf("unknown field type found: %+v", f)

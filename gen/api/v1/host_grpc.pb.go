@@ -120,7 +120,7 @@ func RegisterHostServiceServer(s grpc.ServiceRegistrar, srv HostServiceServer) {
 	s.RegisterService(&HostService_ServiceDesc, srv)
 }
 
-func _HostService_PromptConfirmation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _HostService_PromptConfirmation_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(PromptConfirmationRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -132,13 +132,13 @@ func _HostService_PromptConfirmation_Handler(srv interface{}, ctx context.Contex
 		Server:     srv,
 		FullMethod: "/api.v1.HostService/PromptConfirmation",
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(HostServiceServer).PromptConfirmation(ctx, req.(*PromptConfirmationRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _HostService_PromptInput_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _HostService_PromptInput_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(PromptInputRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -150,13 +150,13 @@ func _HostService_PromptInput_Handler(srv interface{}, ctx context.Context, dec 
 		Server:     srv,
 		FullMethod: "/api.v1.HostService/PromptInput",
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(HostServiceServer).PromptInput(ctx, req.(*PromptInputRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _HostService_PromptSelect_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _HostService_PromptSelect_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(PromptSelectRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -168,13 +168,13 @@ func _HostService_PromptSelect_Handler(srv interface{}, ctx context.Context, dec
 		Server:     srv,
 		FullMethod: "/api.v1.HostService/PromptSelect",
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(HostServiceServer).PromptSelect(ctx, req.(*PromptSelectRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _HostService_Log_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _HostService_Log_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(LogRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -186,13 +186,13 @@ func _HostService_Log_Handler(srv interface{}, ctx context.Context, dec func(int
 		Server:     srv,
 		FullMethod: "/api.v1.HostService/Log",
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(HostServiceServer).Log(ctx, req.(*LogRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _HostService_HostGetSecret_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _HostService_HostGetSecret_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(HostGetSecretRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -204,7 +204,7 @@ func _HostService_HostGetSecret_Handler(srv interface{}, ctx context.Context, de
 		Server:     srv,
 		FullMethod: "/api.v1.HostService/HostGetSecret",
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(HostServiceServer).HostGetSecret(ctx, req.(*HostGetSecretRequest))
 	}
 	return interceptor(ctx, in, info, handler)

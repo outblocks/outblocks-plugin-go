@@ -11,7 +11,7 @@ import (
 func CmdSignal(cmd *exec.Cmd, signal os.Signal) error {
 	pgid, err := syscall.Getpgid(cmd.Process.Pid)
 	if err == nil {
-		err = syscall.Kill(-pgid, signal.(syscall.Signal))
+		err = syscall.Kill(-pgid, signal.(syscall.Signal)) //nolint:errcheck
 		_ = cmd.Process.Release()
 
 		return err

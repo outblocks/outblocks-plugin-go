@@ -92,7 +92,7 @@ func RegisterBasicPluginServiceServer(s grpc.ServiceRegistrar, srv BasicPluginSe
 	s.RegisterService(&BasicPluginService_ServiceDesc, srv)
 }
 
-func _BasicPluginService_Init_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _BasicPluginService_Init_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(InitRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -104,13 +104,13 @@ func _BasicPluginService_Init_Handler(srv interface{}, ctx context.Context, dec 
 		Server:     srv,
 		FullMethod: "/api.v1.BasicPluginService/Init",
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(BasicPluginServiceServer).Init(ctx, req.(*InitRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _BasicPluginService_Start_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _BasicPluginService_Start_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(StartRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -122,13 +122,13 @@ func _BasicPluginService_Start_Handler(srv interface{}, ctx context.Context, dec
 		Server:     srv,
 		FullMethod: "/api.v1.BasicPluginService/Start",
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(BasicPluginServiceServer).Start(ctx, req.(*StartRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _BasicPluginService_ProjectInit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _BasicPluginService_ProjectInit_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(ProjectInitRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -140,7 +140,7 @@ func _BasicPluginService_ProjectInit_Handler(srv interface{}, ctx context.Contex
 		Server:     srv,
 		FullMethod: "/api.v1.BasicPluginService/ProjectInit",
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(BasicPluginServiceServer).ProjectInit(ctx, req.(*ProjectInitRequest))
 	}
 	return interceptor(ctx, in, info, handler)
@@ -271,7 +271,7 @@ func RegisterStatePluginServiceServer(s grpc.ServiceRegistrar, srv StatePluginSe
 	s.RegisterService(&StatePluginService_ServiceDesc, srv)
 }
 
-func _StatePluginService_GetState_Handler(srv interface{}, stream grpc.ServerStream) error {
+func _StatePluginService_GetState_Handler(srv any, stream grpc.ServerStream) error {
 	m := new(GetStateRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
@@ -292,7 +292,7 @@ func (x *statePluginServiceGetStateServer) Send(m *GetStateResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func _StatePluginService_SaveState_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _StatePluginService_SaveState_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(SaveStateRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -304,13 +304,13 @@ func _StatePluginService_SaveState_Handler(srv interface{}, ctx context.Context,
 		Server:     srv,
 		FullMethod: "/api.v1.StatePluginService/SaveState",
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(StatePluginServiceServer).SaveState(ctx, req.(*SaveStateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _StatePluginService_ReleaseStateLock_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _StatePluginService_ReleaseStateLock_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(ReleaseStateLockRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -322,7 +322,7 @@ func _StatePluginService_ReleaseStateLock_Handler(srv interface{}, ctx context.C
 		Server:     srv,
 		FullMethod: "/api.v1.StatePluginService/ReleaseStateLock",
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(StatePluginServiceServer).ReleaseStateLock(ctx, req.(*ReleaseStateLockRequest))
 	}
 	return interceptor(ctx, in, info, handler)
@@ -441,7 +441,7 @@ func RegisterLockingPluginServiceServer(s grpc.ServiceRegistrar, srv LockingPlug
 	s.RegisterService(&LockingPluginService_ServiceDesc, srv)
 }
 
-func _LockingPluginService_AcquireLocks_Handler(srv interface{}, stream grpc.ServerStream) error {
+func _LockingPluginService_AcquireLocks_Handler(srv any, stream grpc.ServerStream) error {
 	m := new(AcquireLocksRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
@@ -462,7 +462,7 @@ func (x *lockingPluginServiceAcquireLocksServer) Send(m *AcquireLocksResponse) e
 	return x.ServerStream.SendMsg(m)
 }
 
-func _LockingPluginService_ReleaseLocks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _LockingPluginService_ReleaseLocks_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(ReleaseLocksRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -474,7 +474,7 @@ func _LockingPluginService_ReleaseLocks_Handler(srv interface{}, ctx context.Con
 		Server:     srv,
 		FullMethod: "/api.v1.LockingPluginService/ReleaseLocks",
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(LockingPluginServiceServer).ReleaseLocks(ctx, req.(*ReleaseLocksRequest))
 	}
 	return interceptor(ctx, in, info, handler)
@@ -589,7 +589,7 @@ func RegisterDeployPluginServiceServer(s grpc.ServiceRegistrar, srv DeployPlugin
 	s.RegisterService(&DeployPluginService_ServiceDesc, srv)
 }
 
-func _DeployPluginService_Plan_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _DeployPluginService_Plan_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(PlanRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -601,13 +601,13 @@ func _DeployPluginService_Plan_Handler(srv interface{}, ctx context.Context, dec
 		Server:     srv,
 		FullMethod: "/api.v1.DeployPluginService/Plan",
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(DeployPluginServiceServer).Plan(ctx, req.(*PlanRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DeployPluginService_Apply_Handler(srv interface{}, stream grpc.ServerStream) error {
+func _DeployPluginService_Apply_Handler(srv any, stream grpc.ServerStream) error {
 	m := new(ApplyRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
@@ -723,7 +723,7 @@ func RegisterLogsPluginServiceServer(s grpc.ServiceRegistrar, srv LogsPluginServ
 	s.RegisterService(&LogsPluginService_ServiceDesc, srv)
 }
 
-func _LogsPluginService_Logs_Handler(srv interface{}, stream grpc.ServerStream) error {
+func _LogsPluginService_Logs_Handler(srv any, stream grpc.ServerStream) error {
 	m := new(LogsRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
@@ -848,7 +848,7 @@ func RegisterDNSPluginServiceServer(s grpc.ServiceRegistrar, srv DNSPluginServic
 	s.RegisterService(&DNSPluginService_ServiceDesc, srv)
 }
 
-func _DNSPluginService_PlanDNS_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _DNSPluginService_PlanDNS_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(PlanDNSRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -860,13 +860,13 @@ func _DNSPluginService_PlanDNS_Handler(srv interface{}, ctx context.Context, dec
 		Server:     srv,
 		FullMethod: "/api.v1.DNSPluginService/PlanDNS",
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(DNSPluginServiceServer).PlanDNS(ctx, req.(*PlanDNSRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DNSPluginService_ApplyDNS_Handler(srv interface{}, stream grpc.ServerStream) error {
+func _DNSPluginService_ApplyDNS_Handler(srv any, stream grpc.ServerStream) error {
 	m := new(ApplyDNSRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
@@ -982,7 +982,7 @@ func RegisterRunPluginServiceServer(s grpc.ServiceRegistrar, srv RunPluginServic
 	s.RegisterService(&RunPluginService_ServiceDesc, srv)
 }
 
-func _RunPluginService_Run_Handler(srv interface{}, stream grpc.ServerStream) error {
+func _RunPluginService_Run_Handler(srv any, stream grpc.ServerStream) error {
 	m := new(RunRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
@@ -1070,7 +1070,7 @@ func RegisterCommandPluginServiceServer(s grpc.ServiceRegistrar, srv CommandPlug
 	s.RegisterService(&CommandPluginService_ServiceDesc, srv)
 }
 
-func _CommandPluginService_Command_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _CommandPluginService_Command_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(CommandRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -1082,7 +1082,7 @@ func _CommandPluginService_Command_Handler(srv interface{}, ctx context.Context,
 		Server:     srv,
 		FullMethod: "/api.v1.CommandPluginService/Command",
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(CommandPluginServiceServer).Command(ctx, req.(*CommandRequest))
 	}
 	return interceptor(ctx, in, info, handler)
@@ -1154,7 +1154,7 @@ func RegisterDeployHookServiceServer(s grpc.ServiceRegistrar, srv DeployHookServ
 	s.RegisterService(&DeployHookService_ServiceDesc, srv)
 }
 
-func _DeployHookService_DeployHook_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _DeployHookService_DeployHook_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(DeployHookRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -1166,7 +1166,7 @@ func _DeployHookService_DeployHook_Handler(srv interface{}, ctx context.Context,
 		Server:     srv,
 		FullMethod: "/api.v1.DeployHookService/DeployHook",
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(DeployHookServiceServer).DeployHook(ctx, req.(*DeployHookRequest))
 	}
 	return interceptor(ctx, in, info, handler)
@@ -1308,7 +1308,7 @@ func RegisterSecretPluginServiceServer(s grpc.ServiceRegistrar, srv SecretPlugin
 	s.RegisterService(&SecretPluginService_ServiceDesc, srv)
 }
 
-func _SecretPluginService_GetSecret_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _SecretPluginService_GetSecret_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(GetSecretRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -1320,13 +1320,13 @@ func _SecretPluginService_GetSecret_Handler(srv interface{}, ctx context.Context
 		Server:     srv,
 		FullMethod: "/api.v1.SecretPluginService/GetSecret",
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(SecretPluginServiceServer).GetSecret(ctx, req.(*GetSecretRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SecretPluginService_SetSecret_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _SecretPluginService_SetSecret_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(SetSecretRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -1338,13 +1338,13 @@ func _SecretPluginService_SetSecret_Handler(srv interface{}, ctx context.Context
 		Server:     srv,
 		FullMethod: "/api.v1.SecretPluginService/SetSecret",
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(SecretPluginServiceServer).SetSecret(ctx, req.(*SetSecretRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SecretPluginService_DeleteSecret_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _SecretPluginService_DeleteSecret_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(DeleteSecretRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -1356,13 +1356,13 @@ func _SecretPluginService_DeleteSecret_Handler(srv interface{}, ctx context.Cont
 		Server:     srv,
 		FullMethod: "/api.v1.SecretPluginService/DeleteSecret",
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(SecretPluginServiceServer).DeleteSecret(ctx, req.(*DeleteSecretRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SecretPluginService_GetSecrets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _SecretPluginService_GetSecrets_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(GetSecretsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -1374,13 +1374,13 @@ func _SecretPluginService_GetSecrets_Handler(srv interface{}, ctx context.Contex
 		Server:     srv,
 		FullMethod: "/api.v1.SecretPluginService/GetSecrets",
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(SecretPluginServiceServer).GetSecrets(ctx, req.(*GetSecretsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SecretPluginService_ReplaceSecrets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _SecretPluginService_ReplaceSecrets_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(ReplaceSecretsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -1392,13 +1392,13 @@ func _SecretPluginService_ReplaceSecrets_Handler(srv interface{}, ctx context.Co
 		Server:     srv,
 		FullMethod: "/api.v1.SecretPluginService/ReplaceSecrets",
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(SecretPluginServiceServer).ReplaceSecrets(ctx, req.(*ReplaceSecretsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SecretPluginService_DeleteSecrets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _SecretPluginService_DeleteSecrets_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(DeleteSecretsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -1410,7 +1410,7 @@ func _SecretPluginService_DeleteSecrets_Handler(srv interface{}, ctx context.Con
 		Server:     srv,
 		FullMethod: "/api.v1.SecretPluginService/DeleteSecrets",
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(SecretPluginServiceServer).DeleteSecrets(ctx, req.(*DeleteSecretsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
@@ -1539,7 +1539,7 @@ func RegisterMonitoringPluginServiceServer(s grpc.ServiceRegistrar, srv Monitori
 	s.RegisterService(&MonitoringPluginService_ServiceDesc, srv)
 }
 
-func _MonitoringPluginService_PlanMonitoring_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _MonitoringPluginService_PlanMonitoring_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(PlanMonitoringRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -1551,13 +1551,13 @@ func _MonitoringPluginService_PlanMonitoring_Handler(srv interface{}, ctx contex
 		Server:     srv,
 		FullMethod: "/api.v1.MonitoringPluginService/PlanMonitoring",
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(MonitoringPluginServiceServer).PlanMonitoring(ctx, req.(*PlanMonitoringRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MonitoringPluginService_ApplyMonitoring_Handler(srv interface{}, stream grpc.ServerStream) error {
+func _MonitoringPluginService_ApplyMonitoring_Handler(srv any, stream grpc.ServerStream) error {
 	m := new(ApplyMonitoringRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err

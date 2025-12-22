@@ -7,7 +7,7 @@ type MonitoringChannelSlack struct {
 	Token   string `json:"token,omitempty"`
 }
 
-func NewMonitoringChannelSlack(in map[string]interface{}) (*MonitoringChannelSlack, error) {
+func NewMonitoringChannelSlack(in map[string]any) (*MonitoringChannelSlack, error) {
 	o := &MonitoringChannelSlack{}
 
 	return o, util.MapstructureJSONDecode(in, o)
@@ -17,7 +17,7 @@ type MonitoringChannelEmail struct {
 	Email string `json:"email,omitempty"`
 }
 
-func NewMonitoringChannelEmail(in map[string]interface{}) (*MonitoringChannelEmail, error) {
+func NewMonitoringChannelEmail(in map[string]any) (*MonitoringChannelEmail, error) {
 	o := &MonitoringChannelEmail{}
 
 	return o, util.MapstructureJSONDecode(in, o)

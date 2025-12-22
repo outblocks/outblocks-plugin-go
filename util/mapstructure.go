@@ -7,16 +7,16 @@ import (
 )
 
 type Unmarshaler interface {
-	UnmarshalMapstructure(interface{}) error
+	UnmarshalMapstructure(any) error
 }
 
-func MapstructureJSONDecode(in, out interface{}) error {
+func MapstructureJSONDecode(in, out any) error {
 	return MapstructureDecode(in, out, "json")
 }
 
-func MapstructureDecode(in, out interface{}, tag string) error {
+func MapstructureDecode(in, out any, tag string) error {
 	cfg := &mapstructure.DecoderConfig{
-		DecodeHook: func(from reflect.Value, to reflect.Value) (interface{}, error) {
+		DecodeHook: func(from, to reflect.Value) (any, error) {
 			// If the destination implements the unmarshaling interface
 			u, ok := to.Interface().(Unmarshaler)
 			if !ok {
@@ -26,7 +26,7 @@ func MapstructureDecode(in, out interface{}, tag string) error {
 			// If it is nil and a pointer, create and assign the target value first
 			if to.IsNil() && to.Type().Kind() == reflect.Ptr {
 				to.Set(reflect.New(to.Type().Elem()))
-				u = to.Interface().(Unmarshaler)
+				u = to.Interface().(Unmarshaler) //nolint:errcheck
 			}
 
 			// Call the custom unmarshaling method

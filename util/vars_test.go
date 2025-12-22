@@ -11,37 +11,37 @@ import (
 func TestExpand(t *testing.T) {
 	tests := []struct {
 		content  string
-		vars     map[string]interface{}
+		vars     map[string]any
 		expected string
 	}{
 		{
 			content:  "abc: ${var.abc}",
-			vars:     map[string]interface{}{"var": map[string]interface{}{"abc": 1}},
+			vars:     map[string]any{"var": map[string]any{"abc": 1}},
 			expected: `abc: 1`,
 		},
 		{
 			content:  "abc: ${var}\na: true",
-			vars:     map[string]interface{}{"var": map[string]interface{}{"abc": 1, "cba": []interface{}{"1", 2, true, 1.5}}},
+			vars:     map[string]any{"var": map[string]any{"abc": 1, "cba": []any{"1", 2, true, 1.5}}},
 			expected: "abc: map[abc:1 cba:[1 2 true 1.5]]\na: true",
 		},
 		{
 			content:  "abc: I am ${var}",
-			vars:     map[string]interface{}{"var": "cornholio"},
+			vars:     map[string]any{"var": "cornholio"},
 			expected: "abc: I am cornholio",
 		},
 		{
 			content:  "abc: ${var.nested.val.y}",
-			vars:     map[string]interface{}{"var": map[string]interface{}{"nested": map[string]interface{}{"val": map[string]interface{}{"y": 1}}}},
+			vars:     map[string]any{"var": map[string]any{"nested": map[string]any{"val": map[string]any{"y": 1}}}},
 			expected: `abc: 1`,
 		},
 		{
 			content:  "val: ${var.base_url}/func1",
-			vars:     map[string]interface{}{"var": map[string]interface{}{"base_url": "test"}},
+			vars:     map[string]any{"var": map[string]any{"base_url": "test"}},
 			expected: "val: test/func1",
 		},
 		{
 			content:  `val: "*.${var.base_url}"`,
-			vars:     map[string]interface{}{"var": map[string]interface{}{"base_url": "test"}},
+			vars:     map[string]any{"var": map[string]any{"base_url": "test"}},
 			expected: `val: "*.test"`,
 		},
 	}
@@ -62,7 +62,7 @@ func TestExpand(t *testing.T) {
 func TestExpand_Invalid(t *testing.T) {
 	tests := []struct {
 		content  string
-		vars     map[string]interface{}
+		vars     map[string]any
 		expected string
 	}{
 		{

@@ -5,7 +5,7 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
-func Any(m map[string]*structpb.Value, key, msg string) (val interface{}, err error) {
+func Any(m map[string]*structpb.Value, key, msg string) (val any, err error) {
 	if v, ok := m[key]; ok {
 		return v.AsInterface(), nil
 	}

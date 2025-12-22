@@ -52,7 +52,9 @@ func (f *IntBaseField) LookupCurrent() (v int, ok bool) {
 		return 0, f.currentDefined
 	}
 
-	return f.currentVal.(int), true
+	val, ok := f.currentVal.(int)
+
+	return val, ok
 }
 
 func (f *IntBaseField) SetWanted(i int) {
@@ -64,7 +66,9 @@ func (f *IntBaseField) LookupWanted() (v int, ok bool) {
 		return 0, false
 	}
 
-	return f.wanted().(int), true
+	val, ok := f.wanted().(int)
+
+	return val, ok
 }
 
 func (f *IntBaseField) Wanted() int {
@@ -78,18 +82,18 @@ func (f *IntBaseField) Current() int {
 }
 
 func (f *IntBaseField) Any() int {
-	any, defined := f.lookupAny()
+	val, defined := f.lookupAny()
 	if !defined {
 		return 0
 	}
 
-	return any.(int)
+	return val.(int) //nolint:errcheck
 }
 
 func (f *IntBaseField) Input() IntInputField {
 	return f
 }
 
-func (f *IntBaseField) EmptyValue() interface{} {
+func (f *IntBaseField) EmptyValue() any {
 	return 0
 }

@@ -15,8 +15,8 @@ func AppEnvPrefix(a *apiv1.App) string {
 	return fmt.Sprintf("APP_%s_%s_", strings.ToUpper(a.Type), util.SanitizeEnvVar(strings.ToUpper(a.Name)))
 }
 
-func encodeToMap(in interface{}) (map[string]interface{}, error) {
-	out := make(map[string]interface{})
+func encodeToMap(in any) (map[string]any, error) {
+	out := make(map[string]any)
 
 	b, err := json.Marshal(in)
 	if err != nil {
@@ -80,7 +80,7 @@ type ServiceAppProperties struct {
 	Scheduler []*AppScheduler      `json:"scheduler,omitempty"`
 }
 
-func NewServiceAppProperties(in map[string]interface{}) (*ServiceAppProperties, error) {
+func NewServiceAppProperties(in map[string]any) (*ServiceAppProperties, error) {
 	o := &ServiceAppProperties{
 		Build: &ServiceAppBuild{},
 		Container: &ServiceAppContainer{
@@ -98,7 +98,7 @@ func NewServiceAppProperties(in map[string]interface{}) (*ServiceAppProperties, 
 	return o, defaults.Set(o)
 }
 
-func (p *ServiceAppProperties) Encode() (map[string]interface{}, error) {
+func (p *ServiceAppProperties) Encode() (map[string]any, error) {
 	return encodeToMap(p)
 }
 
@@ -110,7 +110,7 @@ type ServiceAppDeployOptions struct {
 	Timeout     int     `json:"timeout,omitempty"`
 }
 
-func NewServiceAppDeployOptions(in map[string]interface{}) (*ServiceAppDeployOptions, error) {
+func NewServiceAppDeployOptions(in map[string]any) (*ServiceAppDeployOptions, error) {
 	o := &ServiceAppDeployOptions{}
 
 	return o, util.MapstructureJSONDecode(in, o)
@@ -138,7 +138,7 @@ type StaticAppProperties struct {
 	RemoveTrailingSlash *bool  `json:"remove_trailing_slash,omitempty"`
 }
 
-func NewStaticAppProperties(in map[string]interface{}) (*StaticAppProperties, error) {
+func NewStaticAppProperties(in map[string]any) (*StaticAppProperties, error) {
 	o := &StaticAppProperties{
 		Build: &StaticAppBuild{},
 		CDN:   &AppCDN{},
@@ -147,7 +147,7 @@ func NewStaticAppProperties(in map[string]interface{}) (*StaticAppProperties, er
 	return o, util.MapstructureJSONDecode(in, o)
 }
 
-func (p *StaticAppProperties) Encode() (map[string]interface{}, error) {
+func (p *StaticAppProperties) Encode() (map[string]any, error) {
 	return encodeToMap(p)
 }
 
@@ -158,7 +158,7 @@ type StaticAppDeployOptions struct {
 	Patterns []string `json:"patterns,omitempty"`
 }
 
-func NewStaticAppDeployOptions(in map[string]interface{}) (*StaticAppDeployOptions, error) {
+func NewStaticAppDeployOptions(in map[string]any) (*StaticAppDeployOptions, error) {
 	o := &StaticAppDeployOptions{}
 
 	return o, util.MapstructureJSONDecode(in, o)
@@ -181,7 +181,7 @@ type FunctionAppProperties struct {
 	Scheduler []*AppScheduler   `json:"scheduler,omitempty"`
 }
 
-func NewFunctionAppProperties(in map[string]interface{}) (*FunctionAppProperties, error) {
+func NewFunctionAppProperties(in map[string]any) (*FunctionAppProperties, error) {
 	o := &FunctionAppProperties{
 		Build: &FunctionAppBuild{},
 		CDN:   &AppCDN{},
@@ -197,28 +197,28 @@ type FunctionAppDeployOptions struct {
 	Timeout     int `json:"timeout,omitempty"`
 }
 
-func NewFunctionAppDeployOptions(in map[string]interface{}) (*FunctionAppDeployOptions, error) {
+func NewFunctionAppDeployOptions(in map[string]any) (*FunctionAppDeployOptions, error) {
 	o := &FunctionAppDeployOptions{}
 
 	return o, util.MapstructureJSONDecode(in, o)
 }
 
-func (p *FunctionAppProperties) Encode() (map[string]interface{}, error) {
+func (p *FunctionAppProperties) Encode() (map[string]any, error) {
 	return encodeToMap(p)
 }
 
-type AppVars map[string]interface{}
+type AppVars map[string]any
 
-func VarsFromAppType(app *apiv1.App) map[string]interface{} {
-	return map[string]interface{}{
+func VarsFromAppType(app *apiv1.App) map[string]any {
+	return map[string]any{
 		"url":         app.Url,
 		"cloud_url":   app.Url,
 		"private_url": app.Url,
 	}
 }
 
-func VarsFromAppRunType(app *apiv1.AppRun) map[string]interface{} {
-	return map[string]interface{}{
+func VarsFromAppRunType(app *apiv1.AppRun) map[string]any {
+	return map[string]any{
 		"url":         app.Url,
 		"cloud_url":   app.Url,
 		"private_url": app.Url,
@@ -226,17 +226,17 @@ func VarsFromAppRunType(app *apiv1.AppRun) map[string]interface{} {
 }
 
 func AppVarsFromApps(apps []*apiv1.App) AppVars {
-	appVars := make(map[string]interface{}) // type->name->value
+	appVars := make(map[string]any) // type->name->value
 
 	for _, app := range apps {
 		vars := VarsFromAppType(app)
 
 		if _, ok := appVars[app.Type]; !ok {
-			appVars[app.Type] = map[string]interface{}{
+			appVars[app.Type] = map[string]any{
 				app.Name: vars,
 			}
 		} else {
-			appVars[app.Type].(map[string]interface{})[app.Name] = vars
+			appVars[app.Type].(map[string]any)[app.Name] = vars //nolint:errcheck
 		}
 	}
 
@@ -244,17 +244,17 @@ func AppVarsFromApps(apps []*apiv1.App) AppVars {
 }
 
 func AppVarsFromAppStates(apps []*apiv1.AppState) AppVars {
-	appVars := make(map[string]interface{}) // type->name->value
+	appVars := make(map[string]any) // type->name->value
 
 	for _, state := range apps {
 		vars := VarsFromAppType(state.App)
 
 		if _, ok := appVars[state.App.Type]; !ok {
-			appVars[state.App.Type] = map[string]interface{}{
+			appVars[state.App.Type] = map[string]any{
 				state.App.Name: vars,
 			}
 		} else {
-			appVars[state.App.Type].(map[string]interface{})[state.App.Name] = vars
+			appVars[state.App.Type].(map[string]any)[state.App.Name] = vars //nolint:errcheck
 		}
 	}
 
@@ -263,7 +263,7 @@ func AppVarsFromAppStates(apps []*apiv1.AppState) AppVars {
 			continue
 		}
 
-		vars := appVars[state.App.Type].(map[string]interface{})[state.App.Name].(map[string]interface{})
+		vars := appVars[state.App.Type].(map[string]any)[state.App.Name].(map[string]any) //nolint:errcheck
 
 		if state.Dns.CloudUrl != "" {
 			vars["cloud_url"] = state.Dns.CloudUrl
@@ -278,30 +278,30 @@ func AppVarsFromAppStates(apps []*apiv1.AppState) AppVars {
 }
 
 func AppVarsFromAppRun(apps []*apiv1.AppRun) AppVars {
-	appVars := make(map[string]interface{}) // type->name->value
+	appVars := make(map[string]any) // type->name->value
 
 	for _, app := range apps {
 		vars := VarsFromAppRunType(app)
 
 		if _, ok := appVars[app.App.Type]; !ok {
-			appVars[app.App.Type] = map[string]interface{}{
+			appVars[app.App.Type] = map[string]any{
 				app.App.Name: vars,
 			}
 		} else {
-			appVars[app.App.Type].(map[string]interface{})[app.App.Name] = vars
+			appVars[app.App.Type].(map[string]any)[app.App.Name] = vars //nolint:errcheck
 		}
 	}
 
 	return appVars
 }
 
-func (v AppVars) ForApp(a *apiv1.App) map[string]interface{} {
-	return v[a.Type].(map[string]interface{})[a.Name].(map[string]interface{})
+func (v AppVars) ForApp(a *apiv1.App) map[string]any {
+	return v[a.Type].(map[string]any)[a.Name].(map[string]any) //nolint:errcheck
 }
 
-func VarsForApp(av AppVars, a *apiv1.App, depVars interface{}) map[string]interface{} {
-	return map[string]interface{}{
-		"app":  map[string]interface{}(av),
+func VarsForApp(av AppVars, a *apiv1.App, depVars any) map[string]any {
+	return map[string]any{
+		"app":  map[string]any(av),
 		"self": av.ForApp(a),
 		"dep":  depVars,
 	}

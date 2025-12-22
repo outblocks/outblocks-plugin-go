@@ -7004,7 +7004,7 @@ func file_api_v1_plugin_proto_rawDescGZIP() []byte {
 
 var file_api_v1_plugin_proto_enumTypes = make([]protoimpl.EnumInfo, 8)
 var file_api_v1_plugin_proto_msgTypes = make([]protoimpl.MessageInfo, 100)
-var file_api_v1_plugin_proto_goTypes = []interface{}{
+var file_api_v1_plugin_proto_goTypes = []any{
 	(PlanType)(0),                       // 0: api.v1.PlanType
 	(LogSeverity)(0),                    // 1: api.v1.LogSeverity
 	(DNSState_SSLStatus)(0),             // 2: api.v1.DNSState.SSLStatus
@@ -7334,7 +7334,7 @@ func file_api_v1_plugin_proto_init() {
 		return
 	}
 	if !protoimpl.UnsafeEnabled {
-		file_api_v1_plugin_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[0].Exporter = func(v any, i int) any {
 			switch v := v.(*InitRequest); i {
 			case 0:
 				return &v.state
@@ -7346,7 +7346,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[1].Exporter = func(v any, i int) any {
 			switch v := v.(*InitResponse); i {
 			case 0:
 				return &v.state
@@ -7358,7 +7358,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[2].Exporter = func(v any, i int) any {
 			switch v := v.(*StartRequest); i {
 			case 0:
 				return &v.state
@@ -7370,7 +7370,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[3].Exporter = func(v any, i int) any {
 			switch v := v.(*StartResponse); i {
 			case 0:
 				return &v.state
@@ -7382,7 +7382,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[4].Exporter = func(v any, i int) any {
 			switch v := v.(*ProjectInitRequest); i {
 			case 0:
 				return &v.state
@@ -7394,7 +7394,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[5].Exporter = func(v any, i int) any {
 			switch v := v.(*ProjectInitResponse); i {
 			case 0:
 				return &v.state
@@ -7406,7 +7406,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[6].Exporter = func(v any, i int) any {
 			switch v := v.(*GetStateRequest); i {
 			case 0:
 				return &v.state
@@ -7418,7 +7418,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[7].Exporter = func(v any, i int) any {
 			switch v := v.(*GetStateResponse); i {
 			case 0:
 				return &v.state
@@ -7430,7 +7430,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[8].Exporter = func(v any, i int) any {
 			switch v := v.(*SaveStateRequest); i {
 			case 0:
 				return &v.state
@@ -7442,7 +7442,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[9].Exporter = func(v any, i int) any {
 			switch v := v.(*SaveStateResponse); i {
 			case 0:
 				return &v.state
@@ -7454,7 +7454,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[10].Exporter = func(v any, i int) any {
 			switch v := v.(*ReleaseStateLockRequest); i {
 			case 0:
 				return &v.state
@@ -7466,7 +7466,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[11].Exporter = func(v any, i int) any {
 			switch v := v.(*ReleaseStateLockResponse); i {
 			case 0:
 				return &v.state
@@ -7478,7 +7478,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[12].Exporter = func(v any, i int) any {
 			switch v := v.(*AcquireLocksRequest); i {
 			case 0:
 				return &v.state
@@ -7490,7 +7490,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[13].Exporter = func(v any, i int) any {
 			switch v := v.(*AcquireLocksResponse); i {
 			case 0:
 				return &v.state
@@ -7502,7 +7502,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[14].Exporter = func(v any, i int) any {
 			switch v := v.(*ReleaseLocksRequest); i {
 			case 0:
 				return &v.state
@@ -7514,7 +7514,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[15].Exporter = func(v any, i int) any {
 			switch v := v.(*ReleaseLocksResponse); i {
 			case 0:
 				return &v.state
@@ -7526,7 +7526,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[16].Exporter = func(v any, i int) any {
 			switch v := v.(*AppDeployInfo); i {
 			case 0:
 				return &v.state
@@ -7538,7 +7538,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[17].Exporter = func(v any, i int) any {
 			switch v := v.(*AppNeed); i {
 			case 0:
 				return &v.state
@@ -7550,7 +7550,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[18].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[18].Exporter = func(v any, i int) any {
 			switch v := v.(*App); i {
 			case 0:
 				return &v.state
@@ -7562,7 +7562,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[19].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[19].Exporter = func(v any, i int) any {
 			switch v := v.(*DNSState); i {
 			case 0:
 				return &v.state
@@ -7574,7 +7574,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[20].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[20].Exporter = func(v any, i int) any {
 			switch v := v.(*DeploymentState); i {
 			case 0:
 				return &v.state
@@ -7586,7 +7586,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[21].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[21].Exporter = func(v any, i int) any {
 			switch v := v.(*AppState); i {
 			case 0:
 				return &v.state
@@ -7598,7 +7598,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[22].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[22].Exporter = func(v any, i int) any {
 			switch v := v.(*AppBuild); i {
 			case 0:
 				return &v.state
@@ -7610,7 +7610,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[23].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[23].Exporter = func(v any, i int) any {
 			switch v := v.(*AppPlan); i {
 			case 0:
 				return &v.state
@@ -7622,7 +7622,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[24].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[24].Exporter = func(v any, i int) any {
 			switch v := v.(*Dependency); i {
 			case 0:
 				return &v.state
@@ -7634,7 +7634,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[25].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[25].Exporter = func(v any, i int) any {
 			switch v := v.(*DependencyState); i {
 			case 0:
 				return &v.state
@@ -7646,7 +7646,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[26].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[26].Exporter = func(v any, i int) any {
 			switch v := v.(*DependencyPlan); i {
 			case 0:
 				return &v.state
@@ -7658,7 +7658,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[27].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[27].Exporter = func(v any, i int) any {
 			switch v := v.(*PluginState); i {
 			case 0:
 				return &v.state
@@ -7670,7 +7670,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[28].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[28].Exporter = func(v any, i int) any {
 			switch v := v.(*PlanRequest); i {
 			case 0:
 				return &v.state
@@ -7682,7 +7682,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[29].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[29].Exporter = func(v any, i int) any {
 			switch v := v.(*PlanAction); i {
 			case 0:
 				return &v.state
@@ -7694,7 +7694,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[30].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[30].Exporter = func(v any, i int) any {
 			switch v := v.(*Plan); i {
 			case 0:
 				return &v.state
@@ -7706,7 +7706,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[31].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[31].Exporter = func(v any, i int) any {
 			switch v := v.(*PlanResponse); i {
 			case 0:
 				return &v.state
@@ -7718,7 +7718,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[32].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[32].Exporter = func(v any, i int) any {
 			switch v := v.(*ApplyRequest); i {
 			case 0:
 				return &v.state
@@ -7730,7 +7730,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[33].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[33].Exporter = func(v any, i int) any {
 			switch v := v.(*ApplyAction); i {
 			case 0:
 				return &v.state
@@ -7742,7 +7742,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[34].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[34].Exporter = func(v any, i int) any {
 			switch v := v.(*ApplyActionResponse); i {
 			case 0:
 				return &v.state
@@ -7754,7 +7754,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[35].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[35].Exporter = func(v any, i int) any {
 			switch v := v.(*ApplyDoneResponse); i {
 			case 0:
 				return &v.state
@@ -7766,7 +7766,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[36].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[36].Exporter = func(v any, i int) any {
 			switch v := v.(*ApplyResponse); i {
 			case 0:
 				return &v.state
@@ -7778,7 +7778,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[37].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[37].Exporter = func(v any, i int) any {
 			switch v := v.(*LogsRequest); i {
 			case 0:
 				return &v.state
@@ -7790,7 +7790,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[38].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[38].Exporter = func(v any, i int) any {
 			switch v := v.(*LogsResponse); i {
 			case 0:
 				return &v.state
@@ -7802,7 +7802,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[39].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[39].Exporter = func(v any, i int) any {
 			switch v := v.(*DomainInfo); i {
 			case 0:
 				return &v.state
@@ -7814,7 +7814,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[40].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[40].Exporter = func(v any, i int) any {
 			switch v := v.(*DNSRecord); i {
 			case 0:
 				return &v.state
@@ -7826,7 +7826,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[41].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[41].Exporter = func(v any, i int) any {
 			switch v := v.(*ApplyDNSDoneResponse); i {
 			case 0:
 				return &v.state
@@ -7838,7 +7838,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[42].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[42].Exporter = func(v any, i int) any {
 			switch v := v.(*PlanDNSRequest); i {
 			case 0:
 				return &v.state
@@ -7850,7 +7850,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[43].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[43].Exporter = func(v any, i int) any {
 			switch v := v.(*PlanDNSResponse); i {
 			case 0:
 				return &v.state
@@ -7862,7 +7862,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[44].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[44].Exporter = func(v any, i int) any {
 			switch v := v.(*ApplyDNSRequest); i {
 			case 0:
 				return &v.state
@@ -7874,7 +7874,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[45].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[45].Exporter = func(v any, i int) any {
 			switch v := v.(*ApplyDNSResponse); i {
 			case 0:
 				return &v.state
@@ -7886,7 +7886,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[46].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[46].Exporter = func(v any, i int) any {
 			switch v := v.(*AppRun); i {
 			case 0:
 				return &v.state
@@ -7898,7 +7898,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[47].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[47].Exporter = func(v any, i int) any {
 			switch v := v.(*DependencyRun); i {
 			case 0:
 				return &v.state
@@ -7910,7 +7910,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[48].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[48].Exporter = func(v any, i int) any {
 			switch v := v.(*RunRequest); i {
 			case 0:
 				return &v.state
@@ -7922,7 +7922,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[49].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[49].Exporter = func(v any, i int) any {
 			switch v := v.(*RunVars); i {
 			case 0:
 				return &v.state
@@ -7934,7 +7934,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[50].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[50].Exporter = func(v any, i int) any {
 			switch v := v.(*RunStartResponse); i {
 			case 0:
 				return &v.state
@@ -7946,7 +7946,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[51].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[51].Exporter = func(v any, i int) any {
 			switch v := v.(*RunOutputResponse); i {
 			case 0:
 				return &v.state
@@ -7958,7 +7958,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[52].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[52].Exporter = func(v any, i int) any {
 			switch v := v.(*RunResponse); i {
 			case 0:
 				return &v.state
@@ -7970,7 +7970,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[53].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[53].Exporter = func(v any, i int) any {
 			switch v := v.(*CommandArgs); i {
 			case 0:
 				return &v.state
@@ -7982,7 +7982,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[54].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[54].Exporter = func(v any, i int) any {
 			switch v := v.(*CommandRequest); i {
 			case 0:
 				return &v.state
@@ -7994,7 +7994,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[55].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[55].Exporter = func(v any, i int) any {
 			switch v := v.(*CommandResponse); i {
 			case 0:
 				return &v.state
@@ -8006,7 +8006,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[56].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[56].Exporter = func(v any, i int) any {
 			switch v := v.(*DeployHookRequest); i {
 			case 0:
 				return &v.state
@@ -8018,7 +8018,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[57].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[57].Exporter = func(v any, i int) any {
 			switch v := v.(*DeployHookResponse); i {
 			case 0:
 				return &v.state
@@ -8030,7 +8030,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[58].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[58].Exporter = func(v any, i int) any {
 			switch v := v.(*GetSecretRequest); i {
 			case 0:
 				return &v.state
@@ -8042,7 +8042,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[59].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[59].Exporter = func(v any, i int) any {
 			switch v := v.(*GetSecretResponse); i {
 			case 0:
 				return &v.state
@@ -8054,7 +8054,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[60].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[60].Exporter = func(v any, i int) any {
 			switch v := v.(*SetSecretRequest); i {
 			case 0:
 				return &v.state
@@ -8066,7 +8066,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[61].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[61].Exporter = func(v any, i int) any {
 			switch v := v.(*SetSecretResponse); i {
 			case 0:
 				return &v.state
@@ -8078,7 +8078,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[62].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[62].Exporter = func(v any, i int) any {
 			switch v := v.(*DeleteSecretRequest); i {
 			case 0:
 				return &v.state
@@ -8090,7 +8090,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[63].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[63].Exporter = func(v any, i int) any {
 			switch v := v.(*DeleteSecretResponse); i {
 			case 0:
 				return &v.state
@@ -8102,7 +8102,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[64].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[64].Exporter = func(v any, i int) any {
 			switch v := v.(*GetSecretsRequest); i {
 			case 0:
 				return &v.state
@@ -8114,7 +8114,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[65].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[65].Exporter = func(v any, i int) any {
 			switch v := v.(*GetSecretsResponse); i {
 			case 0:
 				return &v.state
@@ -8126,7 +8126,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[66].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[66].Exporter = func(v any, i int) any {
 			switch v := v.(*ReplaceSecretsRequest); i {
 			case 0:
 				return &v.state
@@ -8138,7 +8138,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[67].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[67].Exporter = func(v any, i int) any {
 			switch v := v.(*ReplaceSecretsResponse); i {
 			case 0:
 				return &v.state
@@ -8150,7 +8150,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[68].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[68].Exporter = func(v any, i int) any {
 			switch v := v.(*DeleteSecretsRequest); i {
 			case 0:
 				return &v.state
@@ -8162,7 +8162,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[69].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[69].Exporter = func(v any, i int) any {
 			switch v := v.(*DeleteSecretsResponse); i {
 			case 0:
 				return &v.state
@@ -8174,7 +8174,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[70].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[70].Exporter = func(v any, i int) any {
 			switch v := v.(*MonitoringTarget); i {
 			case 0:
 				return &v.state
@@ -8186,7 +8186,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[71].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[71].Exporter = func(v any, i int) any {
 			switch v := v.(*MonitoringChannel); i {
 			case 0:
 				return &v.state
@@ -8198,7 +8198,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[72].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[72].Exporter = func(v any, i int) any {
 			switch v := v.(*MonitoringData); i {
 			case 0:
 				return &v.state
@@ -8210,7 +8210,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[73].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[73].Exporter = func(v any, i int) any {
 			switch v := v.(*PlanMonitoringRequest); i {
 			case 0:
 				return &v.state
@@ -8222,7 +8222,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[74].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[74].Exporter = func(v any, i int) any {
 			switch v := v.(*PlanMonitoringResponse); i {
 			case 0:
 				return &v.state
@@ -8234,7 +8234,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[75].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[75].Exporter = func(v any, i int) any {
 			switch v := v.(*ApplyMonitoringRequest); i {
 			case 0:
 				return &v.state
@@ -8246,7 +8246,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[76].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[76].Exporter = func(v any, i int) any {
 			switch v := v.(*ApplyMonitoringDoneResponse); i {
 			case 0:
 				return &v.state
@@ -8258,7 +8258,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[77].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[77].Exporter = func(v any, i int) any {
 			switch v := v.(*ApplyMonitoringResponse); i {
 			case 0:
 				return &v.state
@@ -8270,7 +8270,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[78].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[78].Exporter = func(v any, i int) any {
 			switch v := v.(*GetStateResponse_State); i {
 			case 0:
 				return &v.state
@@ -8282,7 +8282,7 @@ func file_api_v1_plugin_proto_init() {
 				return nil
 			}
 		}
-		file_api_v1_plugin_proto_msgTypes[89].Exporter = func(v interface{}, i int) interface{} {
+		file_api_v1_plugin_proto_msgTypes[89].Exporter = func(v any, i int) any {
 			switch v := v.(*LogsResponse_Http); i {
 			case 0:
 				return &v.state
@@ -8295,27 +8295,27 @@ func file_api_v1_plugin_proto_init() {
 			}
 		}
 	}
-	file_api_v1_plugin_proto_msgTypes[7].OneofWrappers = []interface{}{
+	file_api_v1_plugin_proto_msgTypes[7].OneofWrappers = []any{
 		(*GetStateResponse_Waiting)(nil),
 		(*GetStateResponse_State_)(nil),
 	}
-	file_api_v1_plugin_proto_msgTypes[36].OneofWrappers = []interface{}{
+	file_api_v1_plugin_proto_msgTypes[36].OneofWrappers = []any{
 		(*ApplyResponse_Action)(nil),
 		(*ApplyResponse_Done)(nil),
 	}
-	file_api_v1_plugin_proto_msgTypes[38].OneofWrappers = []interface{}{
+	file_api_v1_plugin_proto_msgTypes[38].OneofWrappers = []any{
 		(*LogsResponse_Text)(nil),
 		(*LogsResponse_Json)(nil),
 	}
-	file_api_v1_plugin_proto_msgTypes[45].OneofWrappers = []interface{}{
+	file_api_v1_plugin_proto_msgTypes[45].OneofWrappers = []any{
 		(*ApplyDNSResponse_Action)(nil),
 		(*ApplyDNSResponse_Done)(nil),
 	}
-	file_api_v1_plugin_proto_msgTypes[52].OneofWrappers = []interface{}{
+	file_api_v1_plugin_proto_msgTypes[52].OneofWrappers = []any{
 		(*RunResponse_Start)(nil),
 		(*RunResponse_Output)(nil),
 	}
-	file_api_v1_plugin_proto_msgTypes[77].OneofWrappers = []interface{}{
+	file_api_v1_plugin_proto_msgTypes[77].OneofWrappers = []any{
 		(*ApplyMonitoringResponse_Action)(nil),
 		(*ApplyMonitoringResponse_Done)(nil),
 	}
